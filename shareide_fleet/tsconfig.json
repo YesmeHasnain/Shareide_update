@@ -1,0 +1,11 @@
+{
+  "extends": "expo-module-scripts/tsconfig.base",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "jsx": "react",
+    "noEmit": true,
+    "baseUrl": "."
+  },
+  "include": ["src", "App.js", "index.js"]
+}
