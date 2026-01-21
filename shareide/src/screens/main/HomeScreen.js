@@ -1,17 +1,34 @@
-﻿import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { getUpcomingCount } from '../../api/scheduledRides';
 
 const HomeScreen = ({ navigation }) => {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const [scheduledCount, setScheduledCount] = useState(0);
+
+  useEffect(() => {
+    fetchScheduledCount();
+  }, []);
+
+  const fetchScheduledCount = async () => {
+    try {
+      const response = await getUpcomingCount();
+      if (response.success) {
+        setScheduledCount(response.data.count);
+      }
+    } catch (error) {
+      console.log('Error fetching scheduled count:', error);
+    }
+  };
 
   const quickActions = [
-    { id: 1, icon: '', label: 'Saved Places', screen: 'SavedPlaces' },
-    { id: 2, icon: '', label: 'Schedule', screen: 'Schedule' },
-    { id: 3, icon: '', label: 'Promos', screen: 'PromoCodes' },
-    { id: 4, icon: '', label: 'Support', screen: 'Support' },
+    { id: 1, icon: '📍', label: 'Saved Places', screen: 'SavedPlaces' },
+    { id: 2, icon: '📅', label: 'Scheduled', screen: 'ScheduledRides', badge: scheduledCount },
+    { id: 3, icon: '🎁', label: 'Promos', screen: 'PromoCodes' },
+    { id: 4, icon: '💬', label: 'Support', screen: 'Support' },
   ];
 
   return (
@@ -61,6 +78,11 @@ const HomeScreen = ({ navigation }) => {
               style={[styles.actionCard, { backgroundColor: colors.surface }]}
               onPress={() => navigation.navigate(action.screen)}
             >
+              {action.badge > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{action.badge}</Text>
+                </View>
+              )}
               <Text style={styles.actionIcon}>{action.icon}</Text>
               <Text style={[styles.actionLabel, { color: colors.text }]}>{action.label}</Text>
             </TouchableOpacity>
@@ -112,6 +134,8 @@ const styles = StyleSheet.create({
   emptyState: { borderRadius: 12, padding: 40, alignItems: 'center' },
   emptyEmoji: { fontSize: 60, marginBottom: 12 },
   emptyText: { fontSize: 16 },
+  badge: { position: 'absolute', top: 8, right: 8, backgroundColor: '#F44336', borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center' },
+  badgeText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
 });
 
 export default HomeScreen;

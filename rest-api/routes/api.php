@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\EmergencyController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\SavedPlacesController;
 use App\Http\Controllers\Api\RiderWalletController;
+use App\Http\Controllers\Api\ScheduledRideController;
 use App\Http\Controllers\Admin\ChatManagementController;
 
 // Health check
@@ -75,6 +76,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/payment-methods', [RiderWalletController::class, 'addPaymentMethod']);
         Route::post('/payment-methods/{id}/default', [RiderWalletController::class, 'setDefaultMethod']);
         Route::delete('/payment-methods/{id}', [RiderWalletController::class, 'deletePaymentMethod']);
+    });
+
+    // ============================================
+    // SCHEDULED RIDES (Passenger App)
+    // ============================================
+    Route::prefix('scheduled-rides')->group(function () {
+        Route::get('/', [ScheduledRideController::class, 'index']);
+        Route::post('/', [ScheduledRideController::class, 'store']);
+        Route::get('/upcoming-count', [ScheduledRideController::class, 'upcomingCount']);
+        Route::get('/{id}', [ScheduledRideController::class, 'show']);
+        Route::put('/{id}', [ScheduledRideController::class, 'update']);
+        Route::delete('/{id}', [ScheduledRideController::class, 'destroy']);
     });
 
     // ============================================

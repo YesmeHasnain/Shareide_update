@@ -45,6 +45,10 @@ import EmergencyScreen from '../screens/profile/EmergencyScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
 import SupportScreen from '../screens/profile/SupportScreen';
 
+// Scheduled Rides screens
+import ScheduledRidesScreen from '../screens/scheduled/ScheduledRidesScreen';
+import ScheduleRideScreen from '../screens/scheduled/ScheduleRideScreen';
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -151,7 +155,10 @@ const AppNavigator = () => {
             <Stack.Screen name='Notifications' component={NotificationsScreen} />
             <Stack.Screen name='Settings' component={SettingsScreen} />
             <Stack.Screen name='Support' component={SupportScreen} />
-            <Stack.Screen name='Schedule' component={PlaceholderScreen} />
+
+            {/* Scheduled Rides */}
+            <Stack.Screen name='ScheduledRides' component={ScheduledRidesScreen} />
+            <Stack.Screen name='ScheduleRide' component={ScheduleRideScreen} />
           </>
         )}
       </Stack.Navigator>
