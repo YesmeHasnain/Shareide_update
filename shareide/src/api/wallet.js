@@ -1,46 +1,48 @@
 import apiClient from './client';
 
 export const walletAPI = {
+  // Get wallet balance and stats
   getBalance: async () => {
-    const response = await apiClient.get('/wallet/balance');
+    const response = await apiClient.get('/rider-wallet/balance');
     return response.data;
   },
 
-  getTransactions: async (page = 1) => {
-    const response = await apiClient.get(`/wallet/transactions?page=${page}`);
+  // Get transaction history
+  getTransactions: async (page = 1, perPage = 20) => {
+    const response = await apiClient.get(`/rider-wallet/transactions?page=${page}&per_page=${perPage}`);
     return response.data;
   },
 
-  topup: async (amount, paymentMethod) => {
-    const response = await apiClient.post('/wallet/topup', {
+  // Initiate wallet top-up (supports Bank Alfalah, JazzCash, Easypaisa)
+  topUp: async (amount, method) => {
+    const response = await apiClient.post('/rider-wallet/topup', {
       amount,
-      payment_method: paymentMethod,
+      method, // 'card', 'bank_alfalah', 'jazzcash', 'easypaisa'
     });
     return response.data;
   },
 
-  withdraw: async (amount, bankDetails) => {
-    const response = await apiClient.post('/wallet/withdraw', {
-      amount,
-      bank_name: bankDetails.bankName,
-      account_number: bankDetails.accountNumber,
-      account_title: bankDetails.accountTitle,
-    });
-    return response.data;
-  },
-
+  // Get saved payment methods
   getPaymentMethods: async () => {
-    const response = await apiClient.get('/wallet/payment-methods');
+    const response = await apiClient.get('/rider-wallet/payment-methods');
     return response.data;
   },
 
-  addPaymentMethod: async (cardDetails) => {
-    const response = await apiClient.post('/wallet/payment-methods', cardDetails);
+  // Add new payment method
+  addPaymentMethod: async (data) => {
+    const response = await apiClient.post('/rider-wallet/payment-methods', data);
     return response.data;
   },
 
+  // Set default payment method
+  setDefaultMethod: async (id) => {
+    const response = await apiClient.post(`/rider-wallet/payment-methods/${id}/default`);
+    return response.data;
+  },
+
+  // Delete payment method
   deletePaymentMethod: async (id) => {
-    const response = await apiClient.delete(`/wallet/payment-methods/${id}`);
+    const response = await apiClient.delete(`/rider-wallet/payment-methods/${id}`);
     return response.data;
   },
 };

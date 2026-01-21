@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator, ScrollView, Linking } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { walletAPI } from '../../api/wallet';
 
 const TopUpScreen = ({ navigation }) => {
   const { colors } = useTheme();
   const [amount, setAmount] = useState('');
-  const [selectedMethod, setSelectedMethod] = useState('jazzcash');
+  const [selectedMethod, setSelectedMethod] = useState('card');
   const [loading, setLoading] = useState(false);
 
   const quickAmounts = [500, 1000, 2000, 5000];
 
   const paymentMethods = [
-    { id: 'jazzcash', name: 'JazzCash', icon: '📱' },
-    { id: 'easypaisa', name: 'Easypaisa', icon: '📲' },
-    { id: 'card', name: 'Credit/Debit Card', icon: '💳' },
-    { id: 'bank', name: 'Bank Transfer', icon: '🏦' },
+    { id: 'card', name: 'Debit/Credit Card', icon: '💳', desc: 'Bank Alfalah Gateway' },
+    { id: 'jazzcash', name: 'JazzCash', icon: '📱', desc: 'Mobile Wallet' },
+    { id: 'easypaisa', name: 'Easypaisa', icon: '📲', desc: 'Mobile Wallet' },
   ];
 
   const handleTopUp = async () => {
@@ -25,21 +24,39 @@ const TopUpScreen = ({ navigation }) => {
       return;
     }
 
+    if (numAmount > 50000) {
+      Alert.alert('Invalid Amount', 'Maximum top-up amount is Rs. 50,000');
+      return;
+    }
+
     try {
       setLoading(true);
-      await walletAPI.topup(numAmount, selectedMethod);
-      Alert.alert(
-        'Success',
-        `Rs. ${numAmount} has been added to your wallet!`,
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
-      );
+      const response = await walletAPI.topUp(numAmount, selectedMethod);
+
+      if (response.success) {
+        // For card/bank_alfalah - redirect to payment gateway
+        if (selectedMethod === 'card' || selectedMethod === 'bank_alfalah') {
+          if (response.data?.payment_url) {
+            // Navigate to payment webview
+            navigation.navigate('PaymentWebView', {
+              paymentUrl: response.data.payment_url,
+              formData: response.data.form_data,
+              orderId: response.data.order_id,
+              amount: numAmount,
+            });
+          }
+        } else {
+          // For JazzCash/Easypaisa - show reference info
+          Alert.alert(
+            'Payment Initiated',
+            `Reference ID: ${response.data?.reference_id}\n\nPlease complete payment via ${selectedMethod === 'jazzcash' ? 'JazzCash' : 'Easypaisa'} app.`,
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+          );
+        }
+      }
     } catch (error) {
-      // Mock success for demo
-      Alert.alert(
-        'Success',
-        `Rs. ${numAmount} has been added to your wallet!`,
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
-      );
+      const message = error.response?.data?.message || 'Failed to initiate payment. Please try again.';
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }
@@ -70,7 +87,7 @@ const TopUpScreen = ({ navigation }) => {
             />
           </View>
           <Text style={[styles.minAmount, { color: colors.textSecondary }]}>
-            Minimum amount: Rs. 100
+            Min: Rs. 100 | Max: Rs. 50,000
           </Text>
         </View>
 
@@ -118,7 +135,10 @@ const TopUpScreen = ({ navigation }) => {
               onPress={() => setSelectedMethod(method.id)}
             >
               <Text style={styles.methodIcon}>{method.icon}</Text>
-              <Text style={[styles.methodName, { color: colors.text }]}>{method.name}</Text>
+              <View style={styles.methodInfo}>
+                <Text style={[styles.methodName, { color: colors.text }]}>{method.name}</Text>
+                <Text style={[styles.methodDesc, { color: colors.textSecondary }]}>{method.desc}</Text>
+              </View>
               <View
                 style={[
                   styles.radioOuter,
@@ -131,6 +151,13 @@ const TopUpScreen = ({ navigation }) => {
               </View>
             </TouchableOpacity>
           ))}
+        </View>
+
+        <View style={[styles.securityNote, { backgroundColor: colors.surface }]}>
+          <Text style={styles.securityIcon}>🔒</Text>
+          <Text style={[styles.securityText, { color: colors.textSecondary }]}>
+            Payments are processed securely via Bank Alfalah payment gateway. Your card details are never stored.
+          </Text>
         </View>
       </ScrollView>
 
@@ -147,7 +174,7 @@ const TopUpScreen = ({ navigation }) => {
             <ActivityIndicator color="#000" />
           ) : (
             <Text style={styles.topUpText}>
-              Top Up {amount ? `Rs. ${parseInt(amount, 10).toLocaleString()}` : ''}
+              {selectedMethod === 'card' ? 'Pay with Card' : 'Top Up'} {amount ? `Rs. ${parseInt(amount, 10).toLocaleString()}` : ''}
             </Text>
           )}
         </TouchableOpacity>
@@ -200,7 +227,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   methodIcon: { fontSize: 28, marginRight: 12 },
-  methodName: { flex: 1, fontSize: 16, fontWeight: '500' },
+  methodInfo: { flex: 1 },
+  methodName: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
+  methodDesc: { fontSize: 12 },
   radioOuter: {
     width: 24,
     height: 24,
@@ -214,6 +243,15 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
   },
+  securityNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    gap: 12,
+  },
+  securityIcon: { fontSize: 24 },
+  securityText: { flex: 1, fontSize: 12, lineHeight: 18 },
   footer: {
     position: 'absolute',
     bottom: 0,

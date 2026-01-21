@@ -6,30 +6,42 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\PhoneVerification;
 use App\Models\RiderProfile;
+use App\Models\RiderWallet;
+use App\Services\TwilioWhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 
 class AuthController extends Controller
 {
+    protected $whatsappService;
+
+    public function __construct(TwilioWhatsAppService $whatsappService)
+    {
+        $this->whatsappService = $whatsappService;
+    }
+
     /**
-     * Send verification code to phone
+     * Send verification code to phone via WhatsApp
      */
     public function sendCode(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'phone' => 'required|string|regex:/^\+92[0-9]{10}$/',
+            'phone' => ['required', 'string', 'regex:/^(\+92|0)?3[0-9]{9}$/'],
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid phone number format. Use +92XXXXXXXXXX',
+                'message' => 'Invalid phone number format. Use 03XXXXXXXXX or +923XXXXXXXXX',
                 'errors' => $validator->errors(),
             ], 422);
         }
 
-        $phone = $request->phone;
+        $phone = $this->formatPhoneNumber($request->phone);
+
+        // Check if user exists (for frontend to know)
+        $existingUser = User::where('phone', $phone)->first();
 
         // Generate 6-digit code
         $code = PhoneVerification::generateCode();
@@ -41,22 +53,57 @@ class AuthController extends Controller
         PhoneVerification::create([
             'phone' => $phone,
             'code' => $code,
-            'expires_at' => Carbon::now()->addMinutes(10),
+            'expires_at' => Carbon::now()->addMinutes(5),
             'attempts' => 0,
             'verified_at' => null,
         ]);
 
-        // Dev mode response (production me WhatsApp/SMS bhejna hoga)
-        return response()->json([
+        // Send OTP via WhatsApp
+        $result = $this->whatsappService->sendOTP($phone, $code);
+
+        if (!$result['success'] && !isset($result['dev_otp'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send OTP. Please try again.',
+            ], 500);
+        }
+
+        $response = [
             'success' => true,
-            'message' => 'Verification code sent via WhatsApp (dev mode)',
-            'debug_code' => $code,
-        ]);
+            'message' => 'Verification code sent via WhatsApp',
+            'is_existing_user' => $existingUser !== null,
+        ];
+
+        // Include OTP in dev mode
+        if (isset($result['dev_otp'])) {
+            $response['debug_code'] = $result['dev_otp'];
+        }
+
+        return response()->json($response);
+    }
+
+    /**
+     * Format phone number to +92 format
+     */
+    private function formatPhoneNumber(string $phone): string
+    {
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+
+        if (str_starts_with($phone, '0')) {
+            $phone = '92' . substr($phone, 1);
+        }
+
+        if (!str_starts_with($phone, '92')) {
+            $phone = '92' . $phone;
+        }
+
+        return '+' . $phone;
     }
 
     /**
      * Verify code and check if user exists
-     * - If existing user: return token + user
+     * - If existing user with complete profile: return token + user (go to Home)
+     * - If existing user with incomplete profile: return token + needs_profile_setup
      * - If new user: return is_new_user true (no token yet)
      */
     public function verifyCode(Request $request)
@@ -74,7 +121,7 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $phone = $request->phone;
+        $phone = $this->formatPhoneNumber($request->phone);
         $code  = $request->code;
 
         // Find verification
@@ -106,12 +153,13 @@ class AuthController extends Controller
         // Check if user exists
         $user = User::where('phone', $phone)->first();
 
-        // If user does NOT exist -> new user flow
+        // If user does NOT exist -> new user flow (go to Gender -> Profile Setup)
         if (!$user) {
             return response()->json([
                 'success' => true,
                 'is_new_user' => true,
-                'verification_token' => $phone, // simple token; later hum secure kar sakte hain
+                'needs_profile_setup' => true,
+                'verification_token' => base64_encode($phone . ':' . $code),
                 'message' => 'New user. Please complete registration.',
             ]);
         }
@@ -121,18 +169,30 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        // Check if profile is complete
+        $profile = $user->riderProfile;
+        $isProfileComplete = $profile && $profile->full_name && $profile->gender;
+
+        // Create wallet if not exists
+        RiderWallet::firstOrCreate(
+            ['user_id' => $user->id],
+            ['balance' => 0, 'total_spent' => 0, 'total_topped_up' => 0]
+        );
+
         return response()->json([
             'success' => true,
             'is_new_user' => false,
-            'message' => 'Login successful',
+            'needs_profile_setup' => !$isProfileComplete,
+            'message' => $isProfileComplete ? 'Login successful' : 'Please complete your profile',
             'token' => $token,
             'user' => [
                 'id' => (string) $user->id,
                 'name' => $user->name,
                 'phone' => $user->phone,
                 'email' => $user->email,
-                'avatar' => $user->riderProfile?->avatar_path,
-                'gender' => $user->riderProfile?->gender,
+                'avatar' => $profile?->avatar_path,
+                'gender' => $profile?->gender,
+                'profile_complete' => $isProfileComplete,
             ],
         ]);
     }
@@ -144,9 +204,10 @@ class AuthController extends Controller
     public function completeRegistration(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'phone' => 'required|string',
-            'code'  => 'required|string|size:6',
+            'verification_token' => 'required|string',
             'name'  => 'required|string|max:255',
+            'gender' => 'required|in:male,female,other',
+            'email' => 'nullable|email|unique:users,email',
         ]);
 
         if ($validator->fails()) {
@@ -157,9 +218,19 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $phone = $request->phone;
-        $code  = $request->code;
-        $name  = $request->name;
+        // Decode verification token
+        $decoded = base64_decode($request->verification_token);
+        $parts = explode(':', $decoded);
+
+        if (count($parts) !== 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid verification token',
+            ], 401);
+        }
+
+        $phone = $parts[0];
+        $code = $parts[1];
 
         // Find verification (must be un-used)
         $verification = PhoneVerification::where('phone', $phone)
@@ -176,7 +247,7 @@ class AuthController extends Controller
         if ($verification->isExpired()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Verification code has expired',
+                'message' => 'Verification code has expired. Please request a new one.',
             ], 401);
         }
 
@@ -187,27 +258,56 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // If user already exists, treat as login (fallback safety)
+        // If user already exists, update profile
         $user = User::where('phone', $phone)->first();
 
         if (!$user) {
             $user = User::create([
                 'phone'  => $phone,
-                'name'   => $name,
+                'name'   => $request->name,
+                'email'  => $request->email,
                 'role'   => 'rider',
                 'status' => 'active',
             ]);
 
             RiderProfile::create([
                 'user_id'   => $user->id,
-                'full_name' => $name,
+                'full_name' => $request->name,
+                'gender'    => $request->gender,
+            ]);
+
+            // Create wallet for new user
+            RiderWallet::create([
+                'user_id' => $user->id,
+                'balance' => 0,
+                'total_spent' => 0,
+                'total_topped_up' => 0,
             ]);
         } else {
-            // update name if user exists
-            $user->update(['name' => $name]);
+            // Update existing user profile
+            $user->update([
+                'name' => $request->name,
+                'email' => $request->email ?? $user->email,
+            ]);
+
             if ($user->riderProfile) {
-                $user->riderProfile->update(['full_name' => $name]);
+                $user->riderProfile->update([
+                    'full_name' => $request->name,
+                    'gender' => $request->gender,
+                ]);
+            } else {
+                RiderProfile::create([
+                    'user_id'   => $user->id,
+                    'full_name' => $request->name,
+                    'gender'    => $request->gender,
+                ]);
             }
+
+            // Ensure wallet exists
+            RiderWallet::firstOrCreate(
+                ['user_id' => $user->id],
+                ['balance' => 0, 'total_spent' => 0, 'total_topped_up' => 0]
+            );
         }
 
         // Mark verification used
@@ -218,6 +318,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => 'Registration completed successfully',
             'token' => $token,
             'user' => [
                 'id' => (string) $user->id,
@@ -226,6 +327,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'avatar' => $user->riderProfile?->avatar_path,
                 'gender' => $user->riderProfile?->gender,
+                'profile_complete' => true,
             ],
         ]);
     }

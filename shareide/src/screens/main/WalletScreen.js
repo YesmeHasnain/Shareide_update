@@ -18,13 +18,31 @@ const WalletScreen = ({ navigation }) => {
         walletAPI.getTransactions(),
       ]);
 
-      setBalance(balanceRes.balance || balanceRes.data?.balance || 0);
-      setTransactions(transactionsRes.transactions || transactionsRes.data || []);
+      // Parse balance response from new API format
+      const balanceData = balanceRes.data || balanceRes;
+      setBalance(balanceData.balance || 0);
       setStats({
-        thisMonth: balanceRes.this_month_spent || 0,
-        totalRides: balanceRes.total_rides || 0,
-        totalSpent: balanceRes.total_spent || 0,
+        thisMonth: balanceData.this_month_spent || 0,
+        totalRides: balanceData.total_rides || 0,
+        totalSpent: balanceData.total_spent || 0,
       });
+
+      // Parse transactions response
+      const txData = transactionsRes.data || transactionsRes;
+      const txList = txData.transactions || txData || [];
+
+      // Map transactions to display format
+      const mappedTx = txList.map(tx => ({
+        id: tx.id?.toString(),
+        type: tx.type === 'topup' ? 'credit' : 'debit',
+        description: tx.description || (tx.type === 'topup' ? 'Wallet top-up' : 'Ride payment'),
+        amount: Math.abs(tx.amount),
+        date: tx.created_at,
+        icon: tx.type === 'topup' ? '💰' : '🚗',
+        status: tx.status,
+      }));
+
+      setTransactions(mappedTx);
     } catch (error) {
       // Use mock data if API fails
       setBalance(1500);

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\RiderWallet;
 use App\Models\RiderTransaction;
 use App\Models\PaymentMethod;
+use App\Services\BankAlfalahService;
 use Carbon\Carbon;
 
 class RiderWalletController extends Controller
@@ -94,14 +95,13 @@ class RiderWalletController extends Controller
     }
 
     /**
-     * Top up wallet
+     * Initiate wallet top-up
      */
     public function topUp(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'amount' => 'required|numeric|min:100|max:50000',
-            'method' => 'required|in:jazzcash,easypaisa,card',
-            'payment_details' => 'sometimes|array',
+            'method' => 'required|in:jazzcash,easypaisa,card,bank_alfalah',
         ]);
 
         if ($validator->fails()) {
@@ -114,52 +114,158 @@ class RiderWalletController extends Controller
         try {
             $user = $request->user();
 
-            DB::beginTransaction();
+            // Generate unique order ID
+            $orderId = 'TOPUP-' . $user->id . '-' . time();
 
-            $wallet = RiderWallet::firstOrCreate(
-                ['user_id' => $user->id],
-                ['balance' => 0, 'total_spent' => 0, 'total_topped_up' => 0]
-            );
+            // For Bank Alfalah card payment
+            if ($request->method === 'card' || $request->method === 'bank_alfalah') {
+                $bankAlfalah = new BankAlfalahService();
+                $paymentResult = $bankAlfalah->createPayment(
+                    $orderId,
+                    $request->amount,
+                    'SHAREIDE Wallet Top-up'
+                );
 
-            // Simulate payment processing (in production, integrate with actual payment gateway)
-            $referenceId = 'TXN' . strtoupper(uniqid());
+                if (!$paymentResult['success']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to initiate payment',
+                        'error' => $paymentResult['error'] ?? 'Unknown error'
+                    ], 500);
+                }
 
-            // Update wallet
-            $wallet->balance += $request->amount;
-            $wallet->total_topped_up += $request->amount;
-            $wallet->save();
+                // Create pending transaction
+                RiderTransaction::create([
+                    'user_id' => $user->id,
+                    'type' => 'topup',
+                    'amount' => $request->amount,
+                    'balance_after' => 0, // Will be updated on callback
+                    'description' => 'Wallet top-up via Bank Alfalah',
+                    'reference_id' => $orderId,
+                    'status' => 'pending',
+                    'metadata' => [
+                        'method' => 'bank_alfalah',
+                        'payment_url' => $paymentResult['payment_url'],
+                    ]
+                ]);
 
-            // Create transaction record
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Redirecting to payment gateway',
+                    'data' => [
+                        'payment_url' => $paymentResult['payment_url'],
+                        'form_data' => $paymentResult['form_data'],
+                        'method' => $paymentResult['method'],
+                        'order_id' => $orderId,
+                    ]
+                ]);
+            }
+
+            // For JazzCash/Easypaisa - create pending transaction
+            // (These would need their own gateway integration)
+            $referenceId = 'TXN-' . strtoupper(uniqid());
+
             RiderTransaction::create([
                 'user_id' => $user->id,
                 'type' => 'topup',
                 'amount' => $request->amount,
-                'balance_after' => $wallet->balance,
+                'balance_after' => 0,
                 'description' => 'Wallet top-up via ' . ucfirst($request->method),
                 'reference_id' => $referenceId,
-                'status' => 'completed',
+                'status' => 'pending',
                 'metadata' => [
                     'method' => $request->method,
-                    'payment_details' => $request->payment_details ?? [],
                 ]
             ]);
 
-            DB::commit();
-
             return response()->json([
                 'success' => true,
-                'message' => 'Wallet topped up successfully',
+                'message' => 'Payment initiated',
                 'data' => [
-                    'new_balance' => (float) $wallet->balance,
                     'reference_id' => $referenceId,
+                    'method' => $request->method,
+                    'amount' => $request->amount,
+                    // Mobile wallet integration details would go here
                 ]
-            ], 200);
+            ]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to process top-up',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Handle Bank Alfalah payment callback
+     */
+    public function paymentCallback(Request $request)
+    {
+        try {
+            $bankAlfalah = new BankAlfalahService();
+            $result = $bankAlfalah->verifyPayment($request->all());
+
+            $orderId = $result['transaction_id'] ?? $request->input('orderrefnum');
+
+            // Find the pending transaction
+            $transaction = RiderTransaction::where('reference_id', $orderId)
+                ->where('status', 'pending')
+                ->first();
+
+            if (!$transaction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaction not found'
+                ], 404);
+            }
+
+            if ($result['success']) {
+                DB::beginTransaction();
+
+                // Get or create wallet
+                $wallet = RiderWallet::firstOrCreate(
+                    ['user_id' => $transaction->user_id],
+                    ['balance' => 0, 'total_spent' => 0, 'total_topped_up' => 0]
+                );
+
+                // Update wallet balance
+                $wallet->balance += $transaction->amount;
+                $wallet->total_topped_up += $transaction->amount;
+                $wallet->save();
+
+                // Update transaction
+                $transaction->update([
+                    'status' => 'completed',
+                    'balance_after' => $wallet->balance,
+                    'metadata' => array_merge($transaction->metadata ?? [], [
+                        'bank_transaction_id' => $result['bank_transaction_id'],
+                        'response_code' => $result['response_code'],
+                    ])
+                ]);
+
+                DB::commit();
+
+                // Redirect to success page in app
+                return redirect(config('app.frontend_url') . '/wallet/topup/success?amount=' . $transaction->amount);
+            } else {
+                // Payment failed
+                $transaction->update([
+                    'status' => 'failed',
+                    'metadata' => array_merge($transaction->metadata ?? [], [
+                        'error' => $result['error'],
+                        'response_code' => $result['response_code'] ?? null,
+                    ])
+                ]);
+
+                return redirect(config('app.frontend_url') . '/wallet/topup/failed?error=' . urlencode($result['error']));
+            }
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Callback processing failed',
                 'error' => $e->getMessage()
             ], 500);
         }

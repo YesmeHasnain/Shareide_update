@@ -8,9 +8,9 @@ import { authAPI } from '../../api/auth';
 const ProfileSetupScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
   const { login } = useAuth();
-  const { phone, gender, token } = route.params;
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const { phone, gender, verificationToken, token, user, isNewUser } = route.params;
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
   const [profileImage, setProfileImage] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -42,38 +42,30 @@ const ProfileSetupScreen = ({ route, navigation }) => {
     try {
       setLoading(true);
 
-      const formData = new FormData();
-      formData.append('name', name.trim());
-      formData.append('phone', phone);
-      formData.append('gender', gender);
+      // Prepare registration data
+      const registrationData = {
+        verification_token: verificationToken,
+        name: name.trim(),
+        gender: gender,
+      };
 
       if (email.trim()) {
-        formData.append('email', email.trim());
+        registrationData.email = email.trim();
       }
 
-      if (profileImage) {
-        const uri = profileImage.uri;
-        const filename = uri.split('/').pop();
-        const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : 'image/jpeg';
+      // Call complete registration API
+      const response = await authAPI.completeRegistration(registrationData);
 
-        formData.append('profile_picture', {
-          uri,
-          name: filename,
-          type,
+      if (response.success) {
+        // Store user data and token
+        await login(response.user, response.token);
+
+        // Navigate to main app
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Drawer' }],
         });
       }
-
-      const response = await authAPI.completeRegistration(formData);
-
-      // Store user data and token
-      await login(response.user, response.token || token);
-
-      // Navigate to main app
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Drawer' }],
-      });
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to complete registration. Please try again.';
       Alert.alert('Error', message);
@@ -102,6 +94,9 @@ const ProfileSetupScreen = ({ route, navigation }) => {
       </TouchableOpacity>
 
       <Text style={[styles.title, { color: colors.text }]}>Complete Profile</Text>
+      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+        Tell us a bit about yourself
+      </Text>
 
       <View style={styles.inputContainer}>
         <Text style={[styles.label, { color: colors.textSecondary }]}>Full Name *</Text>
@@ -165,7 +160,8 @@ const styles = StyleSheet.create({
   avatarEmoji: { fontSize: 60 },
   cameraIcon: { position: 'absolute', bottom: 0, right: 0, width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
   cameraEmoji: { fontSize: 18 },
-  title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 32 },
+  title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 },
+  subtitle: { fontSize: 16, textAlign: 'center', marginBottom: 32, color: '#888' },
   inputContainer: { marginBottom: 20 },
   label: { fontSize: 14, marginBottom: 8, fontWeight: '500' },
   input: { height: 56, borderRadius: 12, paddingHorizontal: 16, fontSize: 16 },

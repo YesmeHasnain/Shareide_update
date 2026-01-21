@@ -35,6 +35,7 @@ import BookingDetailsScreen from '../screens/booking/BookingDetailsScreen';
 import TopUpScreen from '../screens/wallet/TopUpScreen';
 import PaymentMethodsScreen from '../screens/wallet/PaymentMethodsScreen';
 import TransactionHistoryScreen from '../screens/wallet/TransactionHistoryScreen';
+import PaymentWebViewScreen from '../screens/wallet/PaymentWebViewScreen';
 
 // Profile screens
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
@@ -146,6 +147,7 @@ const AppNavigator = () => {
             <Stack.Screen name='TopUp' component={TopUpScreen} />
             <Stack.Screen name='TransactionHistory' component={TransactionHistoryScreen} />
             <Stack.Screen name='PaymentMethods' component={PaymentMethodsScreen} />
+            <Stack.Screen name='PaymentWebView' component={PaymentWebViewScreen} />
 
             {/* Profile & Settings */}
             <Stack.Screen name='EditProfile' component={EditProfileScreen} />

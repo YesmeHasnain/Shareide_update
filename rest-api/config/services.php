@@ -35,4 +35,30 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Twilio WhatsApp Configuration
+    |--------------------------------------------------------------------------
+    */
+    'twilio' => [
+        'sid' => env('TWILIO_SID'),
+        'token' => env('TWILIO_AUTH_TOKEN'),
+        'whatsapp_from' => env('TWILIO_WHATSAPP_FROM', '+14155238886'), // Twilio sandbox number
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bank Alfalah Payment Gateway
+    |--------------------------------------------------------------------------
+    */
+    'bank_alfalah' => [
+        'merchant_id' => env('BANK_ALFALAH_MERCHANT_ID'),
+        'merchant_key' => env('BANK_ALFALAH_MERCHANT_KEY'),
+        'merchant_name' => env('BANK_ALFALAH_MERCHANT_NAME', 'SHAREIDE'),
+        'currency' => env('BANK_ALFALAH_CURRENCY', 'PKR'),
+        'base_url' => env('BANK_ALFALAH_BASE_URL', 'https://payments.bankalfalah.com'),
+        'return_url' => env('BANK_ALFALAH_RETURN_URL'),
+        'sandbox' => env('BANK_ALFALAH_SANDBOX', true),
+    ],
+
 ];

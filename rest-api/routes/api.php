@@ -37,9 +37,10 @@ Route::prefix('auth')->group(function () {
 });
 
 // ============================================
-// PAYMENT CALLBACK (Public - No Auth Required)
+// PAYMENT CALLBACKS (Public - No Auth Required)
 // ============================================
 Route::post('/payment/callback', [PaymentController::class, 'paymentCallback']);
+Route::post('/wallet/payment-callback', [RiderWalletController::class, 'paymentCallback']);
 
 // Protected routes (authentication required)
 Route::middleware('auth:sanctum')->group(function () {

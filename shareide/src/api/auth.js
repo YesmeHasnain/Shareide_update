@@ -1,32 +1,33 @@
 import apiClient from './client';
 
 export const authAPI = {
-  sendOTP: async (phone) => {
-    const response = await apiClient.post('/auth/send-otp', { phone });
+  // Send OTP via WhatsApp
+  sendCode: async (phone) => {
+    const response = await apiClient.post('/auth/send-code', { phone });
     return response.data;
   },
 
-  verifyOTP: async (phone, code) => {
-    const response = await apiClient.post('/auth/verify-otp', { phone, code });
+  // Verify OTP code
+  verifyCode: async (phone, code) => {
+    const response = await apiClient.post('/auth/verify-code', { phone, code });
     return response.data;
   },
 
-  completeRegistration: async (formData) => {
-    const response = await apiClient.post('/auth/complete-registration', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  // Complete registration for new users
+  completeRegistration: async (data) => {
+    const response = await apiClient.post('/auth/complete-registration', data);
     return response.data;
   },
 
+  // Get current user profile
   getProfile: async () => {
-    const response = await apiClient.get('/profile');
+    const response = await apiClient.get('/me');
     return response.data;
   },
 
+  // Logout
   logout: async () => {
-    const response = await apiClient.post('/auth/logout');
+    const response = await apiClient.post('/logout');
     return response.data;
   },
 };
