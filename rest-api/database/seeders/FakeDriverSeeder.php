@@ -261,7 +261,7 @@ class FakeDriverSeeder extends Seeder
             $drivers[] = [
                 'name' => $fullName,
                 'phone' => $phone,
-                'email' => strtolower(str_replace(' ', '.', $fullName)) . '.driver@shareide.pk',
+                'email' => strtolower(str_replace(' ', '.', $fullName)) . '.driver@shareide.com',
                 'cnic' => $cnic,
                 'address' => $area['name'] . ', ' . $city,
                 'city' => $city,

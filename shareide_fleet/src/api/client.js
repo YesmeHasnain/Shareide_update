@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration - Change this to your server IP
 const DEV_API_URL = 'http://172.20.128.1/api';
-const PROD_API_URL = 'https://api.shareide.pk/api';
+const PROD_API_URL = 'https://api.shareide.com/api';
 const API_BASE_URL = __DEV__ ? DEV_API_URL : PROD_API_URL;
 
 const client = axios.create({

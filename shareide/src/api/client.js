@@ -9,7 +9,7 @@ const USE_MOCK_DATA = false;
 // For development: Use your computer's local IP (run 'ipconfig' on Windows)
 // For production: Use your actual server URL
 const DEV_API_URL = 'http://172.20.128.1/api';
-const PROD_API_URL = 'https://api.shareide.pk/api';
+const PROD_API_URL = 'https://api.shareide.com/api';
 
 // Use development URL for now - change to PROD_API_URL for production
 const API_BASE_URL = __DEV__ ? DEV_API_URL : PROD_API_URL;

@@ -84,7 +84,7 @@ const SupportScreen = ({ navigation }) => {
       color: colors.primary,
       action: () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        Linking.openURL('mailto:support@shareide.pk');
+        Linking.openURL('mailto:support@shareide.com');
       },
     },
   ];

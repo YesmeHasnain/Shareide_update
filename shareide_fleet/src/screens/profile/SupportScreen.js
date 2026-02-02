@@ -53,7 +53,7 @@ const SupportScreen = ({ navigation }) => {
   const contactOptions = [
     { icon: '📞', label: 'Call Support', action: () => Linking.openURL('tel:+923001234567') },
     { icon: '💬', label: 'WhatsApp', action: () => Linking.openURL('https://wa.me/923001234567') },
-    { icon: '📧', label: 'Email Us', action: () => Linking.openURL('mailto:support@shareide.pk') },
+    { icon: '📧', label: 'Email Us', action: () => Linking.openURL('mailto:support@shareide.com') },
   ];
 
   const quickLinks = [
