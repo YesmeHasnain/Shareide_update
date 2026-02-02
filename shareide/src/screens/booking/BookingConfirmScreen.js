@@ -1,10 +1,71 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  Alert,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { ridesAPI } from '../../api/rides';
+import { Header, Card, Avatar, Button, Input } from '../../components/common';
+import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
+
+const PaymentOption = ({ id, icon, label, isSelected, onPress, colors }) => {
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress(id);
+  };
+
+  return (
+    <TouchableOpacity
+      onPress={handlePress}
+      activeOpacity={0.7}
+      style={[
+        styles.paymentOption,
+        {
+          backgroundColor: isSelected ? colors.primary : colors.surface,
+          borderColor: isSelected ? colors.primary : colors.border,
+        },
+        shadows.sm,
+      ]}
+    >
+      <View
+        style={[
+          styles.paymentIconContainer,
+          { backgroundColor: isSelected ? 'rgba(0,0,0,0.1)' : colors.primary + '15' },
+        ]}
+      >
+        <Ionicons
+          name={icon}
+          size={24}
+          color={isSelected ? '#000' : colors.primary}
+        />
+      </View>
+      <Text
+        style={[
+          styles.paymentLabel,
+          { color: isSelected ? '#000' : colors.text },
+        ]}
+      >
+        {label}
+      </Text>
+      {isSelected && (
+        <Ionicons name="checkmark-circle" size={20} color="#000" />
+      )}
+    </TouchableOpacity>
+  );
+};
 
 const BookingConfirmScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { driver, pickup, dropoff } = route.params;
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [promoCode, setPromoCode] = useState('');
@@ -13,9 +74,9 @@ const BookingConfirmScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(false);
 
   const paymentMethods = [
-    { id: 'cash', icon: '💵', label: 'Cash' },
-    { id: 'wallet', icon: '👛', label: 'Wallet' },
-    { id: 'card', icon: '💳', label: 'Card' },
+    { id: 'cash', icon: 'cash-outline', label: 'Cash' },
+    { id: 'wallet', icon: 'wallet-outline', label: 'Wallet' },
+    { id: 'card', icon: 'card-outline', label: 'Card' },
   ];
 
   const baseFare = driver.fare || 350;
@@ -23,15 +84,19 @@ const BookingConfirmScreen = ({ route, navigation }) => {
   const totalFare = baseFare + serviceFee - discount;
 
   const applyPromoCode = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (promoCode.toUpperCase() === 'FIRST50') {
       setDiscount(50);
       setPromoApplied(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Success', 'Promo code applied! Rs. 50 off');
     } else if (promoCode.toUpperCase() === 'RIDE100') {
       setDiscount(100);
       setPromoApplied(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Success', 'Promo code applied! Rs. 100 off');
     } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Invalid Code', 'This promo code is not valid or has expired.');
     }
   };
@@ -39,6 +104,7 @@ const BookingConfirmScreen = ({ route, navigation }) => {
   const handleConfirmBooking = async () => {
     try {
       setLoading(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
       const response = await ridesAPI.bookRide({
         driverId: driver.id,
@@ -57,10 +123,11 @@ const BookingConfirmScreen = ({ route, navigation }) => {
         promoCode: promoApplied ? promoCode : null,
       });
 
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.reset({
         index: 0,
         routes: [
-          { name: 'Drawer' },
+          { name: 'MainTabs' },
           {
             name: 'RideTracking',
             params: {
@@ -74,10 +141,11 @@ const BookingConfirmScreen = ({ route, navigation }) => {
       });
     } catch (error) {
       // For demo purposes, navigate anyway with mock data
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.reset({
         index: 0,
         routes: [
-          { name: 'Drawer' },
+          { name: 'MainTabs' },
           {
             name: 'RideTracking',
             params: {
@@ -97,246 +165,424 @@ const BookingConfirmScreen = ({ route, navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Confirm Booking</Text>
-        <View style={{ width: 28 }} />
-      </View>
+      <Header
+        title="Confirm Booking"
+        leftIcon="arrow-back"
+        onLeftPress={() => navigation.goBack()}
+      />
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={[styles.routeCard, { backgroundColor: colors.surface }]}>
-          <View style={styles.routeRow}>
-            <View style={styles.routeIcon}>
-              <Text style={styles.dotGreen}>●</Text>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
+        {/* Route Card */}
+        <View>
+          <Card style={styles.routeCard} shadow="md">
+            <View style={styles.routeRow}>
+              <View style={styles.routeIndicator}>
+                <View style={[styles.routeDot, { backgroundColor: colors.success }]} />
+                <View style={[styles.routeLine, { backgroundColor: colors.border }]} />
+                <View style={[styles.routeDot, { backgroundColor: colors.error }]} />
+              </View>
+              <View style={styles.routeInfo}>
+                <View style={styles.routeItem}>
+                  <Text style={[styles.routeLabel, { color: colors.textSecondary }]}>
+                    PICKUP
+                  </Text>
+                  <Text
+                    style={[styles.routeAddress, { color: colors.text }]}
+                    numberOfLines={2}
+                  >
+                    {pickup?.address || 'Pickup location'}
+                  </Text>
+                </View>
+                <View style={styles.routeItem}>
+                  <Text style={[styles.routeLabel, { color: colors.textSecondary }]}>
+                    DROPOFF
+                  </Text>
+                  <Text
+                    style={[styles.routeAddress, { color: colors.text }]}
+                    numberOfLines={2}
+                  >
+                    {dropoff?.address || 'Dropoff location'}
+                  </Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.routeInfo}>
-              <Text style={[styles.routeLabel, { color: colors.textSecondary }]}>PICKUP</Text>
-              <Text style={[styles.routeAddress, { color: colors.text }]} numberOfLines={2}>
-                {pickup?.address || 'Pickup location'}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.routeLine} />
-
-          <View style={styles.routeRow}>
-            <View style={styles.routeIcon}>
-              <Text style={styles.dotRed}>●</Text>
-            </View>
-            <View style={styles.routeInfo}>
-              <Text style={[styles.routeLabel, { color: colors.textSecondary }]}>DROPOFF</Text>
-              <Text style={[styles.routeAddress, { color: colors.text }]} numberOfLines={2}>
-                {dropoff?.address || 'Dropoff location'}
-              </Text>
-            </View>
-          </View>
+          </Card>
         </View>
 
-        <View style={[styles.driverCard, { backgroundColor: colors.surface }]}>
-          <View style={[styles.driverAvatar, { backgroundColor: colors.primary }]}>
-            <Text style={styles.driverInitial}>{driver.name?.charAt(0) || '?'}</Text>
-          </View>
-          <View style={styles.driverInfo}>
-            <Text style={[styles.driverName, { color: colors.text }]}>{driver.name}</Text>
-            <Text style={[styles.vehicleText, { color: colors.textSecondary }]}>
-              {driver.vehicle?.model} • {driver.vehicle?.plate}
-            </Text>
-          </View>
-          <View style={styles.etaBox}>
-            <Text style={[styles.etaValue, { color: colors.primary }]}>{driver.eta || 5}</Text>
-            <Text style={[styles.etaLabel, { color: colors.textSecondary }]}>min</Text>
-          </View>
+        {/* Driver Card */}
+        <View>
+          <Card style={styles.driverCard} shadow="md">
+            <Avatar
+              source={driver?.avatar}
+              name={driver?.name}
+              size="medium"
+              showBadge
+              badgeType="verified"
+            />
+            <View style={styles.driverInfo}>
+              <Text style={[styles.driverName, { color: colors.text }]}>
+                {driver.name}
+              </Text>
+              <View style={styles.vehicleRow}>
+                <Ionicons name="car-outline" size={14} color={colors.textSecondary} />
+                <Text style={[styles.vehicleText, { color: colors.textSecondary }]}>
+                  {driver.vehicle?.model} - {driver.vehicle?.plate}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.etaBox}>
+              <LinearGradient
+                colors={colors.gradients?.primary || ['#FFD700', '#FFA500']}
+                style={styles.etaGradient}
+              >
+                <Text style={styles.etaValue}>{driver.eta || 5}</Text>
+                <Text style={styles.etaLabel}>min</Text>
+              </LinearGradient>
+            </View>
+          </Card>
         </View>
 
+        {/* Payment Method */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Payment Method</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Payment Method
+          </Text>
           <View style={styles.paymentOptions}>
             {paymentMethods.map((method) => (
-              <TouchableOpacity
+              <PaymentOption
                 key={method.id}
-                style={[
-                  styles.paymentOption,
-                  {
-                    backgroundColor: paymentMethod === method.id ? colors.primary : colors.surface,
-                    borderColor: paymentMethod === method.id ? colors.primary : colors.border,
-                  },
-                ]}
-                onPress={() => setPaymentMethod(method.id)}
-              >
-                <Text style={styles.paymentIcon}>{method.icon}</Text>
-                <Text style={[styles.paymentLabel, { color: paymentMethod === method.id ? '#000' : colors.text }]}>
-                  {method.label}
-                </Text>
-              </TouchableOpacity>
+                id={method.id}
+                icon={method.icon}
+                label={method.label}
+                isSelected={paymentMethod === method.id}
+                onPress={setPaymentMethod}
+                colors={colors}
+              />
             ))}
           </View>
         </View>
 
+        {/* Promo Code */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Promo Code</Text>
-          <View style={[styles.promoRow, { backgroundColor: colors.surface }]}>
-            <TextInput
-              style={[styles.promoInput, { color: colors.text }]}
-              value={promoCode}
-              onChangeText={setPromoCode}
-              placeholder="Enter promo code"
-              placeholderTextColor={colors.textSecondary}
-              autoCapitalize="characters"
-              editable={!promoApplied}
-            />
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Promo Code
+          </Text>
+          <View style={styles.promoRow}>
+            <View style={styles.promoInputContainer}>
+              <Ionicons
+                name="pricetag-outline"
+                size={20}
+                color={colors.textSecondary}
+                style={styles.promoIcon}
+              />
+              <TextInput
+                style={[styles.promoInput, { color: colors.text }]}
+                value={promoCode}
+                onChangeText={setPromoCode}
+                placeholder="Enter promo code"
+                placeholderTextColor={colors.textSecondary}
+                autoCapitalize="characters"
+                editable={!promoApplied}
+              />
+            </View>
             <TouchableOpacity
-              style={[styles.applyButton, { backgroundColor: promoApplied ? colors.border : colors.primary }]}
+              style={[
+                styles.applyButton,
+                {
+                  backgroundColor: promoApplied
+                    ? colors.success + '20'
+                    : colors.primary,
+                },
+              ]}
               onPress={applyPromoCode}
               disabled={promoApplied || !promoCode.trim()}
             >
-              <Text style={[styles.applyText, { color: promoApplied ? colors.textSecondary : '#000' }]}>
-                {promoApplied ? 'Applied' : 'Apply'}
-              </Text>
+              {promoApplied ? (
+                <Ionicons name="checkmark" size={20} color={colors.success} />
+              ) : (
+                <Text style={styles.applyText}>Apply</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={[styles.fareCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.fareTitle, { color: colors.text }]}>Fare Breakdown</Text>
-          <View style={styles.fareRow}>
-            <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Base Fare</Text>
-            <Text style={[styles.fareValue, { color: colors.text }]}>Rs. {baseFare}</Text>
-          </View>
-          <View style={styles.fareRow}>
-            <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Service Fee</Text>
-            <Text style={[styles.fareValue, { color: colors.text }]}>Rs. {serviceFee}</Text>
-          </View>
-          {discount > 0 && (
+        {/* Fare Breakdown */}
+        <View>
+          <Card style={styles.fareCard} shadow="lg">
+            <Text style={[styles.fareTitle, { color: colors.text }]}>
+              Fare Breakdown
+            </Text>
+
             <View style={styles.fareRow}>
-              <Text style={[styles.fareLabel, { color: '#22c55e' }]}>Discount</Text>
-              <Text style={[styles.fareValue, { color: '#22c55e' }]}>- Rs. {discount}</Text>
+              <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>
+                Base Fare
+              </Text>
+              <Text style={[styles.fareValue, { color: colors.text }]}>
+                Rs. {baseFare}
+              </Text>
             </View>
-          )}
-          <View style={[styles.fareDivider, { backgroundColor: colors.border }]} />
-          <View style={styles.fareRow}>
-            <Text style={[styles.totalLabel, { color: colors.text }]}>Total</Text>
-            <Text style={[styles.totalValue, { color: colors.primary }]}>Rs. {totalFare}</Text>
-          </View>
+
+            <View style={styles.fareRow}>
+              <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>
+                Service Fee
+              </Text>
+              <Text style={[styles.fareValue, { color: colors.text }]}>
+                Rs. {serviceFee}
+              </Text>
+            </View>
+
+            {discount > 0 && (
+              <View style={styles.fareRow}>
+                <View style={styles.discountRow}>
+                  <Ionicons name="pricetag" size={14} color={colors.success} />
+                  <Text style={[styles.fareLabel, { color: colors.success }]}>
+                    Discount
+                  </Text>
+                </View>
+                <Text style={[styles.fareValue, { color: colors.success }]}>
+                  - Rs. {discount}
+                </Text>
+              </View>
+            )}
+
+            <View style={[styles.fareDivider, { backgroundColor: colors.border }]} />
+
+            <View style={styles.fareRow}>
+              <Text style={[styles.totalLabel, { color: colors.text }]}>
+                Total
+              </Text>
+              <Text style={[styles.totalValue, { color: colors.primary }]}>
+                Rs. {totalFare}
+              </Text>
+            </View>
+          </Card>
         </View>
+
+        <View style={{ height: 120 }} />
       </ScrollView>
 
-      <View style={[styles.footer, { backgroundColor: colors.surface }]}>
-        <TouchableOpacity
-          style={[styles.confirmButton, { backgroundColor: loading ? colors.border : colors.primary }]}
+      {/* Footer */}
+      <View
+        style={[
+          styles.footer,
+          {
+            backgroundColor: colors.surface,
+            paddingBottom: insets.bottom + spacing.md,
+          },
+          shadows.lg,
+        ]}
+      >
+        <Button
+          title={`Confirm Booking - Rs. ${totalFare}`}
           onPress={handleConfirmBooking}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#000" />
-          ) : (
-            <Text style={styles.confirmText}>Confirm Booking • Rs. {totalFare}</Text>
-          )}
-        </TouchableOpacity>
+          variant="primary"
+          size="large"
+          loading={loading}
+          icon="checkmark-circle"
+          fullWidth
+        />
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
+  container: {
+    flex: 1,
   },
-  backIcon: { fontSize: 28, color: '#000' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#000' },
-  content: { padding: 16, paddingBottom: 100 },
-  routeCard: { borderRadius: 16, padding: 16, marginBottom: 16 },
-  routeRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  routeIcon: { width: 24, alignItems: 'center', marginRight: 12 },
-  dotGreen: { fontSize: 16, color: '#22c55e' },
-  dotRed: { fontSize: 16, color: '#ef4444' },
+  content: {
+    padding: spacing.lg,
+  },
+  routeCard: {
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+  },
+  routeRow: {
+    flexDirection: 'row',
+  },
+  routeIndicator: {
+    alignItems: 'center',
+    marginRight: spacing.md,
+    paddingTop: spacing.xs,
+  },
+  routeDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
   routeLine: {
     width: 2,
-    height: 24,
-    backgroundColor: '#ddd',
-    marginLeft: 11,
-    marginVertical: 4,
+    height: 40,
+    marginVertical: spacing.xs,
   },
-  routeInfo: { flex: 1 },
-  routeLabel: { fontSize: 11, fontWeight: '600', marginBottom: 2 },
-  routeAddress: { fontSize: 14 },
+  routeInfo: {
+    flex: 1,
+  },
+  routeItem: {
+    marginBottom: spacing.lg,
+  },
+  routeLabel: {
+    fontSize: typography.caption,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
+    letterSpacing: 0.5,
+  },
+  routeAddress: {
+    fontSize: typography.body,
+    lineHeight: 20,
+  },
   driverCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    marginBottom: spacing.xl,
+    padding: spacing.lg,
   },
-  driverAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  driverInitial: { fontSize: 20, fontWeight: 'bold', color: '#000' },
-  driverInfo: { flex: 1, marginLeft: 12 },
-  driverName: { fontSize: 16, fontWeight: 'bold', marginBottom: 2 },
-  vehicleText: { fontSize: 14 },
-  etaBox: { alignItems: 'center' },
-  etaValue: { fontSize: 24, fontWeight: 'bold' },
-  etaLabel: { fontSize: 12 },
-  section: { marginBottom: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
-  paymentOptions: { flexDirection: 'row', gap: 12 },
-  paymentOption: {
+  driverInfo: {
     flex: 1,
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 2,
+    marginLeft: spacing.md,
   },
-  paymentIcon: { fontSize: 24, marginBottom: 4 },
-  paymentLabel: { fontSize: 14, fontWeight: '600' },
-  promoRow: {
+  driverName: {
+    fontSize: typography.body,
+    fontWeight: '700',
+    marginBottom: spacing.xs,
+  },
+  vehicleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
-    paddingLeft: 16,
-    overflow: 'hidden',
+    gap: spacing.xs,
   },
-  promoInput: { flex: 1, height: 50, fontSize: 16 },
-  applyButton: { paddingHorizontal: 20, height: 50, justifyContent: 'center' },
-  applyText: { fontSize: 14, fontWeight: 'bold' },
-  fareCard: { borderRadius: 16, padding: 16 },
-  fareTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 16 },
+  vehicleText: {
+    fontSize: typography.bodySmall,
+  },
+  etaBox: {
+    alignItems: 'center',
+  },
+  etaGradient: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+  },
+  etaValue: {
+    fontSize: typography.h4,
+    fontWeight: '700',
+    color: '#000',
+  },
+  etaLabel: {
+    fontSize: typography.caption,
+    color: '#00000080',
+  },
+  section: {
+    marginBottom: spacing.xl,
+  },
+  sectionTitle: {
+    fontSize: typography.body,
+    fontWeight: '700',
+    marginBottom: spacing.md,
+  },
+  paymentOptions: {
+    gap: spacing.sm,
+  },
+  paymentOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 2,
+  },
+  paymentIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  paymentLabel: {
+    flex: 1,
+    fontSize: typography.body,
+    fontWeight: '600',
+  },
+  promoRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  promoInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+  },
+  promoIcon: {
+    marginRight: spacing.sm,
+  },
+  promoInput: {
+    flex: 1,
+    height: 50,
+    fontSize: typography.body,
+  },
+  applyButton: {
+    paddingHorizontal: spacing.xl,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: borderRadius.lg,
+  },
+  applyText: {
+    fontSize: typography.body,
+    fontWeight: '700',
+    color: '#000',
+  },
+  fareCard: {
+    padding: spacing.lg,
+  },
+  fareTitle: {
+    fontSize: typography.body,
+    fontWeight: '700',
+    marginBottom: spacing.lg,
+  },
   fareRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'center',
+    marginBottom: spacing.sm,
   },
-  fareLabel: { fontSize: 14 },
-  fareValue: { fontSize: 14, fontWeight: '500' },
-  fareDivider: { height: 1, marginVertical: 8 },
-  totalLabel: { fontSize: 16, fontWeight: 'bold' },
-  totalValue: { fontSize: 20, fontWeight: 'bold' },
+  discountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  fareLabel: {
+    fontSize: typography.body,
+  },
+  fareValue: {
+    fontSize: typography.body,
+    fontWeight: '500',
+  },
+  fareDivider: {
+    height: 1,
+    marginVertical: spacing.md,
+  },
+  totalLabel: {
+    fontSize: typography.body,
+    fontWeight: '700',
+  },
+  totalValue: {
+    fontSize: typography.h4,
+    fontWeight: '700',
+  },
   footer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
-    paddingBottom: 32,
+    padding: spacing.lg,
   },
-  confirmButton: {
-    height: 56,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  confirmText: { fontSize: 18, fontWeight: 'bold', color: '#000' },
 });
 
 export default BookingConfirmScreen;

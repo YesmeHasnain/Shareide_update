@@ -19,9 +19,9 @@ const RatingsScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [ratingStats, setRatingStats] = useState({
-    average: 4.8,
-    total: 156,
-    breakdown: { 5: 120, 4: 28, 3: 5, 2: 2, 1: 1 },
+    average: user?.driver?.rating || 0,
+    total: user?.driver?.total_ratings || 0,
+    breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
   });
 
   useEffect(() => {
@@ -36,49 +36,9 @@ const RatingsScreen = ({ navigation }) => {
         setRatingStats(response.data.stats);
       }
     } catch (error) {
-      // Mock data
-      setReviews([
-        {
-          id: 1,
-          rating: 5,
-          comment: 'Very professional driver. Clean car and smooth ride!',
-          passenger_name: 'Ahmed K.',
-          created_at: new Date().toISOString(),
-          tags: ['Professional', 'Clean Car'],
-        },
-        {
-          id: 2,
-          rating: 5,
-          comment: 'Best driver I have had. Knew all the shortcuts!',
-          passenger_name: 'Sara A.',
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          tags: ['Great Navigation'],
-        },
-        {
-          id: 3,
-          rating: 4,
-          comment: 'Good ride overall. AC was a bit weak.',
-          passenger_name: 'Fatima Z.',
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          tags: ['Safe Driver'],
-        },
-        {
-          id: 4,
-          rating: 5,
-          comment: null,
-          passenger_name: 'Usman M.',
-          created_at: new Date(Date.now() - 259200000).toISOString(),
-          tags: [],
-        },
-        {
-          id: 5,
-          rating: 3,
-          comment: 'Took a longer route but was polite.',
-          passenger_name: 'Ali R.',
-          created_at: new Date(Date.now() - 345600000).toISOString(),
-          tags: ['Polite'],
-        },
-      ]);
+      console.log('Error fetching ratings:', error);
+      // Show empty - real data only
+      setReviews([]);
     } finally {
       setLoading(false);
       setRefreshing(false);

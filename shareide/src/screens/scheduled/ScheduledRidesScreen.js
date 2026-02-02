@@ -7,14 +7,19 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { getScheduledRides, cancelScheduledRide } from '../../api/scheduledRides';
+import { Skeleton } from '../../components/common';
+import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
 const ScheduledRidesScreen = ({ navigation }) => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [upcomingRides, setUpcomingRides] = useState([]);
@@ -30,6 +35,9 @@ const ScheduledRidesScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Error fetching scheduled rides:', error);
+      // Show empty - real data only
+      setUpcomingRides([]);
+      setPastRides([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -42,10 +50,17 @@ const ScheduledRidesScreen = ({ navigation }) => {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     fetchRides();
   }, []);
 
+  const handleTabChange = (tab) => {
+    Haptics.selectionAsync();
+    setActiveTab(tab);
+  };
+
   const handleCancel = (ride) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(
       'Cancel Scheduled Ride',
       'Are you sure you want to cancel this scheduled ride?',
@@ -58,10 +73,12 @@ const ScheduledRidesScreen = ({ navigation }) => {
             try {
               const response = await cancelScheduledRide(ride.id);
               if (response.success) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 Alert.alert('Success', 'Scheduled ride cancelled');
                 fetchRides();
               }
             } catch (error) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
               Alert.alert('Error', 'Failed to cancel ride');
             }
           },
@@ -73,17 +90,17 @@ const ScheduledRidesScreen = ({ navigation }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
-        return '#FFA500';
+        return '#f59e0b';
       case 'processing':
-        return '#2196F3';
+        return '#3b82f6';
       case 'booked':
-        return '#4CAF50';
+        return '#22c55e';
       case 'completed':
-        return '#8BC34A';
+        return '#10b981';
       case 'cancelled':
-        return '#9E9E9E';
+        return '#6b7280';
       case 'failed':
-        return '#F44336';
+        return '#ef4444';
       default:
         return colors.text;
     }
@@ -108,91 +125,187 @@ const ScheduledRidesScreen = ({ navigation }) => {
     }
   };
 
-  const getVehicleIcon = (type) => {
-    switch (type) {
-      case 'bike':
-        return '🏍️';
-      case 'rickshaw':
-        return '🛺';
-      case 'car':
-        return '🚗';
-      case 'ac_car':
-        return '❄️🚗';
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'time';
+      case 'processing':
+        return 'search';
+      case 'booked':
+        return 'checkmark-circle';
+      case 'completed':
+        return 'checkmark-done-circle';
+      case 'cancelled':
+        return 'close-circle';
+      case 'failed':
+        return 'alert-circle';
       default:
-        return '🚗';
+        return 'ellipse';
     }
   };
 
-  const renderRideItem = ({ item }) => (
-    <TouchableOpacity
-      style={[styles.rideCard, { backgroundColor: colors.card }]}
-      onPress={() => navigation.navigate('ScheduledRideDetail', { ride: item })}
+  const getVehicleIcon = (type) => {
+    switch (type) {
+      case 'bike':
+        return 'bicycle';
+      case 'rickshaw':
+        return 'car-sport';
+      case 'car':
+        return 'car';
+      case 'ac_car':
+        return 'snow';
+      default:
+        return 'car';
+    }
+  };
+
+  const getVehicleLabel = (type) => {
+    switch (type) {
+      case 'bike':
+        return 'Bike';
+      case 'rickshaw':
+        return 'Rickshaw';
+      case 'car':
+        return 'Car';
+      case 'ac_car':
+        return 'AC Car';
+      default:
+        return 'Car';
+    }
+  };
+
+  const renderRideItem = ({ item, index }) => (
+    <View >
+      <TouchableOpacity
+        style={[styles.rideCard, { backgroundColor: colors.surface }, shadows.md]}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          navigation.navigate('ScheduledRideDetail', { ride: item });
+        }}
+        activeOpacity={0.8}
+      >
+        {/* Card Header */}
+        <View style={styles.rideHeader}>
+          <View style={styles.vehicleInfo}>
+            <View style={[styles.vehicleIconBg, { backgroundColor: colors.primary + '20' }]}>
+              <Ionicons name={getVehicleIcon(item.vehicle_type)} size={20} color={colors.primary} />
+            </View>
+            <Text style={[styles.vehicleType, { color: colors.text }]}>
+              {getVehicleLabel(item.vehicle_type)}
+            </Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
+            <Ionicons name={getStatusIcon(item.status)} size={12} color={getStatusColor(item.status)} />
+            <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
+              {getStatusText(item.status)}
+            </Text>
+          </View>
+        </View>
+
+        {/* Schedule Info */}
+        <View style={[styles.scheduleInfo, { backgroundColor: colors.primary + '10' }]}>
+          <Ionicons name="calendar" size={18} color={colors.primary} />
+          <Text style={[styles.scheduleText, { color: colors.primary }]}>
+            {item.formatted_schedule}
+          </Text>
+        </View>
+
+        {/* Location Container */}
+        <View style={styles.locationContainer}>
+          <View style={styles.locationRow}>
+            <View style={styles.locationDotContainer}>
+              <View style={[styles.dot, { backgroundColor: '#22c55e' }]} />
+              <View style={[styles.locationLine, { backgroundColor: colors.border }]} />
+            </View>
+            <View style={styles.locationTextContainer}>
+              <Text style={[styles.locationLabel, { color: colors.textSecondary }]}>Pickup</Text>
+              <Text style={[styles.locationText, { color: colors.text }]} numberOfLines={1}>
+                {item.pickup_address}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.locationRow}>
+            <View style={styles.locationDotContainer}>
+              <View style={[styles.dot, { backgroundColor: '#ef4444' }]} />
+            </View>
+            <View style={styles.locationTextContainer}>
+              <Text style={[styles.locationLabel, { color: colors.textSecondary }]}>Drop-off</Text>
+              <Text style={[styles.locationText, { color: colors.text }]} numberOfLines={1}>
+                {item.drop_address}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Card Footer */}
+        <View style={[styles.rideFooter, { borderTopColor: colors.border }]}>
+          <View style={styles.fareContainer}>
+            <Ionicons name="cash-outline" size={16} color={colors.textSecondary} />
+            <View>
+              <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Est. Fare</Text>
+              <Text style={[styles.fareAmount, { color: colors.text }]}>
+                Rs. {item.estimated_fare}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.distanceContainer}>
+            <Ionicons name="navigate-outline" size={16} color={colors.textSecondary} />
+            <View>
+              <Text style={[styles.distanceLabel, { color: colors.textSecondary }]}>Distance</Text>
+              <Text style={[styles.distanceValue, { color: colors.text }]}>
+                {item.distance_km?.toFixed(1)} km
+              </Text>
+            </View>
+          </View>
+          {item.status === 'pending' && (
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => handleCancel(item)}
+            >
+              <Ionicons name="close" size={16} color="#fff" />
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderSkeletonItem = (index) => (
+    <View
+      key={index}
+      style={[styles.rideCard, { backgroundColor: colors.surface }, shadows.md]}
     >
       <View style={styles.rideHeader}>
-        <View style={styles.vehicleInfo}>
-          <Text style={styles.vehicleIcon}>{getVehicleIcon(item.vehicle_type)}</Text>
-          <Text style={[styles.vehicleType, { color: colors.text }]}>
-            {item.vehicle_type?.replace('_', ' ').toUpperCase()}
-          </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <Skeleton width={40} height={40} borderRadius={20} />
+          <Skeleton width={80} height={16} borderRadius={4} />
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
-          <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-            {getStatusText(item.status)}
-          </Text>
-        </View>
+        <Skeleton width={100} height={24} borderRadius={12} />
       </View>
-
-      <View style={styles.scheduleInfo}>
-        <Text style={styles.scheduleIcon}>📅</Text>
-        <Text style={[styles.scheduleText, { color: colors.primary }]}>
-          {item.formatted_schedule}
-        </Text>
+      <Skeleton width="100%" height={44} borderRadius={8} style={{ marginVertical: spacing.md }} />
+      <View style={{ gap: spacing.md }}>
+        <Skeleton width="90%" height={16} borderRadius={4} />
+        <Skeleton width="85%" height={16} borderRadius={4} />
       </View>
-
-      <View style={styles.locationContainer}>
-        <View style={styles.locationRow}>
-          <View style={[styles.dot, { backgroundColor: '#4CAF50' }]} />
-          <Text style={[styles.locationText, { color: colors.text }]} numberOfLines={1}>
-            {item.pickup_address}
-          </Text>
-        </View>
-        <View style={styles.locationLine} />
-        <View style={styles.locationRow}>
-          <View style={[styles.dot, { backgroundColor: '#F44336' }]} />
-          <Text style={[styles.locationText, { color: colors.text }]} numberOfLines={1}>
-            {item.drop_address}
-          </Text>
-        </View>
+      <View style={[styles.rideFooter, { borderTopColor: colors.border, marginTop: spacing.md }]}>
+        <Skeleton width={80} height={32} borderRadius={4} />
+        <Skeleton width={80} height={32} borderRadius={4} />
       </View>
-
-      <View style={styles.rideFooter}>
-        <View style={styles.fareContainer}>
-          <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Est. Fare</Text>
-          <Text style={[styles.fareAmount, { color: colors.text }]}>
-            Rs. {item.estimated_fare}
-          </Text>
-        </View>
-        <View style={styles.distanceContainer}>
-          <Text style={[styles.distanceLabel, { color: colors.textSecondary }]}>Distance</Text>
-          <Text style={[styles.distanceValue, { color: colors.text }]}>
-            {item.distance_km?.toFixed(1)} km
-          </Text>
-        </View>
-        {item.status === 'pending' && (
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => handleCancel(item)}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </TouchableOpacity>
+    </View>
   );
 
   const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyIcon}>📅</Text>
+    <View
+            style={styles.emptyContainer}
+    >
+      <View style={[styles.emptyIconContainer, { backgroundColor: colors.primary + '15' }]}>
+        <Ionicons
+          name={activeTab === 'upcoming' ? 'calendar-outline' : 'time-outline'}
+          size={48}
+          color={colors.primary}
+        />
+      </View>
       <Text style={[styles.emptyTitle, { color: colors.text }]}>
         {activeTab === 'upcoming' ? 'No Upcoming Rides' : 'No Past Rides'}
       </Text>
@@ -203,86 +316,129 @@ const ScheduledRidesScreen = ({ navigation }) => {
       </Text>
       {activeTab === 'upcoming' && (
         <TouchableOpacity
-          style={[styles.scheduleButton, { backgroundColor: colors.primary }]}
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            navigation.navigate('Home');
+          }}
+          activeOpacity={0.8}
         >
-          <Text style={styles.scheduleButtonText}>Schedule a Ride</Text>
+          <LinearGradient
+            colors={colors.gradients?.premium || ['#FFD700', '#FFA500']}
+            style={styles.scheduleButton}
+          >
+            <Ionicons name="add-circle" size={20} color="#000" />
+            <Text style={styles.scheduleButtonText}>Schedule a Ride</Text>
+          </LinearGradient>
         </TouchableOpacity>
       )}
     </View>
   );
 
-  if (loading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   const currentData = activeTab === 'upcoming' ? upcomingRides : pastRides;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={[styles.backButton, { color: colors.text }]}>←</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Premium Header */}
+      <LinearGradient
+        colors={colors.gradients?.premium || ['#FFD700', '#FFA500']}
+        style={[styles.header, { paddingTop: insets.top + spacing.md }]}
+      >
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            navigation.goBack();
+          }}
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Scheduled Rides</Text>
-        <View style={{ width: 40 }} />
-      </View>
+        <Text style={styles.headerTitle}>Scheduled Rides</Text>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            navigation.navigate('Home');
+          }}
+        >
+          <Ionicons name="add" size={24} color="#000" />
+        </TouchableOpacity>
+      </LinearGradient>
 
       {/* Tabs */}
-      <View style={[styles.tabContainer, { backgroundColor: colors.card }]}>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === 'upcoming' && { backgroundColor: colors.primary },
-          ]}
-          onPress={() => setActiveTab('upcoming')}
-        >
-          <Text
+      <View
+                style={styles.tabSection}
+      >
+        <View style={[styles.tabContainer, { backgroundColor: colors.surface }, shadows.sm]}>
+          <TouchableOpacity
             style={[
-              styles.tabText,
-              { color: activeTab === 'upcoming' ? '#fff' : colors.text },
+              styles.tab,
+              activeTab === 'upcoming' && styles.activeTab,
+              activeTab === 'upcoming' && { backgroundColor: colors.primary },
             ]}
+            onPress={() => handleTabChange('upcoming')}
           >
-            Upcoming ({upcomingRides.length})
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === 'past' && { backgroundColor: colors.primary },
-          ]}
-          onPress={() => setActiveTab('past')}
-        >
-          <Text
+            <Ionicons
+              name="calendar"
+              size={18}
+              color={activeTab === 'upcoming' ? '#000' : colors.textSecondary}
+            />
+            <Text
+              style={[
+                styles.tabText,
+                { color: activeTab === 'upcoming' ? '#000' : colors.text },
+              ]}
+            >
+              Upcoming ({upcomingRides.length})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[
-              styles.tabText,
-              { color: activeTab === 'past' ? '#fff' : colors.text },
+              styles.tab,
+              activeTab === 'past' && styles.activeTab,
+              activeTab === 'past' && { backgroundColor: colors.primary },
             ]}
+            onPress={() => handleTabChange('past')}
           >
-            Past ({pastRides.length})
-          </Text>
-        </TouchableOpacity>
+            <Ionicons
+              name="time"
+              size={18}
+              color={activeTab === 'past' ? '#000' : colors.textSecondary}
+            />
+            <Text
+              style={[
+                styles.tabText,
+                { color: activeTab === 'past' ? '#000' : colors.text },
+              ]}
+            >
+              Past ({pastRides.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* List */}
-      <FlatList
-        data={currentData}
-        renderItem={renderRideItem}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={renderEmptyState}
-      />
-    </SafeAreaView>
+      {loading ? (
+        <View style={styles.listContainer}>
+          {[0, 1, 2].map(renderSkeletonItem)}
+        </View>
+      ) : (
+        <FlatList
+          data={currentData}
+          renderItem={renderRideItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContainer}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+            />
+          }
+          ListEmptyComponent={renderEmptyState}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+    </View>
   );
 };
 
@@ -290,193 +446,232 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   backButton: {
-    fontSize: 24,
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: typography.h4,
+    fontWeight: '700',
+    color: '#000',
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tabSection: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   tabContainer: {
     flexDirection: 'row',
-    margin: 16,
-    borderRadius: 12,
-    padding: 4,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xs,
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 10,
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
   },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  listContainer: {
-    padding: 16,
-    paddingTop: 0,
-  },
-  rideCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+  activeTab: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
+  },
+  tabText: {
+    fontSize: typography.bodySmall,
+    fontWeight: '600',
+  },
+  listContainer: {
+    padding: spacing.lg,
+    paddingTop: 0,
+  },
+  rideCard: {
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
   },
   rideHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   vehicleInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
   },
-  vehicleIcon: {
-    fontSize: 20,
-    marginRight: 8,
+  vehicleIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   vehicleType: {
-    fontSize: 14,
+    fontSize: typography.body,
     fontWeight: '600',
   },
   statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: typography.caption,
     fontWeight: '600',
   },
   scheduleInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(33, 150, 243, 0.1)',
-    borderRadius: 8,
-  },
-  scheduleIcon: {
-    fontSize: 16,
-    marginRight: 8,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
   },
   scheduleText: {
-    fontSize: 14,
+    fontSize: typography.body,
     fontWeight: '600',
   },
   locationContainer: {
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   locationRow: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  locationDotContainer: {
     alignItems: 'center',
+    marginRight: spacing.md,
   },
   dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 12,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
   locationLine: {
     width: 2,
-    height: 20,
-    backgroundColor: '#E0E0E0',
-    marginLeft: 4,
-    marginVertical: 4,
+    height: 24,
+    marginVertical: spacing.xs,
+  },
+  locationTextContainer: {
+    flex: 1,
+    paddingBottom: spacing.sm,
+  },
+  locationLabel: {
+    fontSize: typography.caption,
+    marginBottom: 2,
   },
   locationText: {
-    fontSize: 14,
-    flex: 1,
+    fontSize: typography.body,
+    fontWeight: '500',
   },
   rideFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 12,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
   },
   fareContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
   },
   fareLabel: {
-    fontSize: 11,
+    fontSize: typography.caption,
   },
   fareAmount: {
-    fontSize: 16,
+    fontSize: typography.body,
     fontWeight: '700',
   },
   distanceContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
   },
   distanceLabel: {
-    fontSize: 11,
+    fontSize: typography.caption,
   },
   distanceValue: {
-    fontSize: 14,
+    fontSize: typography.body,
     fontWeight: '600',
   },
   cancelButton: {
-    backgroundColor: '#F44336',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ef4444',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
   },
   cancelButtonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: spacing.xxxl,
   },
-  emptyIcon: {
-    fontSize: 60,
-    marginBottom: 16,
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: typography.h5,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: typography.body,
     textAlign: 'center',
-    paddingHorizontal: 40,
-    marginBottom: 24,
+    paddingHorizontal: spacing.xxl,
+    marginBottom: spacing.xl,
   },
   scheduleButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 25,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.full,
+    gap: spacing.sm,
   },
   scheduleButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#000',
+    fontSize: typography.body,
     fontWeight: '600',
   },
 });

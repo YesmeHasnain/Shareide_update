@@ -52,13 +52,39 @@ return [
     |--------------------------------------------------------------------------
     */
     'bank_alfalah' => [
-        'merchant_id' => env('BANK_ALFALAH_MERCHANT_ID'),
-        'merchant_key' => env('BANK_ALFALAH_MERCHANT_KEY'),
-        'merchant_name' => env('BANK_ALFALAH_MERCHANT_NAME', 'SHAREIDE'),
-        'currency' => env('BANK_ALFALAH_CURRENCY', 'PKR'),
-        'base_url' => env('BANK_ALFALAH_BASE_URL', 'https://payments.bankalfalah.com'),
-        'return_url' => env('BANK_ALFALAH_RETURN_URL'),
-        'sandbox' => env('BANK_ALFALAH_SANDBOX', true),
+        'merchant_id' => env('BANKALFALAH_MERCHANT_ID'),
+        'application_id' => env('BANKALFALAH_APPLICATION_ID', '0'),
+        'username' => env('BANKALFALAH_USERNAME'),
+        'password' => env('BANKALFALAH_PASSWORD'),
+        'merchant_hash' => env('BANKALFALAH_MERCHANT_HASH'),
+        'merchant_storeid' => env('BANKALFALAH_MERCHANT_STOREID'),
+        'key1' => env('BANKALFALAH_KEY1'),
+        'key2' => env('BANKALFALAH_KEY2'),
+        'return_url' => env('BANKALFALAH_RETURN_URL'),
+        'listener_url' => env('BANKALFALAH_LISTENER_URL'),
+        'sandbox_url' => env('BANKALFALAH_SANDBOX_URL', 'https://sandbox.bankalfalah.com'),
+        'sandbox_user' => env('BANKALFALAH_SANDBOX_USER'),
+        'sandbox_password' => env('BANKALFALAH_SANDBOX_PASSWORD'),
+        'sandbox' => env('APP_ENV') === 'local',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Google Maps Configuration
+    |--------------------------------------------------------------------------
+    */
+    'google' => [
+        'maps_key' => env('GOOGLE_MAPS_API_KEY', 'AIzaSyDyPM6e0TnfPpwQYbHufx1LfYHi-Y6FbEM'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Firebase Push Notifications
+    |--------------------------------------------------------------------------
+    */
+    'firebase' => [
+        'server_key' => env('FIREBASE_SERVER_KEY'),
+        'project_id' => env('FIREBASE_PROJECT_ID'),
     ],
 
 ];

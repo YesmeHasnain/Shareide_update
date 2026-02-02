@@ -6,13 +6,19 @@ import {
   TouchableOpacity,
   FlatList,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { walletAPI } from '../../api/wallet';
+import { Skeleton } from '../../components/common';
+import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
 const TransactionHistoryScreen = ({ navigation }) => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [transactions, setTransactions] = useState([]);
@@ -29,17 +35,9 @@ const TransactionHistoryScreen = ({ navigation }) => {
         setTransactions(response.data.transactions || []);
       }
     } catch (error) {
-      // Mock data
-      setTransactions([
-        { id: 1, type: 'topup', amount: 1000, description: 'Wallet Top-up via JazzCash', status: 'completed', created_at: new Date().toISOString() },
-        { id: 2, type: 'payment', amount: -350, description: 'Ride to Clifton Beach', status: 'completed', created_at: new Date(Date.now() - 3600000).toISOString() },
-        { id: 3, type: 'refund', amount: 100, description: 'Ride cancellation refund', status: 'completed', created_at: new Date(Date.now() - 86400000).toISOString() },
-        { id: 4, type: 'payment', amount: -450, description: 'Ride to DHA Phase 6', status: 'completed', created_at: new Date(Date.now() - 172800000).toISOString() },
-        { id: 5, type: 'topup', amount: 2000, description: 'Wallet Top-up via Card', status: 'completed', created_at: new Date(Date.now() - 259200000).toISOString() },
-        { id: 6, type: 'cashback', amount: 50, description: 'Promo cashback - RIDE20', status: 'completed', created_at: new Date(Date.now() - 345600000).toISOString() },
-        { id: 7, type: 'payment', amount: -280, description: 'Ride to Saddar', status: 'completed', created_at: new Date(Date.now() - 432000000).toISOString() },
-        { id: 8, type: 'topup', amount: 500, description: 'Wallet Top-up via Easypaisa', status: 'pending', created_at: new Date(Date.now() - 518400000).toISOString() },
-      ]);
+      console.log('Error fetching transactions:', error);
+      // Show empty - real data only
+      setTransactions([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -48,30 +46,47 @@ const TransactionHistoryScreen = ({ navigation }) => {
 
   const handleRefresh = () => {
     setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     fetchTransactions();
+  };
+
+  const handleFilterChange = (newFilter) => {
+    Haptics.selectionAsync();
+    setFilter(newFilter);
   };
 
   const getTransactionIcon = (type) => {
     switch (type) {
-      case 'topup': return '💳';
-      case 'payment': return '🚗';
-      case 'refund': return '↩️';
-      case 'cashback': return '🎁';
-      case 'withdrawal': return '💸';
-      default: return '💰';
+      case 'topup': return 'wallet';
+      case 'payment': return 'car';
+      case 'refund': return 'arrow-undo';
+      case 'cashback': return 'gift';
+      case 'withdrawal': return 'arrow-down';
+      default: return 'cash';
     }
   };
 
-  const getTransactionColor = (type, amount) => {
+  const getTransactionIconBg = (type) => {
+    switch (type) {
+      case 'topup': return '#22c55e';
+      case 'payment': return colors.primary;
+      case 'refund': return '#3b82f6';
+      case 'cashback': return '#f59e0b';
+      case 'withdrawal': return '#ef4444';
+      default: return colors.primary;
+    }
+  };
+
+  const getAmountColor = (amount) => {
     if (amount > 0) return '#22c55e';
     return '#ef4444';
   };
 
   const filters = [
-    { key: 'all', label: 'All' },
-    { key: 'topup', label: 'Top-ups' },
-    { key: 'payment', label: 'Payments' },
-    { key: 'refund', label: 'Refunds' },
+    { key: 'all', label: 'All', icon: 'list' },
+    { key: 'topup', label: 'Top-ups', icon: 'add-circle' },
+    { key: 'payment', label: 'Payments', icon: 'car' },
+    { key: 'refund', label: 'Refunds', icon: 'arrow-undo' },
   ];
 
   const filteredTransactions = filter === 'all'
@@ -97,100 +112,187 @@ const TransactionHistoryScreen = ({ navigation }) => {
     }
   };
 
-  const renderTransaction = ({ item }) => (
-    <View style={[styles.transactionCard, { backgroundColor: colors.surface }]}>
-      <View style={[styles.iconContainer, { backgroundColor: colors.background }]}>
-        <Text style={styles.icon}>{getTransactionIcon(item.type)}</Text>
+  const renderTransaction = ({ item, index }) => (
+    <View
+            style={[styles.transactionCard, { backgroundColor: colors.surface }, shadows.sm]}
+    >
+      <View
+        style={[
+          styles.iconContainer,
+          { backgroundColor: getTransactionIconBg(item.type) + '20' },
+        ]}
+      >
+        <Ionicons
+          name={getTransactionIcon(item.type)}
+          size={22}
+          color={getTransactionIconBg(item.type)}
+        />
       </View>
       <View style={styles.transactionInfo}>
         <Text style={[styles.transactionDesc, { color: colors.text }]} numberOfLines={1}>
           {item.description}
         </Text>
-        <Text style={[styles.transactionDate, { color: colors.textSecondary }]}>
-          {formatDate(item.created_at)}
-        </Text>
+        <View style={styles.transactionMeta}>
+          <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
+          <Text style={[styles.transactionDate, { color: colors.textSecondary }]}>
+            {formatDate(item.created_at)}
+          </Text>
+        </View>
         {item.status === 'pending' && (
-          <View style={[styles.pendingBadge, { backgroundColor: '#fbbf24' + '30' }]}>
-            <Text style={[styles.pendingText, { color: '#fbbf24' }]}>Pending</Text>
+          <View style={[styles.pendingBadge, { backgroundColor: '#f59e0b' + '20' }]}>
+            <Ionicons name="hourglass-outline" size={10} color="#f59e0b" />
+            <Text style={[styles.pendingText, { color: '#f59e0b' }]}>Pending</Text>
           </View>
         )}
       </View>
-      <Text style={[styles.transactionAmount, { color: getTransactionColor(item.type, item.amount) }]}>
-        {item.amount > 0 ? '+' : ''}Rs. {Math.abs(item.amount).toLocaleString()}
-      </Text>
+      <View style={styles.amountContainer}>
+        <Text style={[styles.transactionAmount, { color: getAmountColor(item.amount) }]}>
+          {item.amount > 0 ? '+' : ''}Rs. {Math.abs(item.amount).toLocaleString()}
+        </Text>
+        <Ionicons
+          name={item.amount > 0 ? 'arrow-down-circle' : 'arrow-up-circle'}
+          size={16}
+          color={getAmountColor(item.amount)}
+        />
+      </View>
     </View>
   );
 
-  if (loading) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={[styles.header, { backgroundColor: colors.primary }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backIcon}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Transaction History</Text>
-          <View style={{ width: 28 }} />
-        </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+  const renderSkeletonItem = (index) => (
+    <View
+      key={index}
+      style={[styles.transactionCard, { backgroundColor: colors.surface }, shadows.sm]}
+    >
+      <Skeleton width={48} height={48} borderRadius={24} />
+      <View style={[styles.transactionInfo, { marginLeft: spacing.md }]}>
+        <Skeleton width={180} height={16} borderRadius={4} />
+        <Skeleton width={120} height={12} borderRadius={4} style={{ marginTop: 8 }} />
       </View>
-    );
-  }
+      <Skeleton width={80} height={20} borderRadius={4} />
+    </View>
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
+      {/* Premium Header */}
+      <LinearGradient
+        colors={colors.gradients?.premium || ['#FFD700', '#FFA500']}
+        style={[styles.header, { paddingTop: insets.top + spacing.md }]}
+      >
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            navigation.goBack();
+          }}
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Transaction History</Text>
-        <View style={{ width: 28 }} />
+        <View style={{ width: 40 }} />
+      </LinearGradient>
+
+      {/* Summary Card */}
+      <View
+                style={styles.summarySection}
+      >
+        <View style={[styles.summaryCard, { backgroundColor: colors.surface }, shadows.md]}>
+          <View style={styles.summaryItem}>
+            <View style={[styles.summaryIconBg, { backgroundColor: '#22c55e20' }]}>
+              <Ionicons name="trending-up" size={20} color="#22c55e" />
+            </View>
+            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Income</Text>
+            <Text style={[styles.summaryValue, { color: '#22c55e' }]}>
+              Rs. {transactions.filter(t => t.amount > 0).reduce((a, b) => a + b.amount, 0).toLocaleString()}
+            </Text>
+          </View>
+          <View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
+          <View style={styles.summaryItem}>
+            <View style={[styles.summaryIconBg, { backgroundColor: '#ef444420' }]}>
+              <Ionicons name="trending-down" size={20} color="#ef4444" />
+            </View>
+            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Spent</Text>
+            <Text style={[styles.summaryValue, { color: '#ef4444' }]}>
+              Rs. {Math.abs(transactions.filter(t => t.amount < 0).reduce((a, b) => a + b.amount, 0)).toLocaleString()}
+            </Text>
+          </View>
+        </View>
       </View>
 
       {/* Filters */}
-      <View style={styles.filtersContainer}>
-        {filters.map((f) => (
-          <TouchableOpacity
-            key={f.key}
-            style={[
-              styles.filterBtn,
-              {
-                backgroundColor: filter === f.key ? colors.primary : colors.surface,
-              }
-            ]}
-            onPress={() => setFilter(f.key)}
-          >
-            <Text style={[
-              styles.filterText,
-              { color: filter === f.key ? '#000' : colors.text }
-            ]}>
-              {f.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      <View
+                style={styles.filtersContainer}
+      >
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={filters}
+          keyExtractor={(item) => item.key}
+          contentContainerStyle={styles.filtersContent}
+          renderItem={({ item: f }) => (
+            <TouchableOpacity
+              style={[
+                styles.filterBtn,
+                {
+                  backgroundColor: filter === f.key ? colors.primary : colors.surface,
+                },
+                shadows.sm,
+              ]}
+              onPress={() => handleFilterChange(f.key)}
+            >
+              <Ionicons
+                name={f.icon}
+                size={16}
+                color={filter === f.key ? '#000' : colors.text}
+              />
+              <Text
+                style={[
+                  styles.filterText,
+                  { color: filter === f.key ? '#000' : colors.text },
+                ]}
+              >
+                {f.label}
+              </Text>
+            </TouchableOpacity>
+          )}
+        />
       </View>
 
-      <FlatList
-        data={filteredTransactions}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderTransaction}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📋</Text>
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              No transactions found
-            </Text>
-            <Text style={[styles.emptyHint, { color: colors.textSecondary }]}>
-              {filter !== 'all' ? 'Try changing the filter' : 'Your transactions will appear here'}
-            </Text>
-          </View>
-        }
-      />
+      {/* Transaction List */}
+      {loading ? (
+        <View style={styles.listContent}>
+          {[0, 1, 2, 3, 4, 5].map(renderSkeletonItem)}
+        </View>
+      ) : (
+        <FlatList
+          data={filteredTransactions}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderTransaction}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.primary}
+            />
+          }
+          ListEmptyComponent={
+            <View
+                            style={styles.emptyState}
+            >
+              <View style={[styles.emptyIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                <Ionicons name="document-text-outline" size={48} color={colors.primary} />
+              </View>
+              <Text style={[styles.emptyText, { color: colors.text }]}>
+                No transactions found
+              </Text>
+              <Text style={[styles.emptyHint, { color: colors.textSecondary }]}>
+                {filter !== 'all' ? 'Try changing the filter' : 'Your transactions will appear here'}
+              </Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 };
@@ -203,49 +305,87 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
-  backIcon: {
-    fontSize: 28,
-    color: '#000',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  loadingContainer: {
-    flex: 1,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  filtersContainer: {
+  headerTitle: {
+    fontSize: typography.h4,
+    fontWeight: '700',
+    color: '#000',
+  },
+  summarySection: {
+    paddingHorizontal: spacing.lg,
+    marginTop: -spacing.md,
+    marginBottom: spacing.md,
+  },
+  summaryCard: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+  },
+  summaryItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  summaryIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  summaryLabel: {
+    fontSize: typography.caption,
+    fontWeight: '500',
+    marginBottom: spacing.xs,
+  },
+  summaryValue: {
+    fontSize: typography.h5,
+    fontWeight: '700',
+  },
+  summaryDivider: {
+    width: 1,
+    marginHorizontal: spacing.md,
+  },
+  filtersContainer: {
+    marginBottom: spacing.sm,
+  },
+  filtersContent: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
   },
   filterBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
+    marginRight: spacing.sm,
   },
   filterText: {
-    fontSize: 13,
+    fontSize: typography.caption,
     fontWeight: '600',
   },
   listContent: {
-    padding: 16,
-    paddingTop: 8,
+    padding: spacing.lg,
+    paddingTop: spacing.sm,
   },
   transactionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
   },
   iconContainer: {
     width: 48,
@@ -253,52 +393,65 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
-  },
-  icon: {
-    fontSize: 24,
+    marginRight: spacing.md,
   },
   transactionInfo: {
     flex: 1,
   },
   transactionDesc: {
-    fontSize: 14,
+    fontSize: typography.body,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
+  },
+  transactionMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   transactionDate: {
-    fontSize: 12,
+    fontSize: typography.caption,
   },
   pendingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    borderRadius: 4,
-    marginTop: 4,
+    borderRadius: borderRadius.sm,
+    marginTop: spacing.xs,
+    gap: 4,
   },
   pendingText: {
     fontSize: 10,
     fontWeight: '600',
   },
+  amountContainer: {
+    alignItems: 'flex-end',
+    gap: spacing.xs,
+  },
   transactionAmount: {
-    fontSize: 16,
+    fontSize: typography.body,
     fontWeight: 'bold',
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 60,
+    paddingVertical: spacing.xxxl,
   },
-  emptyIcon: {
-    fontSize: 60,
-    marginBottom: 16,
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: typography.h5,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   emptyHint: {
-    fontSize: 14,
+    fontSize: typography.body,
     textAlign: 'center',
   },
 });

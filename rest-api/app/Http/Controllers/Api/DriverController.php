@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
+use App\Events\DriverStatusChanged;
+use App\Events\DriverLocationUpdated;
+use App\Events\RideStatusChanged;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -79,6 +82,61 @@ class DriverController extends Controller
                 'is_online' => $driver->is_online,
                 'rating_average' => $driver->rating_average,
                 'completed_rides_count' => $driver->completed_rides_count,
+            ],
+        ]);
+    }
+
+    /**
+     * Get driver dashboard stats
+     */
+    public function stats(Request $request)
+    {
+        $user = $request->user();
+        $driver = $user->driver;
+
+        if (!$driver) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Driver profile not found',
+            ], 404);
+        }
+
+        // Get today's stats
+        $today = now()->startOfDay();
+
+        $todayRides = $user->ridesAsDriver()
+            ->where('status', 'completed')
+            ->where('completed_at', '>=', $today)
+            ->get();
+
+        $todayEarnings = $todayRides->sum('estimated_price');
+        $todayRidesCount = $todayRides->count();
+
+        // Get this week's stats
+        $weekStart = now()->startOfWeek();
+        $weekRides = $user->ridesAsDriver()
+            ->where('status', 'completed')
+            ->where('completed_at', '>=', $weekStart)
+            ->get();
+
+        $weekEarnings = $weekRides->sum('estimated_price');
+        $weekRidesCount = $weekRides->count();
+
+        // Get total stats
+        $totalRides = $driver->completed_rides_count;
+        $rating = $driver->rating_average ?? 5.0;
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'today_earnings' => $todayEarnings,
+                'today_rides' => $todayRidesCount,
+                'week_earnings' => $weekEarnings,
+                'week_rides' => $weekRidesCount,
+                'total_rides' => $totalRides,
+                'rating' => round($rating, 1),
+                'is_online' => $driver->is_online,
+                'status' => $driver->status,
             ],
         ]);
     }
@@ -164,6 +222,9 @@ class DriverController extends Controller
 
         $driver->save();
 
+        // Broadcast driver status change for realtime updates
+        broadcast(new DriverStatusChanged($driver))->toOthers();
+
         return response()->json([
             'success' => true,
             'message' => $driver->is_online ? 'Driver is now online' : 'Driver is now offline',
@@ -207,6 +268,11 @@ class DriverController extends Controller
         $driver->current_lat = $request->lat;
         $driver->current_lng = $request->lng;
         $driver->save();
+
+        // Broadcast location update for realtime tracking (only if driver is online)
+        if ($driver->is_online) {
+            broadcast(new DriverLocationUpdated($driver))->toOthers();
+        }
 
         return response()->json([
             'success' => true,
@@ -372,6 +438,9 @@ class DriverController extends Controller
         $ride->status = 'driver_assigned';
         $ride->save();
 
+        // Broadcast ride status change
+        broadcast(new RideStatusChanged($ride))->toOthers();
+
         return response()->json([
             'success' => true,
             'message' => 'Ride accepted',
@@ -443,6 +512,9 @@ class DriverController extends Controller
 
         $ride->status = $newStatus;
         $ride->save();
+
+        // Broadcast ride status change
+        broadcast(new RideStatusChanged($ride))->toOthers();
 
         return response()->json([
             'success' => true,

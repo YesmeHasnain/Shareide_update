@@ -124,30 +124,42 @@ class AuthController extends Controller
         $phone = $this->formatPhoneNumber($request->phone);
         $code  = $request->code;
 
-        // Find verification
-        $verification = PhoneVerification::where('phone', $phone)
-            ->where('code', $code)
-            ->first();
+        // DEV MODE: Accept 123456 as universal code for testing
+        $isDevBypass = $code === '123456' && config('app.debug');
 
-        if (!$verification) {
+        // Find verification
+        $verification = PhoneVerification::where('phone', $phone)->first();
+
+        if (!$verification && !$isDevBypass) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid verification code',
             ], 401);
         }
 
-        if ($verification->isExpired()) {
+        // If not dev bypass, check actual code
+        if (!$isDevBypass && $verification->code !== $code) {
             return response()->json([
                 'success' => false,
-                'message' => 'Verification code has expired',
+                'message' => 'Invalid verification code',
             ], 401);
         }
 
-        if ($verification->isVerified()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Code already used',
-            ], 401);
+        // Skip expiry/verified checks for dev bypass
+        if (!$isDevBypass) {
+            if ($verification->isExpired()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Verification code has expired',
+                ], 401);
+            }
+
+            if ($verification->isVerified()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Code already used',
+                ], 401);
+            }
         }
 
         // Check if user exists
@@ -165,7 +177,9 @@ class AuthController extends Controller
         }
 
         // Existing user -> mark verification used and issue token
-        $verification->update(['verified_at' => Carbon::now()]);
+        if ($verification) {
+            $verification->update(['verified_at' => Carbon::now()]);
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 

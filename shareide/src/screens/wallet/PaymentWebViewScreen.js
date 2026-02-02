@@ -84,7 +84,7 @@ const PaymentWebViewScreen = ({ route, navigation }) => {
             onPress: () => {
               navigation.reset({
                 index: 0,
-                routes: [{ name: 'Drawer' }],
+                routes: [{ name: 'MainTabs' }],
               });
             },
           },

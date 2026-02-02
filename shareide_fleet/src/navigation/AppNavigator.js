@@ -35,6 +35,17 @@ import RatingsScreen from '../screens/profile/RatingsScreen';
 import NotificationsSettingsScreen from '../screens/profile/NotificationsSettingsScreen';
 import SupportScreen from '../screens/profile/SupportScreen';
 
+// Shared Rides / Carpooling Screens
+import {
+  MySharedRidesScreen,
+  CreateSharedRideScreen,
+  SharedRideRequestsScreen,
+  ManageSharedRideScreen,
+} from '../screens/sharedrides';
+
+// Loyalty Screens
+import { LoyaltyScreen } from '../screens/loyalty';
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -150,6 +161,15 @@ const AppNavigator = () => {
         <Stack.Screen name="Ratings" component={RatingsScreen} />
         <Stack.Screen name="NotificationsSettings" component={NotificationsSettingsScreen} />
         <Stack.Screen name="Support" component={SupportScreen} />
+
+        {/* Shared Rides / Carpooling */}
+        <Stack.Screen name="MySharedRides" component={MySharedRidesScreen} />
+        <Stack.Screen name="CreateSharedRide" component={CreateSharedRideScreen} />
+        <Stack.Screen name="SharedRideRequests" component={SharedRideRequestsScreen} />
+        <Stack.Screen name="ManageSharedRide" component={ManageSharedRideScreen} />
+
+        {/* Loyalty & Rewards */}
+        <Stack.Screen name="Loyalty" component={LoyaltyScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,10 +1,77 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Linking,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { ridesAPI } from '../../api/rides';
+import { Header, Card, Avatar, Button, IconButton } from '../../components/common';
+import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
+
+const PulsingDot = ({ color }) => {
+  return (
+    <View style={styles.pulsingContainer}>
+      <View
+        style={[
+          styles.pulsingOuter,
+          { backgroundColor: color + '30' },
+        ]}
+      />
+      <View style={[styles.pulsingInner, { backgroundColor: color }]} />
+    </View>
+  );
+};
+
+const ActionButton = ({ icon, label, onPress, colors, danger }) => {
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
+  return (
+    <TouchableOpacity
+      onPress={handlePress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.actionButton}>
+        <View
+          style={[
+            styles.actionIconContainer,
+            {
+              backgroundColor: danger ? colors.error + '15' : colors.surface,
+            },
+          ]}
+        >
+          <Ionicons
+            name={icon}
+            size={22}
+            color={danger ? colors.error : colors.primary}
+          />
+        </View>
+        <Text
+          style={[
+            styles.actionLabel,
+            { color: danger ? colors.error : colors.text },
+          ]}
+        >
+          {label}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const RideTrackingScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { ride, driver, pickup, dropoff, fare } = route.params;
   const [status, setStatus] = useState(ride?.status || 'arriving');
   const [eta, setEta] = useState(driver?.eta || 5);
@@ -13,35 +80,75 @@ const RideTrackingScreen = ({ route, navigation }) => {
     // Simulate ride status updates
     const interval = setInterval(() => {
       if (status === 'arriving' && eta > 1) {
-        setEta(prev => prev - 1);
+        setEta((prev) => prev - 1);
       } else if (status === 'arriving' && eta <= 1) {
         setStatus('arrived');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-    }, 30000); // Update every 30 seconds for demo
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [status, eta]);
 
-  const statusMessages = {
-    arriving: 'Driver is on the way',
-    arrived: 'Driver has arrived',
-    started: 'Ride in progress',
-    completed: 'Ride completed',
+  const getStatusConfig = () => {
+    switch (status) {
+      case 'arriving':
+        return {
+          color: colors.primary,
+          icon: 'car',
+          title: 'Driver is on the way',
+          subtitle: `Arriving in ${eta} min`,
+        };
+      case 'arrived':
+        return {
+          color: colors.success,
+          icon: 'checkmark-circle',
+          title: 'Driver has arrived',
+          subtitle: 'Your driver is waiting at the pickup point',
+        };
+      case 'started':
+        return {
+          color: colors.info,
+          icon: 'navigate',
+          title: 'Ride in progress',
+          subtitle: 'Heading to your destination',
+        };
+      case 'completed':
+        return {
+          color: colors.success,
+          icon: 'flag',
+          title: 'Ride completed',
+          subtitle: 'Thank you for riding with us!',
+        };
+      default:
+        return {
+          color: colors.primary,
+          icon: 'car',
+          title: 'Processing',
+          subtitle: 'Please wait...',
+        };
+    }
   };
 
+  const statusConfig = getStatusConfig();
+
   const handleCall = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Linking.openURL(`tel:03001234567`);
   };
 
   const handleChat = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Alert.alert('Chat', 'Chat feature coming soon!');
   };
 
   const handleShare = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Alert.alert('Share', 'Share your ride status with friends and family');
   };
 
   const handleSOS = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(
       'Emergency SOS',
       'Are you in an emergency? This will alert emergency contacts and authorities.',
@@ -50,13 +157,17 @@ const RideTrackingScreen = ({ route, navigation }) => {
         {
           text: 'Confirm SOS',
           style: 'destructive',
-          onPress: () => Alert.alert('SOS Sent', 'Emergency contacts have been notified.'),
+          onPress: () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            Alert.alert('SOS Sent', 'Emergency contacts have been notified.');
+          },
         },
       ]
     );
   };
 
   const handleCancel = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       'Cancel Ride',
       'Are you sure you want to cancel this ride? A cancellation fee may apply.',
@@ -71,9 +182,10 @@ const RideTrackingScreen = ({ route, navigation }) => {
             } catch (error) {
               // Continue anyway for demo
             }
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             navigation.reset({
               index: 0,
-              routes: [{ name: 'Drawer' }],
+              routes: [{ name: 'MainTabs' }],
             });
           },
         },
@@ -89,8 +201,8 @@ const RideTrackingScreen = ({ route, navigation }) => {
     });
   };
 
-  // Simulate completion for demo
   const simulateCompletion = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setStatus('completed');
     setTimeout(() => {
       handleCompleteRide();
@@ -99,95 +211,153 @@ const RideTrackingScreen = ({ route, navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Ride Tracking</Text>
-        <TouchableOpacity onPress={handleShare}>
-          <Text style={styles.shareIcon}>📤</Text>
-        </TouchableOpacity>
-      </View>
+      <Header
+        title="Ride Tracking"
+        leftIcon="arrow-back"
+        onLeftPress={() => navigation.goBack()}
+        rightIcon="share-outline"
+        onRightPress={handleShare}
+      />
 
-      <View style={styles.mapPlaceholder}>
-        <Text style={styles.mapEmoji}>🗺️</Text>
-        <Text style={[styles.mapText, { color: colors.textSecondary }]}>
-          Live map tracking
-        </Text>
-        <TouchableOpacity
-          style={[styles.demoButton, { backgroundColor: colors.primary }]}
-          onPress={simulateCompletion}
+      {/* Map Placeholder */}
+      <View style={[styles.mapContainer, { backgroundColor: colors.surface }]}>
+        <LinearGradient
+          colors={['#E8F4EA', '#D4E8D7']}
+          style={styles.mapPlaceholder}
         >
-          <Text style={styles.demoText}>Complete Ride (Demo)</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={[styles.statusCard, { backgroundColor: colors.surface }]}>
-        <View style={[styles.statusIndicator, { backgroundColor: status === 'completed' ? '#22c55e' : colors.primary }]} />
-        <View style={styles.statusInfo}>
-          <Text style={[styles.statusText, { color: colors.text }]}>
-            {statusMessages[status]}
+          <Ionicons name="map" size={80} color={colors.success + '50'} />
+          <Text style={[styles.mapText, { color: colors.textSecondary }]}>
+            Live map tracking
           </Text>
-          {status === 'arriving' && (
-            <Text style={[styles.etaText, { color: colors.textSecondary }]}>
-              ETA: {eta} min
-            </Text>
-          )}
-        </View>
+          <TouchableOpacity
+            style={[styles.demoButton, { backgroundColor: colors.primary }]}
+            onPress={simulateCompletion}
+          >
+            <Ionicons name="checkmark-circle" size={16} color="#000" />
+            <Text style={styles.demoText}>Complete Ride (Demo)</Text>
+          </TouchableOpacity>
+        </LinearGradient>
       </View>
 
-      <View style={[styles.driverCard, { backgroundColor: colors.surface }]}>
-        <View style={[styles.driverAvatar, { backgroundColor: colors.primary }]}>
-          <Text style={styles.driverInitial}>{driver.name?.charAt(0) || '?'}</Text>
-        </View>
-        <View style={styles.driverInfo}>
-          <Text style={[styles.driverName, { color: colors.text }]}>{driver.name}</Text>
-          <View style={styles.ratingRow}>
-            <Text style={styles.ratingStar}>⭐</Text>
-            <Text style={[styles.ratingText, { color: colors.text }]}>{driver.rating}</Text>
+      {/* Status Card */}
+      <View>
+        <Card style={styles.statusCard} shadow="md">
+          <View style={styles.statusRow}>
+            <PulsingDot color={statusConfig.color} />
+            <View style={styles.statusInfo}>
+              <Text style={[styles.statusTitle, { color: colors.text }]}>
+                {statusConfig.title}
+              </Text>
+              <Text style={[styles.statusSubtitle, { color: colors.textSecondary }]}>
+                {statusConfig.subtitle}
+              </Text>
+            </View>
+            {status === 'arriving' && (
+              <View style={styles.etaContainer}>
+                <Text style={[styles.etaValue, { color: colors.primary }]}>
+                  {eta}
+                </Text>
+                <Text style={[styles.etaLabel, { color: colors.textSecondary }]}>
+                  min
+                </Text>
+              </View>
+            )}
           </View>
-          <Text style={[styles.vehicleText, { color: colors.textSecondary }]}>
-            {driver.vehicle?.model} • {driver.vehicle?.plate}
-          </Text>
-        </View>
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: colors.background }]}
-            onPress={handleCall}
-          >
-            <Text style={styles.actionIcon}>📞</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: colors.background }]}
-            onPress={handleChat}
-          >
-            <Text style={styles.actionIcon}>💬</Text>
-          </TouchableOpacity>
-        </View>
+        </Card>
       </View>
 
-      <View style={[styles.routeCard, { backgroundColor: colors.surface }]}>
-        <View style={styles.routeRow}>
-          <Text style={styles.dotGreen}>●</Text>
-          <Text style={[styles.routeText, { color: colors.text }]} numberOfLines={1}>
-            {pickup?.address || 'Pickup'}
-          </Text>
-        </View>
-        <View style={styles.routeLine} />
-        <View style={styles.routeRow}>
-          <Text style={styles.dotRed}>●</Text>
-          <Text style={[styles.routeText, { color: colors.text }]} numberOfLines={1}>
-            {dropoff?.address || 'Dropoff'}
-          </Text>
-        </View>
+      {/* Driver Card */}
+      <View>
+        <Card style={styles.driverCard} shadow="md">
+          <View style={styles.driverRow}>
+            <Avatar
+              source={driver?.avatar}
+              name={driver?.name}
+              size="large"
+              showBadge
+              badgeType="verified"
+            />
+            <View style={styles.driverInfo}>
+              <Text style={[styles.driverName, { color: colors.text }]}>
+                {driver.name}
+              </Text>
+              <View style={styles.ratingRow}>
+                <Ionicons name="star" size={14} color={colors.star} />
+                <Text style={[styles.ratingText, { color: colors.text }]}>
+                  {driver.rating}
+                </Text>
+              </View>
+              <View style={styles.vehicleRow}>
+                <Ionicons name="car-outline" size={14} color={colors.textSecondary} />
+                <Text style={[styles.vehicleText, { color: colors.textSecondary }]}>
+                  {driver.vehicle?.model} - {driver.vehicle?.plate}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.actionRow}>
+            <ActionButton
+              icon="call"
+              label="Call"
+              onPress={handleCall}
+              colors={colors}
+            />
+            <ActionButton
+              icon="chatbubble"
+              label="Chat"
+              onPress={handleChat}
+              colors={colors}
+            />
+            <ActionButton
+              icon="share-social"
+              label="Share"
+              onPress={handleShare}
+              colors={colors}
+            />
+          </View>
+        </Card>
       </View>
 
-      <View style={styles.footer}>
+      {/* Route Card */}
+      <View>
+        <Card style={styles.routeCard} shadow="sm">
+          <View style={styles.routeItem}>
+            <View style={[styles.routeDot, { backgroundColor: colors.success }]} />
+            <Text
+              style={[styles.routeText, { color: colors.text }]}
+              numberOfLines={1}
+            >
+              {pickup?.address || 'Pickup'}
+            </Text>
+          </View>
+          <View style={[styles.routeLine, { backgroundColor: colors.border }]} />
+          <View style={styles.routeItem}>
+            <View style={[styles.routeDot, { backgroundColor: colors.error }]} />
+            <Text
+              style={[styles.routeText, { color: colors.text }]}
+              numberOfLines={1}
+            >
+              {dropoff?.address || 'Dropoff'}
+            </Text>
+          </View>
+        </Card>
+      </View>
+
+      {/* Footer */}
+      <View
+        style={[
+          styles.footer,
+          {
+            paddingBottom: insets.bottom + spacing.md,
+          },
+        ]}
+      >
         <TouchableOpacity
-          style={[styles.sosButton, { backgroundColor: '#ef4444' }]}
+          style={[styles.sosButton, { backgroundColor: colors.error }]}
           onPress={handleSOS}
         >
-          <Text style={styles.sosIcon}>🚨</Text>
+          <Ionicons name="warning" size={20} color="#FFF" />
           <Text style={styles.sosText}>SOS</Text>
         </TouchableOpacity>
 
@@ -196,7 +366,10 @@ const RideTrackingScreen = ({ route, navigation }) => {
             style={[styles.cancelButton, { backgroundColor: colors.surface }]}
             onPress={handleCancel}
           >
-            <Text style={[styles.cancelText, { color: colors.text }]}>Cancel Ride</Text>
+            <Ionicons name="close-circle-outline" size={20} color={colors.error} />
+            <Text style={[styles.cancelText, { color: colors.error }]}>
+              Cancel Ride
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -205,98 +378,165 @@ const RideTrackingScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
+  container: {
+    flex: 1,
   },
-  backIcon: { fontSize: 28, color: '#000' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#000' },
-  shareIcon: { fontSize: 24 },
-  mapPlaceholder: {
+  mapContainer: {
     height: 200,
+  },
+  mapPlaceholder: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#e5e7eb',
   },
-  mapEmoji: { fontSize: 60, marginBottom: 8 },
-  mapText: { fontSize: 14 },
+  mapText: {
+    fontSize: typography.body,
+    marginTop: spacing.sm,
+  },
   demoButton: {
-    marginTop: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  demoText: { fontSize: 12, fontWeight: '600', color: '#000' },
-  statusCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    margin: 16,
-    padding: 16,
-    borderRadius: 12,
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
   },
-  statusIndicator: {
+  demoText: {
+    fontSize: typography.bodySmall,
+    fontWeight: '600',
+    color: '#000',
+  },
+  statusCard: {
+    margin: spacing.lg,
+    padding: spacing.lg,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pulsingContainer: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  pulsingOuter: {
+    position: 'absolute',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  pulsingInner: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    marginRight: 12,
   },
-  statusInfo: { flex: 1 },
-  statusText: { fontSize: 16, fontWeight: 'bold' },
-  etaText: { fontSize: 14, marginTop: 2 },
+  statusInfo: {
+    flex: 1,
+  },
+  statusTitle: {
+    fontSize: typography.body,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  statusSubtitle: {
+    fontSize: typography.bodySmall,
+  },
+  etaContainer: {
+    alignItems: 'center',
+  },
+  etaValue: {
+    fontSize: typography.h3,
+    fontWeight: '700',
+  },
+  etaLabel: {
+    fontSize: typography.caption,
+  },
   driverCard: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+  },
+  driverRow: {
+    flexDirection: 'row',
+    marginBottom: spacing.lg,
+  },
+  driverInfo: {
+    flex: 1,
+    marginLeft: spacing.md,
+    justifyContent: 'center',
+  },
+  driverName: {
+    fontSize: typography.h5,
+    fontWeight: '700',
+    marginBottom: spacing.xs,
+  },
+  ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 12,
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
   },
-  driverAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
+  ratingText: {
+    fontSize: typography.body,
+    fontWeight: '600',
+  },
+  vehicleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  vehicleText: {
+    fontSize: typography.bodySmall,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
+  },
+  actionButton: {
     alignItems: 'center',
   },
-  driverInitial: { fontSize: 24, fontWeight: 'bold', color: '#000' },
-  driverInfo: { flex: 1, marginLeft: 12 },
-  driverName: { fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  ratingStar: { fontSize: 14 },
-  ratingText: { fontSize: 14, fontWeight: '600', marginLeft: 4 },
-  vehicleText: { fontSize: 14 },
-  actionButtons: { flexDirection: 'row', gap: 8 },
-  actionBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  actionIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: spacing.xs,
+    ...shadows.sm,
   },
-  actionIcon: { fontSize: 20 },
+  actionLabel: {
+    fontSize: typography.caption,
+    fontWeight: '600',
+  },
   routeCard: {
-    marginHorizontal: 16,
-    padding: 16,
-    borderRadius: 12,
+    marginHorizontal: spacing.lg,
+    padding: spacing.lg,
   },
-  routeRow: {
+  routeItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  dotGreen: { fontSize: 12, color: '#22c55e', marginRight: 12 },
-  dotRed: { fontSize: 12, color: '#ef4444', marginRight: 12 },
-  routeText: { flex: 1, fontSize: 14 },
+  routeDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: spacing.md,
+  },
   routeLine: {
     width: 2,
-    height: 16,
-    backgroundColor: '#ddd',
+    height: 20,
     marginLeft: 4,
-    marginVertical: 4,
+    marginVertical: spacing.xs,
+  },
+  routeText: {
+    flex: 1,
+    fontSize: typography.body,
   },
   footer: {
     position: 'absolute',
@@ -304,29 +544,38 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    padding: 16,
-    paddingBottom: 32,
-    gap: 12,
+    padding: spacing.lg,
+    gap: spacing.md,
   },
   sosButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+    borderRadius: borderRadius.lg,
+    gap: spacing.sm,
+    ...shadows.md,
   },
-  sosIcon: { fontSize: 18 },
-  sosText: { fontSize: 16, fontWeight: 'bold', color: '#fff' },
+  sosText: {
+    fontSize: typography.body,
+    fontWeight: '700',
+    color: '#FFF',
+  },
   cancelButton: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: spacing.lg,
+    borderRadius: borderRadius.lg,
+    gap: spacing.sm,
+    ...shadows.sm,
   },
-  cancelText: { fontSize: 16, fontWeight: '600' },
+  cancelText: {
+    fontSize: typography.body,
+    fontWeight: '600',
+  },
 });
 
 export default RideTrackingScreen;

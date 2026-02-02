@@ -1,11 +1,25 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Switch,
+  Alert,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
 const SettingsScreen = ({ navigation }) => {
   const { colors, isDark, toggleTheme } = useTheme();
   const { logout } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const [settings, setSettings] = useState({
     locationServices: true,
@@ -17,10 +31,12 @@ const SettingsScreen = ({ navigation }) => {
   });
 
   const toggleSetting = (key) => {
-    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleDeleteAccount = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert(
       'Delete Account',
       'Are you sure you want to permanently delete your account? This action cannot be undone.',
@@ -30,9 +46,11 @@ const SettingsScreen = ({ navigation }) => {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            Alert.alert('Account Deleted', 'Your account has been scheduled for deletion.', [
-              { text: 'OK', onPress: logout }
-            ]);
+            Alert.alert(
+              'Account Deleted',
+              'Your account has been scheduled for deletion.',
+              [{ text: 'OK', onPress: logout }]
+            );
           },
         },
       ]
@@ -42,57 +60,75 @@ const SettingsScreen = ({ navigation }) => {
   const settingSections = [
     {
       title: 'Account',
+      icon: 'person-circle',
       items: [
-        { icon: '🔑', label: 'Change Password', type: 'link' },
-        { icon: '🔐', label: 'Two-Factor Auth', type: 'link' },
-        { icon: '📱', label: 'Face ID / Fingerprint', key: 'faceId', type: 'toggle' },
+        { icon: 'key', label: 'Change Password', type: 'link' },
+        { icon: 'shield-checkmark', label: 'Two-Factor Auth', type: 'link' },
+        { icon: 'finger-print', label: 'Face ID / Fingerprint', key: 'faceId', type: 'toggle' },
       ],
     },
     {
       title: 'Privacy',
+      icon: 'lock-closed',
       items: [
-        { icon: '📍', label: 'Location Services', key: 'locationServices', type: 'toggle' },
-        { icon: '👥', label: 'Ride Sharing', key: 'rideSharing', type: 'toggle', desc: 'Share rides with others' },
-        { icon: '📊', label: 'Analytics', type: 'link' },
+        { icon: 'location', label: 'Location Services', key: 'locationServices', type: 'toggle' },
+        { icon: 'people', label: 'Ride Sharing', key: 'rideSharing', type: 'toggle', desc: 'Share rides with others' },
+        { icon: 'analytics', label: 'Analytics', type: 'link' },
       ],
     },
     {
       title: 'Payments',
+      icon: 'card',
       items: [
-        { icon: '💳', label: 'Payment Methods', type: 'link', screen: 'PaymentMethods' },
-        { icon: '🔄', label: 'Auto Top-up', key: 'autoTopup', type: 'toggle' },
-        { icon: '🧾', label: 'Receipts', type: 'link' },
+        { icon: 'wallet', label: 'Payment Methods', type: 'link', screen: 'PaymentMethods' },
+        { icon: 'refresh', label: 'Auto Top-up', key: 'autoTopup', type: 'toggle' },
+        { icon: 'receipt', label: 'Receipts', type: 'link' },
       ],
     },
     {
       title: 'Appearance',
+      icon: 'color-palette',
       items: [
-        { icon: isDark ? '☀️' : '🌙', label: isDark ? 'Light Mode' : 'Dark Mode', type: 'toggle', value: isDark, action: toggleTheme },
-        { icon: '🌐', label: 'Language', type: 'value', value: 'English' },
-        { icon: '💱', label: 'Currency', type: 'value', value: 'PKR' },
+        { icon: isDark ? 'sunny' : 'moon', label: isDark ? 'Light Mode' : 'Dark Mode', type: 'toggle', value: isDark, action: toggleTheme },
+        { icon: 'globe', label: 'Language', type: 'value', value: 'English' },
+        { icon: 'cash', label: 'Currency', type: 'value', value: 'PKR' },
       ],
     },
     {
       title: 'Sounds',
+      icon: 'volume-high',
       items: [
-        { icon: '🔊', label: 'Sound Effects', key: 'soundEffects', type: 'toggle' },
-        { icon: '📳', label: 'Vibration', key: 'vibration', type: 'toggle' },
+        { icon: 'volume-medium', label: 'Sound Effects', key: 'soundEffects', type: 'toggle' },
+        { icon: 'phone-portrait', label: 'Vibration', key: 'vibration', type: 'toggle' },
       ],
     },
   ];
 
-  const renderItem = (item) => {
+  const renderItem = (item, isLast) => {
     if (item.type === 'toggle') {
       const value = item.value !== undefined ? item.value : settings[item.key];
       const onToggle = item.action || (() => toggleSetting(item.key));
 
       return (
-        <View style={styles.settingItem}>
+        <View
+          style={[
+            styles.settingItem,
+            !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border },
+          ]}
+        >
           <View style={styles.settingLeft}>
-            <Text style={styles.settingIcon}>{item.icon}</Text>
+            <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
+              <Ionicons name={item.icon} size={18} color={colors.primary} />
+            </View>
             <View>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>{item.label}</Text>
-              {item.desc && <Text style={[styles.settingDesc, { color: colors.textSecondary }]}>{item.desc}</Text>}
+              <Text style={[styles.settingLabel, { color: colors.text }]}>
+                {item.label}
+              </Text>
+              {item.desc && (
+                <Text style={[styles.settingDesc, { color: colors.textSecondary }]}>
+                  {item.desc}
+                </Text>
+              )}
             </View>
           </View>
           <Switch
@@ -100,6 +136,7 @@ const SettingsScreen = ({ navigation }) => {
             onValueChange={onToggle}
             trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor="#fff"
+            ios_backgroundColor={colors.border}
           />
         </View>
       );
@@ -107,14 +144,26 @@ const SettingsScreen = ({ navigation }) => {
 
     if (item.type === 'value') {
       return (
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity
+          style={[
+            styles.settingItem,
+            !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border },
+          ]}
+          onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+        >
           <View style={styles.settingLeft}>
-            <Text style={styles.settingIcon}>{item.icon}</Text>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>{item.label}</Text>
+            <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
+              <Ionicons name={item.icon} size={18} color={colors.primary} />
+            </View>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>
+              {item.label}
+            </Text>
           </View>
           <View style={styles.settingRight}>
-            <Text style={[styles.settingValue, { color: colors.textSecondary }]}>{item.value}</Text>
-            <Text style={[styles.settingArrow, { color: colors.textSecondary }]}>›</Text>
+            <Text style={[styles.settingValue, { color: colors.textSecondary }]}>
+              {item.value}
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
           </View>
         </TouchableOpacity>
       );
@@ -122,63 +171,114 @@ const SettingsScreen = ({ navigation }) => {
 
     return (
       <TouchableOpacity
-        style={styles.settingItem}
-        onPress={() => item.screen && navigation.navigate(item.screen)}
+        style={[
+          styles.settingItem,
+          !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border },
+        ]}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          item.screen && navigation.navigate(item.screen);
+        }}
       >
         <View style={styles.settingLeft}>
-          <Text style={styles.settingIcon}>{item.icon}</Text>
-          <Text style={[styles.settingLabel, { color: colors.text }]}>{item.label}</Text>
+          <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
+            <Ionicons name={item.icon} size={18} color={colors.primary} />
+          </View>
+          <Text style={[styles.settingLabel, { color: colors.text }]}>
+            {item.label}
+          </Text>
         </View>
-        <Text style={[styles.settingArrow, { color: colors.textSecondary }]}>›</Text>
+        <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
       </TouchableOpacity>
     );
   };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
+      {/* Header */}
+      <LinearGradient
+        colors={colors.gradients?.premium || ['#FFD700', '#FFA500']}
+        style={[styles.header, { paddingTop: insets.top + spacing.md }]}
+      >
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            navigation.goBack();
+          }}
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
-        <View style={{ width: 28 }} />
-      </View>
+        <View style={{ width: 44 }} />
+      </LinearGradient>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {settingSections.map((section, sectionIndex) => (
-          <View key={sectionIndex} style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{section.title}</Text>
-            <View style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
+          <View
+            key={sectionIndex}
+                        style={styles.section}
+          >
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                <Ionicons name={section.icon} size={16} color={colors.primary} />
+              </View>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                {section.title}
+              </Text>
+            </View>
+            <View style={[styles.sectionCard, { backgroundColor: colors.surface }, shadows.sm]}>
               {section.items.map((item, itemIndex) => (
-                <View
-                  key={itemIndex}
-                  style={[
-                    itemIndex !== section.items.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }
-                  ]}
-                >
-                  {renderItem(item)}
+                <View key={itemIndex}>
+                  {renderItem(item, itemIndex === section.items.length - 1)}
                 </View>
               ))}
             </View>
           </View>
         ))}
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Danger Zone</Text>
-          <View style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
+        {/* Danger Zone */}
+        <View
+                    style={styles.section}
+        >
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconContainer, { backgroundColor: colors.error + '15' }]}>
+              <Ionicons name="warning" size={16} color={colors.error} />
+            </View>
+            <Text style={[styles.sectionTitle, { color: colors.error }]}>
+              Danger Zone
+            </Text>
+          </View>
+          <View style={[styles.sectionCard, { backgroundColor: colors.surface }, shadows.sm]}>
             <TouchableOpacity style={styles.dangerItem} onPress={handleDeleteAccount}>
-              <Text style={styles.dangerIcon}>⚠️</Text>
-              <Text style={styles.dangerLabel}>Delete Account</Text>
+              <View style={styles.settingLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: colors.error + '15' }]}>
+                  <Ionicons name="trash" size={18} color={colors.error} />
+                </View>
+                <Text style={[styles.dangerLabel, { color: colors.error }]}>
+                  Delete Account
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.error} />
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.footer}>
+        {/* Footer */}
+        <View
+                    style={styles.footer}
+        >
+          <View style={[styles.logoContainer, { backgroundColor: colors.primary + '15' }]}>
+            <Ionicons name="car-sport" size={24} color={colors.primary} />
+          </View>
           <Text style={[styles.versionText, { color: colors.textSecondary }]}>
-            Shareide v1.0.0 (Build 100)
+            SHAREIDE v1.0.0 (Build 100)
           </Text>
-          <Text style={[styles.copyrightText, { color: colors.textSecondary }]}>
-            © 2026 Shareide. All rights reserved.
+          <Text style={[styles.copyrightText, { color: colors.textTertiary }]}>
+            Made with love in Pakistan
           </Text>
         </View>
       </ScrollView>
@@ -187,50 +287,125 @@ const SettingsScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
-  backIcon: { fontSize: 28, color: '#000' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#000' },
-  section: { paddingHorizontal: 16, marginBottom: 24 },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: typography.h4,
+    fontWeight: '700',
+    color: '#000',
+  },
+  scrollContent: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xxxl,
+  },
+  section: {
+    marginBottom: spacing.lg,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
+    gap: spacing.sm,
+  },
+  sectionIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   sectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: typography.caption,
+    fontWeight: '700',
     textTransform: 'uppercase',
-    marginBottom: 8,
-    marginLeft: 4,
     letterSpacing: 1,
   },
-  sectionCard: { borderRadius: 16, overflow: 'hidden' },
+  sectionCard: {
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+  },
   settingItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: spacing.md,
   },
-  settingLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  settingIcon: { fontSize: 20, marginRight: 14, width: 28 },
-  settingLabel: { fontSize: 15 },
-  settingDesc: { fontSize: 12, marginTop: 2 },
-  settingRight: { flexDirection: 'row', alignItems: 'center' },
-  settingValue: { fontSize: 14, marginRight: 8 },
-  settingArrow: { fontSize: 22 },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.md,
+  },
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  settingLabel: {
+    fontSize: typography.body,
+    fontWeight: '500',
+  },
+  settingDesc: {
+    fontSize: typography.caption,
+    marginTop: 2,
+  },
+  settingRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  settingValue: {
+    fontSize: typography.bodySmall,
+  },
   dangerItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    justifyContent: 'space-between',
+    padding: spacing.md,
   },
-  dangerIcon: { fontSize: 20, marginRight: 14 },
-  dangerLabel: { fontSize: 15, color: '#ef4444', fontWeight: '500' },
-  footer: { alignItems: 'center', paddingVertical: 32, paddingBottom: 48 },
-  versionText: { fontSize: 14, marginBottom: 4 },
-  copyrightText: { fontSize: 12 },
+  dangerLabel: {
+    fontSize: typography.body,
+    fontWeight: '600',
+  },
+  footer: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxl,
+    gap: spacing.sm,
+  },
+  logoContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  versionText: {
+    fontSize: typography.bodySmall,
+    fontWeight: '600',
+  },
+  copyrightText: {
+    fontSize: typography.caption,
+  },
 });
 
 export default SettingsScreen;

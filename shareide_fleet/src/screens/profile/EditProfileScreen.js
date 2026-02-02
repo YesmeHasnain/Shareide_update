@@ -8,12 +8,14 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import client from '../../api/client';
+import { defaultMaleAvatar, defaultFemaleAvatar } from '../../utils/avatars';
 
 const EditProfileScreen = ({ navigation }) => {
   const { colors } = useTheme();
@@ -73,10 +75,15 @@ const EditProfileScreen = ({ navigation }) => {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Avatar */}
         <View style={styles.avatarSection}>
-          <TouchableOpacity style={[styles.avatar, { backgroundColor: colors.primary }]}>
-            <Text style={styles.avatarText}>
-              {formData.first_name?.charAt(0) || 'D'}
-            </Text>
+          <TouchableOpacity style={[styles.avatarContainer, { borderColor: colors.primary }]}>
+            {user?.profile_picture ? (
+              <Image source={{ uri: user.profile_picture }} style={styles.avatar} />
+            ) : (
+              <Image
+                source={user?.gender === 'female' ? defaultFemaleAvatar : defaultMaleAvatar}
+                style={styles.avatar}
+              />
+            )}
           </TouchableOpacity>
           <TouchableOpacity style={[styles.changePhotoBtn, { borderColor: colors.primary }]}>
             <Text style={[styles.changePhotoText, { color: colors.primary }]}>Change Photo</Text>
@@ -221,18 +228,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
+  avatarContainer: {
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    borderWidth: 3,
+    overflow: 'hidden',
     marginBottom: 12,
   },
-  avatarText: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: '#000',
+  avatar: {
+    width: 98,
+    height: 98,
+    borderRadius: 49,
   },
   changePhotoBtn: {
     paddingHorizontal: 16,

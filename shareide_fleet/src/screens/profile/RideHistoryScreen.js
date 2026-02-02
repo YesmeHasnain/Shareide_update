@@ -34,57 +34,9 @@ const RideHistoryScreen = ({ navigation }) => {
         setPage(pageNum);
       }
     } catch (error) {
-      // Mock data for demo
-      const mockRides = [
-        {
-          id: 1,
-          pickup_address: 'Gulshan-e-Iqbal Block 5',
-          dropoff_address: 'Clifton Beach',
-          fare: 450,
-          distance: 12.5,
-          duration: 35,
-          status: 'completed',
-          rating: 5,
-          created_at: new Date().toISOString(),
-          passenger: { name: 'Ahmed Khan' },
-        },
-        {
-          id: 2,
-          pickup_address: 'DHA Phase 6',
-          dropoff_address: 'Saddar',
-          fare: 380,
-          distance: 9.2,
-          duration: 28,
-          status: 'completed',
-          rating: 4,
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          passenger: { name: 'Sara Ali' },
-        },
-        {
-          id: 3,
-          pickup_address: 'Korangi Industrial Area',
-          dropoff_address: 'Gulistan-e-Johar',
-          fare: 520,
-          distance: 15.8,
-          duration: 45,
-          status: 'completed',
-          rating: 5,
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          passenger: { name: 'Fatima Zahra' },
-        },
-        {
-          id: 4,
-          pickup_address: 'North Nazimabad',
-          dropoff_address: 'PECHS',
-          fare: 290,
-          distance: 7.5,
-          duration: 22,
-          status: 'cancelled',
-          created_at: new Date(Date.now() - 259200000).toISOString(),
-          passenger: { name: 'Usman Malik' },
-        },
-      ];
-      setRides(append ? [...rides, ...mockRides] : mockRides);
+      console.log('Error fetching ride history:', error);
+      // Show empty - real data only
+      setRides([]);
       setHasMore(false);
     } finally {
       setLoading(false);

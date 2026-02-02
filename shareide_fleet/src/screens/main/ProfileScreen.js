@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { defaultMaleAvatar, defaultFemaleAvatar } from '../../utils/avatars';
 
 const ProfileScreen = ({ navigation }) => {
   const { colors, isDark, toggleTheme } = useTheme();
@@ -73,10 +74,15 @@ const ProfileScreen = ({ navigation }) => {
         {/* Header */}
         <View style={[styles.header, { backgroundColor: colors.primary }]}>
           <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {user?.first_name?.charAt(0) || 'D'}
-              </Text>
+            <View style={styles.avatarWrapper}>
+              {user?.profile_picture ? (
+                <Image source={{ uri: user.profile_picture }} style={styles.avatarImage} />
+              ) : (
+                <Image
+                  source={user?.gender === 'female' ? defaultFemaleAvatar : defaultMaleAvatar}
+                  style={styles.avatarImage}
+                />
+              )}
             </View>
           </View>
           <Text style={styles.headerName}>
@@ -196,18 +202,18 @@ const styles = StyleSheet.create({
   avatarContainer: {
     marginBottom: 16,
   },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
+  avatarWrapper: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 3,
+    borderColor: '#000',
+    overflow: 'hidden',
   },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFD700',
+  avatarImage: {
+    width: 82,
+    height: 82,
+    borderRadius: 41,
   },
   headerName: {
     fontSize: 24,

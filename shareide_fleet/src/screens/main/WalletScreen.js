@@ -43,22 +43,30 @@ const WalletScreen = () => {
   const fetchWalletData = async () => {
     try {
       const [balanceRes, earningsRes, transactionsRes, withdrawalsRes] = await Promise.all([
-        walletAPI.getBalance(),
-        walletAPI.getEarnings(),
-        walletAPI.getTransactions(),
-        walletAPI.getWithdrawals(),
+        walletAPI.getBalance().catch(() => ({ success: false })),
+        walletAPI.getEarnings().catch(() => ({ success: false })),
+        walletAPI.getTransactions().catch(() => ({ success: false })),
+        walletAPI.getWithdrawals().catch(() => ({ success: false })),
       ]);
 
-      if (balanceRes.success) {
-        setWallet(balanceRes.data.wallet);
+      if (balanceRes.success && balanceRes.data) {
+        setWallet(balanceRes.data.wallet || { balance: 0, total_earned: 0, total_withdrawn: 0 });
       }
-      if (earningsRes.success) {
-        setEarnings(earningsRes.data);
+      if (earningsRes.success && earningsRes.data) {
+        // Map API response to expected format
+        setEarnings({
+          today_earnings: earningsRes.data.today || 0,
+          today_rides: earningsRes.data.total_rides_today || 0,
+          week_earnings: earningsRes.data.this_week || 0,
+          week_rides: earningsRes.data.total_rides_week || 0,
+          month_earnings: earningsRes.data.this_month || 0,
+          month_rides: earningsRes.data.total_rides_month || 0,
+        });
       }
-      if (transactionsRes.success) {
+      if (transactionsRes.success && transactionsRes.data) {
         setTransactions(transactionsRes.data.transactions || []);
       }
-      if (withdrawalsRes.success) {
+      if (withdrawalsRes.success && withdrawalsRes.data) {
         setWithdrawals(withdrawalsRes.data.withdrawals || []);
       }
     } catch (error) {

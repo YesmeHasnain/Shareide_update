@@ -4,13 +4,39 @@ import log from '../utils/logger';
 
 const AuthContext = createContext();
 
+// TODO: TESTING MODE - Set to false to restore normal auth flow
+const BYPASS_AUTH = true;
+const MOCK_USER = {
+  id: 1,
+  name: 'Test User',
+  phone: '+923001234567',
+  email: 'test@shareide.com',
+  gender: 'male',
+  avatar: null,
+  wallet_balance: 5000,
+  total_loyalty_points: 250,
+  available_loyalty_points: 200,
+  loyalty_tier: { name: 'Silver', badge_color: '#C0C0C0' },
+  created_at: '2024-01-01T00:00:00.000Z',
+};
+const MOCK_TOKEN = 'test-token-bypass-auth';
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStoredAuth();
+    if (BYPASS_AUTH) {
+      // Set mock data after a small delay to ensure context is ready
+      setTimeout(() => {
+        setUser(MOCK_USER);
+        setToken(MOCK_TOKEN);
+        setLoading(false);
+      }, 100);
+    } else {
+      loadStoredAuth();
+    }
   }, []);
 
   const loadStoredAuth = async () => {

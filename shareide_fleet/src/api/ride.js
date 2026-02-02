@@ -40,7 +40,21 @@ export const rideAPI = {
   },
 
   // Update driver status (online/offline)
-  updateDriverStatus: async (status) => {
-    return await client.post('/driver/status', { status });
+  updateDriverStatus: async (isOnline, lat = null, lng = null) => {
+    return await client.post('/driver/status', {
+      is_online: isOnline,
+      lat,
+      lng,
+    });
+  },
+
+  // Get driver stats (earnings, rides count, rating)
+  getDriverStats: async () => {
+    return await client.get('/driver/stats');
+  },
+
+  // Get driver profile
+  getDriverProfile: async () => {
+    return await client.get('/driver/profile');
   },
 };

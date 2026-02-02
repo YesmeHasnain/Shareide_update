@@ -26,7 +26,10 @@ const DashboardScreen = ({ navigation }) => {
   const [stats, setStats] = useState({
     today_earnings: 0,
     today_rides: 0,
-    rating: 0,
+    week_earnings: 0,
+    week_rides: 0,
+    total_rides: 0,
+    rating: 5.0,
   });
 
   useEffect(() => {
@@ -35,20 +38,41 @@ const DashboardScreen = ({ navigation }) => {
 
   const fetchDashboardData = async () => {
     try {
-      const [activeRideRes, availableRidesRes] = await Promise.all([
-        rideAPI.getActiveRide(),
-        rideAPI.getAvailableRides(),
+      setLoading(true);
+      const [activeRideRes, availableRidesRes, statsRes, profileRes] = await Promise.all([
+        rideAPI.getActiveRide().catch(() => ({ success: false })),
+        rideAPI.getAvailableRides().catch(() => ({ success: false })),
+        rideAPI.getDriverStats().catch(() => ({ success: false })),
+        rideAPI.getDriverProfile().catch(() => ({ success: false })),
       ]);
 
       if (activeRideRes.success) {
-        setActiveRide(activeRideRes.data.ride);
+        setActiveRide(activeRideRes.ride || null);
       }
 
       if (availableRidesRes.success) {
-        setAvailableRides(availableRidesRes.data.rides || []);
+        setAvailableRides(availableRidesRes.rides || []);
+      }
+
+      if (statsRes.success && statsRes.data) {
+        setStats({
+          today_earnings: statsRes.data.today_earnings || 0,
+          today_rides: statsRes.data.today_rides || 0,
+          week_earnings: statsRes.data.week_earnings || 0,
+          week_rides: statsRes.data.week_rides || 0,
+          total_rides: statsRes.data.total_rides || 0,
+          rating: statsRes.data.rating || 5.0,
+        });
+        setIsOnline(statsRes.data.is_online || false);
+      }
+
+      if (profileRes.success && profileRes.driver) {
+        setIsOnline(profileRes.driver.is_online || false);
       }
     } catch (error) {
       console.error('Fetch dashboard error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -60,12 +84,25 @@ const DashboardScreen = ({ navigation }) => {
 
   const toggleOnlineStatus = async (value) => {
     try {
-      const status = value ? 'online' : 'offline';
-      await rideAPI.updateDriverStatus(status);
-      setIsOnline(value);
+      // Get current location when going online
+      let lat = null;
+      let lng = null;
+
+      if (value) {
+        // TODO: Get actual location from device
+        // For now use default Lahore coordinates
+        lat = 31.5204;
+        lng = 74.3587;
+      }
+
+      const response = await rideAPI.updateDriverStatus(value, lat, lng);
+      if (response.success) {
+        setIsOnline(value);
+        Alert.alert('Status Updated', value ? 'You are now online' : 'You are now offline');
+      }
     } catch (error) {
       console.error('Toggle status error:', error);
-      Alert.alert('Error', 'Failed to update status');
+      Alert.alert('Error', error.response?.data?.message || 'Failed to update status');
     }
   };
 
@@ -226,6 +263,51 @@ const DashboardScreen = ({ navigation }) => {
             </Text>
           </View>
         )}
+
+        {/* Carpooling Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Carpooling 🚗👥
+          </Text>
+          <View style={[styles.carpoolBanner, { backgroundColor: '#6366F1' }]}>
+            <View style={styles.carpoolContent}>
+              <Text style={styles.carpoolTitle}>Share Your Ride</Text>
+              <Text style={styles.carpoolSubtitle}>
+                Post your route and earn extra by sharing seats
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.carpoolCreateBtn}
+              onPress={() => navigation.navigate('CreateSharedRide')}
+            >
+              <Text style={styles.carpoolCreateText}>Post Ride</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.carpoolActions}>
+            <TouchableOpacity
+              style={[styles.carpoolAction, { backgroundColor: colors.surface }]}
+              onPress={() => navigation.navigate('MySharedRides')}
+            >
+              <Text style={styles.carpoolActionIcon}>🚙</Text>
+              <Text style={[styles.carpoolActionLabel, { color: colors.text }]}>My Rides</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.carpoolAction, { backgroundColor: colors.surface }]}
+              onPress={() => navigation.navigate('SharedRideRequests')}
+            >
+              <Text style={styles.carpoolActionIcon}>📥</Text>
+              <Text style={[styles.carpoolActionLabel, { color: colors.text }]}>Requests</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.carpoolAction, { backgroundColor: colors.surface }]}
+              onPress={() => navigation.navigate('CreateSharedRide')}
+            >
+              <Text style={styles.carpoolActionIcon}>➕</Text>
+              <Text style={[styles.carpoolActionLabel, { color: colors.text }]}>New Ride</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -374,6 +456,54 @@ const styles = StyleSheet.create({
   },
   emptySubtitle: {
     fontSize: 14,
+  },
+  carpoolBanner: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+  },
+  carpoolContent: {
+    marginBottom: 15,
+  },
+  carpoolTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  carpoolSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+  },
+  carpoolCreateBtn: {
+    backgroundColor: '#fff',
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+  },
+  carpoolCreateText: {
+    color: '#6366F1',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  carpoolActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  carpoolAction: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 15,
+    borderRadius: 12,
+  },
+  carpoolActionIcon: {
+    fontSize: 28,
+    marginBottom: 8,
+  },
+  carpoolActionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 

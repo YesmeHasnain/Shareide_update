@@ -16,6 +16,8 @@ class ChatMessage extends Model
         'type',
         'message',
         'image_url',
+        'media_url',
+        'media_duration',
         'is_read',
         'read_at',
     ];

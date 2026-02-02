@@ -1,0 +1,17 @@
+# Explicitly ignore everything outside this directory
+**/../*
+
+# Node modules
+node_modules/
+
+# Build artifacts
+.expo/
+dist/
+web-build/
+android/
+ios/
+
+# Development files
+*.log
+.DS_Store
+*.tgz

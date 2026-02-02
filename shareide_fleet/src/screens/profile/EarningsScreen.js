@@ -33,28 +33,18 @@ const EarningsScreen = ({ navigation }) => {
         setDailyEarnings(response.data.daily_breakdown || []);
       }
     } catch (error) {
-      // Mock data
-      const mockEarnings = {
-        total: selectedPeriod === 'today' ? 2450 : selectedPeriod === 'week' ? 18500 : 72000,
-        rides: selectedPeriod === 'today' ? 8 : selectedPeriod === 'week' ? 52 : 215,
-        tips: selectedPeriod === 'today' ? 250 : selectedPeriod === 'week' ? 1800 : 7200,
-        average_per_ride: selectedPeriod === 'today' ? 306 : selectedPeriod === 'week' ? 355 : 335,
-        commission: selectedPeriod === 'today' ? 490 : selectedPeriod === 'week' ? 3700 : 14400,
-        net_earnings: selectedPeriod === 'today' ? 1960 : selectedPeriod === 'week' ? 14800 : 57600,
-        hours_online: selectedPeriod === 'today' ? 6.5 : selectedPeriod === 'week' ? 42 : 168,
-      };
-      setEarnings(mockEarnings);
-
-      const mockDaily = [
-        { day: 'Mon', earnings: 2800, rides: 9 },
-        { day: 'Tue', earnings: 3200, rides: 10 },
-        { day: 'Wed', earnings: 2100, rides: 7 },
-        { day: 'Thu', earnings: 2900, rides: 8 },
-        { day: 'Fri', earnings: 3500, rides: 11 },
-        { day: 'Sat', earnings: 2200, rides: 6 },
-        { day: 'Sun', earnings: 1800, rides: 5 },
-      ];
-      setDailyEarnings(mockDaily);
+      console.log('Error fetching earnings:', error);
+      // Show empty state - real data only
+      setEarnings({
+        total: 0,
+        rides: 0,
+        tips: 0,
+        average_per_ride: 0,
+        commission: 0,
+        net_earnings: 0,
+        hours_online: 0,
+      });
+      setDailyEarnings([]);
     } finally {
       setRefreshing(false);
     }

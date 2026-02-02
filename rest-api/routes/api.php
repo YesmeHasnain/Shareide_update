@@ -18,6 +18,10 @@ use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\SavedPlacesController;
 use App\Http\Controllers\Api\RiderWalletController;
 use App\Http\Controllers\Api\ScheduledRideController;
+use App\Http\Controllers\Api\SharedRideController;
+use App\Http\Controllers\Api\PushNotificationController;
+use App\Http\Controllers\Api\RideBidController;
+use App\Http\Controllers\Api\LoyaltyController;
 use App\Http\Controllers\Admin\ChatManagementController;
 
 // Health check
@@ -92,6 +96,37 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ============================================
+    // SHARED RIDES / CARPOOLING
+    // ============================================
+    Route::prefix('shared-rides')->group(function () {
+        // Search & Browse
+        Route::get('/search', [SharedRideController::class, 'search']);
+        Route::get('/my-rides', [SharedRideController::class, 'myRides']); // Driver's posted rides
+        Route::get('/my-bookings', [SharedRideController::class, 'myBookings']); // Passenger's bookings
+        Route::get('/pending-requests', [SharedRideController::class, 'pendingRequests']); // Driver's pending requests
+        Route::get('/{id}', [SharedRideController::class, 'show']);
+
+        // Driver Actions
+        Route::post('/create', [SharedRideController::class, 'create']);
+        Route::post('/{id}/start', [SharedRideController::class, 'startRide']);
+        Route::post('/{id}/complete', [SharedRideController::class, 'completeRide']);
+        Route::post('/{id}/cancel', [SharedRideController::class, 'cancelRide']);
+
+        // Passenger Actions
+        Route::post('/{id}/book', [SharedRideController::class, 'book']);
+        Route::post('/bookings/{bookingId}/confirm', [SharedRideController::class, 'confirmBooking']);
+        Route::post('/bookings/{bookingId}/cancel', [SharedRideController::class, 'cancelBooking']);
+        Route::post('/bookings/{bookingId}/rate', [SharedRideController::class, 'rateDriver']);
+
+        // Driver Booking Management (Swipe Accept/Reject)
+        Route::post('/bookings/{bookingId}/accept', [SharedRideController::class, 'acceptBooking']);
+        Route::post('/bookings/{bookingId}/reject', [SharedRideController::class, 'rejectBooking']);
+        Route::post('/bookings/{bookingId}/pickup', [SharedRideController::class, 'pickupPassenger']);
+        Route::post('/bookings/{bookingId}/dropoff', [SharedRideController::class, 'dropoffPassenger']);
+        Route::post('/bookings/{bookingId}/rate-passenger', [SharedRideController::class, 'ratePassenger']);
+    });
+
+    // ============================================
     // SHAREIDE PLUS (Driver App) Routes
     // ============================================
 
@@ -126,7 +161,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ============================================
-    // CHAT SYSTEM (Both Apps)
+    // CHAT SYSTEM (Both Apps) - Enhanced
     // ============================================
     Route::prefix('chat')->group(function () {
         Route::get('/my-chats', [ChatController::class, 'getMyChats']);
@@ -134,6 +169,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{chatId}/messages', [ChatController::class, 'getMessages']);
         Route::post('/{chatId}/send', [ChatController::class, 'sendMessage']);
         Route::post('/{chatId}/send-image', [ChatController::class, 'sendImage']);
+        Route::post('/{chatId}/send-voice', [ChatController::class, 'sendVoice']);
+        Route::post('/{chatId}/mark-read', [ChatController::class, 'markAsRead']);
     });
 
     // ============================================
@@ -200,11 +237,58 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ============================================
+    // PUSH NOTIFICATIONS (Enhanced)
+    // ============================================
+    Route::prefix('push-notifications')->group(function () {
+        Route::post('/register-device', [PushNotificationController::class, 'registerDevice']);
+        Route::post('/unregister-device', [PushNotificationController::class, 'unregisterDevice']);
+        Route::get('/', [PushNotificationController::class, 'getNotifications']);
+        Route::get('/unread-count', [PushNotificationController::class, 'getUnreadCount']);
+        Route::post('/{id}/read', [PushNotificationController::class, 'markAsRead']);
+        Route::post('/read-all', [PushNotificationController::class, 'markAllAsRead']);
+    });
+
+    // ============================================
+    // RIDE BIDDING SYSTEM
+    // ============================================
+    Route::prefix('ride-bids')->group(function () {
+        // Driver actions
+        Route::post('/rides/{rideRequestId}/bid', [RideBidController::class, 'placeBid']);
+        Route::get('/my-bids', [RideBidController::class, 'getMyBids']);
+        Route::post('/{bidId}/withdraw', [RideBidController::class, 'withdrawBid']);
+
+        // Passenger actions
+        Route::get('/rides/{rideRequestId}/bids', [RideBidController::class, 'getBidsForRide']);
+        Route::post('/{bidId}/accept', [RideBidController::class, 'acceptBid']);
+        Route::post('/{bidId}/reject', [RideBidController::class, 'rejectBid']);
+    });
+
+    // ============================================
+    // LOYALTY & REWARDS PROGRAM
+    // ============================================
+    Route::prefix('loyalty')->group(function () {
+        // Dashboard & Points
+        Route::get('/dashboard', [LoyaltyController::class, 'getDashboard']);
+        Route::get('/tiers', [LoyaltyController::class, 'getTiers']);
+        Route::get('/points-history', [LoyaltyController::class, 'getPointsHistory']);
+
+        // Rewards
+        Route::get('/rewards', [LoyaltyController::class, 'getRewards']);
+        Route::post('/rewards/{rewardId}/redeem', [LoyaltyController::class, 'redeemReward']);
+        Route::get('/my-redemptions', [LoyaltyController::class, 'getMyRedemptions']);
+
+        // Achievements
+        Route::get('/achievements', [LoyaltyController::class, 'getAchievements']);
+        Route::get('/my-achievements', [LoyaltyController::class, 'getMyAchievements']);
+    });
+
+    // ============================================
     // EXISTING Driver routes (Shareide Passenger App)
     // ============================================
     Route::prefix('driver')->group(function () {
         Route::post('/register', [DriverController::class, 'register']);
         Route::get('/profile', [DriverController::class, 'profile']);
+        Route::get('/stats', [DriverController::class, 'stats']);
         Route::post('/status', [DriverController::class, 'updateStatus']);
         Route::post('/location', [DriverController::class, 'updateLocation']);
         Route::get('/rides', [DriverController::class, 'getRides']);
@@ -218,11 +302,22 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/create', [RideController::class, 'create']);
         Route::get('/my', [RideController::class, 'myRides']);
         Route::get('/available', [RideController::class, 'getAvailableRides']);
+        Route::get('/vehicle-types', [RideController::class, 'getVehicleTypes']);
         Route::post('/book', [RideController::class, 'bookRide']);
         Route::get('/active', [RideController::class, 'getActiveRide']);
         Route::get('/history', [RideController::class, 'getRideHistory']);
+
+        // ============================================
+        // BIDDING / UPSALE FEATURE (must be before {id} routes)
+        // ============================================
+        Route::get('/search-with-bidding', [RideController::class, 'searchRidesWithBidding']);
+        Route::post('/book-with-bid', [RideController::class, 'createRideWithBid']);
+
+        // Wildcard routes must come LAST
         Route::get('/{id}', [RideController::class, 'show']);
         Route::post('/{id}/cancel', [RideController::class, 'cancel']);
+        Route::get('/{id}/bid-options', [RideController::class, 'getBidOptions']);
+        Route::post('/{id}/increase-bid', [RideController::class, 'increaseBid']);
     });
 });
 

@@ -314,6 +314,150 @@ class ChatController extends Controller
     }
 
     /**
+     * Send voice message
+     */
+    public function sendVoice(Request $request, $chatId)
+    {
+        $validator = Validator::make($request->all(), [
+            'voice' => 'required|file|mimes:mp3,wav,m4a,aac,ogg|max:10240',
+            'duration' => 'nullable|integer|min:1|max:300',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $user = $request->user();
+
+            $chat = Chat::findOrFail($chatId);
+
+            // Check if chat is locked
+            if ($chat->status === 'locked') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This chat is no longer active'
+                ], 403);
+            }
+
+            // Check if user is part of this chat
+            $isRider = $chat->rider_id === $user->id;
+            $isDriver = $user->driver && $chat->driver_id === $user->driver->id;
+
+            if (!$isRider && !$isDriver) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access to this chat'
+                ], 403);
+            }
+
+            // Upload voice file
+            $voicePath = $request->file('voice')->store('chat-voice/' . $chatId, 'public');
+            $voiceUrl = Storage::url($voicePath);
+
+            // Create message
+            $message = ChatMessage::create([
+                'chat_id' => $chatId,
+                'sender_id' => $user->id,
+                'sender_type' => $isRider ? 'rider' : 'driver',
+                'type' => 'voice',
+                'media_url' => $voiceUrl,
+                'media_duration' => $request->duration,
+            ]);
+
+            // Update chat last message
+            $chat->last_message = 'Voice message';
+            $chat->last_message_at = now();
+            $chat->last_message_by = $user->id;
+
+            // Increment unread count for receiver
+            if ($isRider) {
+                $chat->unread_count_driver += 1;
+            } else {
+                $chat->unread_count_rider += 1;
+            }
+
+            $chat->save();
+
+            $message->load('sender');
+
+            // Broadcast real-time message
+            broadcast(new NewChatMessage($message))->toOthers();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Voice message sent successfully',
+                'data' => [
+                    'message' => $message
+                ]
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send voice message',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Mark messages as read
+     */
+    public function markAsRead(Request $request, $chatId)
+    {
+        try {
+            $user = $request->user();
+
+            $chat = Chat::findOrFail($chatId);
+
+            // Check if user is part of this chat
+            $isRider = $chat->rider_id === $user->id;
+            $isDriver = $user->driver && $chat->driver_id === $user->driver->id;
+
+            if (!$isRider && !$isDriver) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access to this chat'
+                ], 403);
+            }
+
+            // Mark all messages from other user as read
+            $updated = ChatMessage::where('chat_id', $chatId)
+                ->where('sender_id', '!=', $user->id)
+                ->where('is_read', false)
+                ->update([
+                    'is_read' => true,
+                    'read_at' => now()
+                ]);
+
+            // Reset unread count
+            if ($isRider) {
+                $chat->unread_count_rider = 0;
+            } else {
+                $chat->unread_count_driver = 0;
+            }
+            $chat->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Messages marked as read',
+                'data' => ['updated_count' => $updated]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to mark messages as read',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get all active chats for user
      */
     public function getMyChats(Request $request)

@@ -6,14 +6,20 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "SHAREIDE needs your location to find nearby drivers and show your position on the map.",
+        "NSLocationAlwaysUsageDescription": "SHAREIDE needs your location to track your ride in the background."
+      },
+      "config": {
+        "googleMapsApiKey": "AIzaSyC3D7EgF9_N8jzEYubmJr0uIGbyzGdjOqU"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +27,17 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.shareide_official.shareide"
+      "package": "com.shareide_official.shareide",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyC3D7EgF9_N8jzEYubmJr0uIGbyzGdjOqU"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,7 +45,17 @@
     "extra": {
       "eas": {
         "projectId": "a7e38c35-0209-4bf7-a0fb-25b3b526c003"
-      }
-    }
+      },
+      "googleMapsApiKey": "AIzaSyC3D7EgF9_N8jzEYubmJr0uIGbyzGdjOqU"
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "SHAREIDE needs your location to find nearby drivers and track your ride."
+        }
+      ]
+    ]
   }
 }

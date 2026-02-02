@@ -1,9 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Switch, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  Switch,
+  Alert,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
+import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
 const NotificationsScreen = ({ navigation }) => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [notifications, setNotifications] = useState([]);
   const [settings, setSettings] = useState({
     push: true,
@@ -15,175 +29,412 @@ const NotificationsScreen = ({ navigation }) => {
   });
 
   useEffect(() => {
-    // Mock notifications
-    setNotifications([
-      { id: 1, title: 'Ride Completed', message: 'Your ride to Clifton has been completed. Total fare: Rs. 350', time: '2 hours ago', read: false, type: 'ride' },
-      { id: 2, title: 'Payment Received', message: 'Rs. 1000 has been added to your wallet', time: '1 day ago', read: true, type: 'payment' },
-      { id: 3, title: 'Special Offer', message: 'Get 20% off on your next 3 rides! Use code RIDE20', time: '2 days ago', read: true, type: 'promo' },
-      { id: 4, title: 'Rate Your Ride', message: 'How was your ride with Ahmed Khan?', time: '3 days ago', read: true, type: 'ride' },
-    ]);
+    // Notifications will be fetched from API
+    // Empty by default - real data only
+    setNotifications([]);
   }, []);
 
   const toggleSetting = (key) => {
-    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const markAsRead = (id) => {
-    setNotifications(prev =>
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
   };
 
   const clearAll = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Alert.alert('Clear All', 'Are you sure you want to clear all notifications?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Clear', style: 'destructive', onPress: () => setNotifications([]) },
+      {
+        text: 'Clear',
+        style: 'destructive',
+        onPress: () => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          setNotifications([]);
+        },
+      },
     ]);
   };
 
   const getIcon = (type) => {
     switch (type) {
-      case 'ride': return '🚗';
-      case 'payment': return '💰';
-      case 'promo': return '🎉';
-      default: return '🔔';
+      case 'ride':
+        return { name: 'car', color: colors.primary };
+      case 'payment':
+        return { name: 'wallet', color: colors.success };
+      case 'promo':
+        return { name: 'gift', color: colors.warning };
+      default:
+        return { name: 'notifications', color: colors.primary };
     }
   };
 
-  const renderNotification = ({ item }) => (
-    <TouchableOpacity
-      style={[
-        styles.notificationCard,
-        { backgroundColor: item.read ? colors.surface : colors.primary + '20' }
-      ]}
-      onPress={() => markAsRead(item.id)}
+  const settingsItems = [
+    { key: 'push', label: 'Push Notifications', icon: 'notifications' },
+    { key: 'email', label: 'Email Notifications', icon: 'mail' },
+    { key: 'sms', label: 'SMS Notifications', icon: 'chatbubble' },
+    { key: 'rideUpdates', label: 'Ride Updates', icon: 'car' },
+    { key: 'payments', label: 'Payment Alerts', icon: 'card' },
+    { key: 'promotions', label: 'Promotions & Offers', icon: 'gift' },
+  ];
+
+  const renderNotification = ({ item, index }) => {
+    const iconInfo = getIcon(item.type);
+
+    return (
+      <View >
+        <TouchableOpacity
+          style={[
+            styles.notificationCard,
+            { backgroundColor: item.read ? colors.surface : colors.primary + '15' },
+            shadows.sm,
+          ]}
+          onPress={() => markAsRead(item.id)}
+          activeOpacity={0.8}
+        >
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: iconInfo.color + '20' },
+            ]}
+          >
+            <Ionicons name={iconInfo.name} size={22} color={iconInfo.color} />
+          </View>
+          <View style={styles.notificationContent}>
+            <View style={styles.notificationHeader}>
+              <Text
+                style={[
+                  styles.notificationTitle,
+                  { color: colors.text },
+                  !item.read && { fontWeight: '700' },
+                ]}
+              >
+                {item.title}
+              </Text>
+              {!item.read && (
+                <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />
+              )}
+            </View>
+            <Text
+              style={[styles.notificationMessage, { color: colors.textSecondary }]}
+              numberOfLines={2}
+            >
+              {item.message}
+            </Text>
+            <Text style={[styles.notificationTime, { color: colors.textTertiary }]}>
+              {item.time}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  const ListHeader = () => (
+    <View
+            style={[styles.settingsSection, { backgroundColor: colors.surface }, shadows.sm]}
     >
-      <View style={[styles.iconContainer, { backgroundColor: colors.surface }]}>
-        <Text style={styles.icon}>{getIcon(item.type)}</Text>
-      </View>
-      <View style={styles.notificationContent}>
-        <View style={styles.notificationHeader}>
-          <Text style={[styles.notificationTitle, { color: colors.text }]}>{item.title}</Text>
-          {!item.read && <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />}
+      <View style={styles.settingsHeader}>
+        <View style={[styles.settingsIconContainer, { backgroundColor: colors.primary + '15' }]}>
+          <Ionicons name="settings" size={18} color={colors.primary} />
         </View>
-        <Text style={[styles.notificationMessage, { color: colors.textSecondary }]} numberOfLines={2}>
-          {item.message}
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Notification Settings
         </Text>
-        <Text style={[styles.notificationTime, { color: colors.textSecondary }]}>{item.time}</Text>
       </View>
-    </TouchableOpacity>
+      {settingsItems.map((item, index) => (
+        <View
+          key={item.key}
+          style={[
+            styles.settingItem,
+            index !== settingsItems.length - 1 && {
+              borderBottomWidth: 1,
+              borderBottomColor: colors.border,
+            },
+          ]}
+        >
+          <View style={styles.settingLeft}>
+            <View style={[styles.settingIconContainer, { backgroundColor: colors.primary + '10' }]}>
+              <Ionicons name={item.icon} size={16} color={colors.primary} />
+            </View>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>
+              {item.label}
+            </Text>
+          </View>
+          <Switch
+            value={settings[item.key]}
+            onValueChange={() => toggleSetting(item.key)}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor="#fff"
+            ios_backgroundColor={colors.border}
+          />
+        </View>
+      ))}
+    </View>
   );
 
-  const settingsItems = [
-    { key: 'push', label: 'Push Notifications', icon: '📱' },
-    { key: 'email', label: 'Email Notifications', icon: '📧' },
-    { key: 'sms', label: 'SMS Notifications', icon: '💬' },
-    { key: 'rideUpdates', label: 'Ride Updates', icon: '🚗' },
-    { key: 'payments', label: 'Payment Alerts', icon: '💳' },
-    { key: 'promotions', label: 'Promotions & Offers', icon: '🎁' },
-  ];
+  const ListEmpty = () => (
+    <View
+            style={styles.emptyState}
+    >
+      <View style={[styles.emptyIconContainer, { backgroundColor: colors.primary + '15' }]}>
+        <Ionicons name="notifications-off" size={48} color={colors.primary} />
+      </View>
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>
+        No Notifications
+      </Text>
+      <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+        When you get notifications, they'll appear here
+      </Text>
+    </View>
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
+      {/* Header */}
+      <LinearGradient
+        colors={colors.gradients?.premium || ['#FFD700', '#FFA500']}
+        style={[styles.header, { paddingTop: insets.top + spacing.md }]}
+      >
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            navigation.goBack();
+          }}
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
-        <TouchableOpacity onPress={clearAll}>
-          <Text style={styles.clearText}>Clear</Text>
+        <TouchableOpacity
+          style={styles.clearButton}
+          onPress={clearAll}
+          disabled={notifications.length === 0}
+        >
+          <Text
+            style={[
+              styles.clearText,
+              notifications.length === 0 && { opacity: 0.5 },
+            ]}
+          >
+            Clear
+          </Text>
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
 
       <FlatList
         data={notifications}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={(item) => item.id.toString()}
         renderItem={renderNotification}
         contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
         ListHeaderComponent={
-          <View style={[styles.settingsSection, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Notification Settings</Text>
-            {settingsItems.map((item) => (
-              <View key={item.key} style={[styles.settingItem, { borderBottomColor: colors.border }]}>
-                <View style={styles.settingLeft}>
-                  <Text style={styles.settingIcon}>{item.icon}</Text>
-                  <Text style={[styles.settingLabel, { color: colors.text }]}>{item.label}</Text>
+          <>
+            <ListHeader />
+            {notifications.length > 0 && (
+              <View
+                                style={styles.notificationsHeader}
+              >
+                <View style={[styles.settingsIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                  <Ionicons name="mail" size={16} color={colors.primary} />
                 </View>
-                <Switch
-                  value={settings[item.key]}
-                  onValueChange={() => toggleSetting(item.key)}
-                  trackColor={{ false: colors.border, true: colors.primary }}
-                  thumbColor="#fff"
-                />
+                <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+                  RECENT NOTIFICATIONS
+                </Text>
+                <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.badgeText}>
+                    {notifications.filter((n) => !n.read).length}
+                  </Text>
+                </View>
               </View>
-            ))}
-          </View>
+            )}
+          </>
         }
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🔔</Text>
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No notifications yet</Text>
-          </View>
-        }
+        ListEmptyComponent={<ListEmpty />}
+        ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
-  backIcon: { fontSize: 28, color: '#000' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#000' },
-  clearText: { fontSize: 14, fontWeight: '600', color: '#000' },
-  listContent: { padding: 16 },
-  settingsSection: { borderRadius: 16, padding: 16, marginBottom: 20 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 16 },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: typography.h4,
+    fontWeight: '700',
+    color: '#000',
+  },
+  clearButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  clearText: {
+    fontSize: typography.body,
+    fontWeight: '600',
+    color: '#000',
+  },
+  listContent: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xxxl,
+  },
+  settingsSection: {
+    borderRadius: borderRadius.xl,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  settingsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  settingsIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: typography.body,
+    fontWeight: '700',
+  },
   settingItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingVertical: spacing.sm,
   },
-  settingLeft: { flexDirection: 'row', alignItems: 'center' },
-  settingIcon: { fontSize: 20, marginRight: 12 },
-  settingLabel: { fontSize: 14 },
-  notificationCard: {
+  settingLeft: {
     flexDirection: 'row',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
+    alignItems: 'center',
+    gap: spacing.md,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  settingIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
-  icon: { fontSize: 24 },
-  notificationContent: { flex: 1 },
+  settingLabel: {
+    fontSize: typography.bodySmall,
+    fontWeight: '500',
+  },
+  notificationsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.xs,
+  },
+  sectionLabel: {
+    fontSize: typography.caption,
+    fontWeight: '700',
+    letterSpacing: 1,
+    flex: 1,
+  },
+  badge: {
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+  },
+  badgeText: {
+    fontSize: typography.caption,
+    fontWeight: '700',
+    color: '#000',
+  },
+  notificationCard: {
+    flexDirection: 'row',
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notificationContent: {
+    flex: 1,
+  },
   notificationHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
   },
-  notificationTitle: { fontSize: 14, fontWeight: 'bold', flex: 1 },
-  unreadDot: { width: 8, height: 8, borderRadius: 4 },
-  notificationMessage: { fontSize: 13, marginBottom: 4 },
-  notificationTime: { fontSize: 11 },
-  emptyState: { alignItems: 'center', paddingVertical: 40 },
-  emptyIcon: { fontSize: 60, marginBottom: 12 },
-  emptyText: { fontSize: 16 },
+  notificationTitle: {
+    fontSize: typography.bodySmall,
+    fontWeight: '600',
+    flex: 1,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: spacing.sm,
+  },
+  notificationMessage: {
+    fontSize: typography.caption,
+    lineHeight: 18,
+    marginBottom: 4,
+  },
+  notificationTime: {
+    fontSize: typography.caption,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxxl,
+  },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  emptyTitle: {
+    fontSize: typography.h4,
+    fontWeight: '700',
+    marginBottom: spacing.sm,
+  },
+  emptyText: {
+    fontSize: typography.body,
+    textAlign: 'center',
+  },
 });
 
 export default NotificationsScreen;
