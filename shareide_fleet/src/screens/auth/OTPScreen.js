@@ -3,103 +3,130 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TextInput,
-  Alert,
   TouchableOpacity,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Animated,
+  StatusBar,
+  ActivityIndicator,
 } from 'react-native';
-import { useTheme } from '../../context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
-import Button from '../../components/Button';
 import { authAPI } from '../../api/auth';
 
+const PRIMARY_COLOR = '#FCC014';
+const OTP_LENGTH = 6;
+
 const OTPScreen = ({ route, navigation }) => {
-  const { colors } = useTheme();
   const { login } = useAuth();
-  const { phone } = route.params;
+  const insets = useSafeAreaInsets();
+  const phone = route?.params?.phone || '';
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
-  const [timer, setTimer] = useState(60);
+  const [resending, setResending] = useState(false);
+  const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(0);
 
-  const inputRefs = [
-    useRef(null),
-    useRef(null),
-    useRef(null),
-    useRef(null),
-    useRef(null),
-    useRef(null),
-  ];
+  const inputRefs = useRef([]);
+  const shakeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Focus first input on mount
-    inputRefs[0].current?.focus();
-  }, []);
-
-  useEffect(() => {
-    // Timer countdown
-    if (timer > 0) {
-      const interval = setInterval(() => {
-        setTimer((prev) => prev - 1);
-      }, 1000);
-      return () => clearInterval(interval);
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
     } else {
       setCanResend(true);
     }
-  }, [timer]);
+  }, [countdown]);
+
+  const triggerShake = () => {
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+    ]).start();
+  };
 
   const handleOtpChange = (value, index) => {
-    // Only allow numbers
-    if (!/^\d*$/.test(value)) return;
-
     const newOtp = [...otp];
-    newOtp[index] = value;
+    newOtp[index] = value.replace(/[^0-9]/g, '');
     setOtp(newOtp);
 
-    // Auto focus next input
-    if (value && index < 5) {
-      inputRefs[index + 1].current?.focus();
+    if (value && index < OTP_LENGTH - 1) {
+      inputRefs.current[index + 1]?.focus();
     }
 
-    // Auto submit when all filled
-    if (newOtp.every((digit) => digit !== '') && value) {
-      handleVerifyOTP(newOtp.join(''));
+    if (newOtp.every(digit => digit !== '') && newOtp.join('').length === OTP_LENGTH) {
+      handleVerify(newOtp.join(''));
     }
   };
 
   const handleKeyPress = (e, index) => {
-    // Handle backspace
     if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs[index - 1].current?.focus();
+      inputRefs.current[index - 1]?.focus();
     }
   };
 
-  const handleVerifyOTP = async (otpCode = otp.join('')) => {
-    if (otpCode.length !== 6) {
-      Alert.alert('Error', 'Please enter complete OTP');
+  const handleVerify = async (otpCode) => {
+    if (!otpCode || otpCode.length !== OTP_LENGTH) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      triggerShake();
       return;
     }
 
-    setLoading(true);
     try {
+      setLoading(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const response = await authAPI.verifyOTP(phone, otpCode);
 
       if (response.success) {
-        const { user, token } = response.data;
-        await login(user, token);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        // Navigate based on user status
-        // Will be handled by AppNavigator
+        if (response.is_new_user) {
+          navigation.reset({
+            index: 0,
+            routes: [{
+              name: 'PersonalInfo',
+              params: {
+                phone,
+                verificationToken: response.verification_token,
+                isNewUser: true
+              }
+            }],
+          });
+          return;
+        }
+
+        if (response.needs_profile_setup || !response.user?.driver) {
+          const { user, token } = response;
+          await login(user, token);
+          navigation.reset({
+            index: 0,
+            routes: [{
+              name: 'PersonalInfo',
+              params: { phone, isNewUser: false }
+            }],
+          });
+          return;
+        }
+
+        const { user, token } = response;
+        await login(user, token);
       }
     } catch (error) {
-      console.error('Verify OTP error:', error);
-      Alert.alert(
-        'Error',
-        error.response?.data?.message || 'Invalid OTP. Please try again.'
-      );
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      triggerShake();
       setOtp(['', '', '', '', '', '']);
-      inputRefs[0].current?.focus();
+      inputRefs.current[0]?.focus();
+      const message = error.response?.data?.message || 'Invalid OTP';
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }
@@ -108,155 +135,236 @@ const OTPScreen = ({ route, navigation }) => {
   const handleResendOTP = async () => {
     if (!canResend) return;
 
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
     try {
+      setResending(true);
       await authAPI.sendOTP(phone);
-      Alert.alert('Success', 'OTP sent successfully!');
-      setTimer(60);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('Sent!', 'New code sent via WhatsApp');
+      setCountdown(60);
       setCanResend(false);
       setOtp(['', '', '', '', '', '']);
-      inputRefs[0].current?.focus();
+      inputRefs.current[0]?.focus();
     } catch (error) {
-      Alert.alert('Error', 'Failed to resend OTP');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Error', 'Failed to resend code');
+    } finally {
+      setResending(false);
     }
   };
 
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}s`;
+  };
+
+  const isComplete = otp.every(digit => digit !== '');
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.content}>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>
-            Verify Phone Number 📱
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Enter the 6-digit code sent to
-          </Text>
-          <Text style={[styles.phone, { color: colors.primary }]}>
-            +92 {phone}
-          </Text>
+        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={20} color="#000" />
+          </TouchableOpacity>
         </View>
 
-        {/* OTP Inputs */}
-        <View style={styles.otpContainer}>
-          {otp.map((digit, index) => (
-            <TextInput
-              key={index}
-              ref={inputRefs[index]}
-              style={[
-                styles.otpInput,
-                {
-                  backgroundColor: colors.surface,
-                  color: colors.text,
-                  borderColor: digit ? colors.primary : colors.border,
-                },
-              ]}
-              value={digit}
-              onChangeText={(value) => handleOtpChange(value, index)}
-              onKeyPress={(e) => handleKeyPress(e, index)}
-              keyboardType="number-pad"
-              maxLength={1}
-              selectTextOnFocus
-            />
-          ))}
-        </View>
+        {/* Content */}
+        <View style={styles.content}>
+          {/* Title */}
+          <Text style={styles.title}>We sent you a WhatsApp</Text>
+          <Text style={styles.subtitle}>
+            Please enter the code we just{'\n'}sent to +92 {phone}
+          </Text>
 
-        {/* Timer */}
-        <View style={styles.timerContainer}>
-          {canResend ? (
-            <TouchableOpacity onPress={handleResendOTP}>
-              <Text style={[styles.resendText, { color: colors.primary }]}>
-                Resend OTP
+          {/* OTP Inputs - Larger */}
+          <Animated.View style={[styles.otpSection, { transform: [{ translateX: shakeAnim }] }]}>
+            <View style={styles.otpContainer}>
+              {otp.map((digit, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.otpBox,
+                    digit && styles.otpBoxFilled,
+                    focusedIndex === index && !digit && styles.otpBoxActive,
+                  ]}
+                >
+                  <TextInput
+                    ref={(ref) => (inputRefs.current[index] = ref)}
+                    style={styles.otpInput}
+                    value={digit}
+                    onChangeText={(value) => handleOtpChange(value, index)}
+                    onKeyPress={(e) => handleKeyPress(e, index)}
+                    onFocus={() => setFocusedIndex(index)}
+                    keyboardType="number-pad"
+                    maxLength={1}
+                    selectTextOnFocus
+                    editable={!loading}
+                    autoFocus={index === 0}
+                  />
+                </View>
+              ))}
+            </View>
+          </Animated.View>
+
+          {/* Timer / Resend */}
+          <View style={styles.resendSection}>
+            {!canResend ? (
+              <Text style={styles.timerText}>
+                Resend code in {formatTime(countdown)}
               </Text>
-            </TouchableOpacity>
-          ) : (
-            <Text style={[styles.timerText, { color: colors.textSecondary }]}>
-              Resend OTP in {timer}s
-            </Text>
-          )}
+            ) : (
+              <TouchableOpacity onPress={handleResendOTP} disabled={resending}>
+                <Text style={styles.resendText}>
+                  {resending ? 'Sending...' : 'Resend code'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
-        {/* Verify Button */}
-        <Button
-          title="Verify & Continue"
-          onPress={() => handleVerifyOTP()}
-          loading={loading}
-          style={styles.button}
-        />
-
-        {/* Change Number */}
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.changeNumber}
-        >
-          <Text style={[styles.changeNumberText, { color: colors.textSecondary }]}>
-            Wrong number? Change
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+        {/* Bottom Button */}
+        <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 24 }]}>
+          <TouchableOpacity
+            style={[
+              styles.verifyButton,
+              {
+                backgroundColor: isComplete ? PRIMARY_COLOR : '#F3F4F6',
+                shadowOpacity: isComplete ? 0.15 : 0,
+              },
+            ]}
+            onPress={() => handleVerify(otp.join(''))}
+            disabled={!isComplete || loading}
+            activeOpacity={0.8}
+          >
+            {loading ? (
+              <ActivityIndicator color="#000" />
+            ) : (
+              <Text style={[
+                styles.verifyText,
+                { color: isComplete ? '#000' : '#9CA3AF' }
+              ]}>
+                Verify code
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 12,
   },
   subtitle: {
-    fontSize: 16,
-    marginBottom: 4,
+    fontSize: 15,
+    color: '#6B7280',
+    lineHeight: 22,
+    marginBottom: 40,
   },
-  phone: {
-    fontSize: 18,
-    fontWeight: '600',
+  otpSection: {
+    marginBottom: 24,
   },
   otpContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    gap: 10,
+  },
+  // Larger OTP boxes
+  otpBox: {
+    flex: 1,
+    height: 60,
+    borderRadius: 14,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  otpBoxFilled: {
+    backgroundColor: '#FFF',
+    borderWidth: 2,
+    borderColor: PRIMARY_COLOR,
+  },
+  otpBoxActive: {
+    borderWidth: 2,
+    borderColor: '#1A1A2E',
+    backgroundColor: '#FFF',
   },
   otpInput: {
-    width: 50,
-    height: 56,
-    borderRadius: 12,
-    borderWidth: 2,
-    textAlign: 'center',
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    color: '#000',
+    textAlign: 'center',
+    width: '100%',
+    height: '100%',
   },
-  timerContainer: {
+  resendSection: {
     alignItems: 'center',
-    marginBottom: 32,
   },
   timerText: {
     fontSize: 14,
+    fontWeight: '500',
+    color: '#10B981',
   },
   resendText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
+    color: PRIMARY_COLOR,
   },
-  button: {
-    marginTop: 8,
+  bottomSection: {
+    paddingHorizontal: 24,
   },
-  changeNumber: {
+  verifyButton: {
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 4,
   },
-  changeNumberText: {
-    fontSize: 14,
+  verifyText: {
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
 

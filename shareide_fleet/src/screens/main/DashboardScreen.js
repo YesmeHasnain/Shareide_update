@@ -1,509 +1,605 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
-  ScrollView,
   TouchableOpacity,
-  RefreshControl,
-  Switch,
   Alert,
+  StatusBar,
+  Animated,
+  Image,
 } from 'react-native';
-import { useTheme } from '../../context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { WebView } from 'react-native-webview';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { rideAPI } from '../../api/ride';
+import locationService from '../../utils/locationService';
+import rideRequestService from '../../utils/rideRequestService';
+
+const PRIMARY_COLOR = '#FCC014';
 
 const DashboardScreen = ({ navigation }) => {
-  const { colors } = useTheme();
   const { user } = useAuth();
-  
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const insets = useSafeAreaInsets();
+
   const [isOnline, setIsOnline] = useState(false);
-  const [activeRide, setActiveRide] = useState(null);
-  const [availableRides, setAvailableRides] = useState([]);
-  const [stats, setStats] = useState({
-    today_earnings: 0,
-    today_rides: 0,
-    week_earnings: 0,
-    week_rides: 0,
-    total_rides: 0,
-    rating: 5.0,
-  });
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [mapKey, setMapKey] = useState(0);
+  const [stats, setStats] = useState({ today_earnings: 0, today_rides: 0, rating: 5.0 });
+
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const goButtonScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    fetchDashboardData();
+    initializeLocation();
+    fetchData();
   }, []);
 
-  const fetchDashboardData = async () => {
+  useEffect(() => {
+    if (isOnline) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.4, duration: 1200, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
+        ])
+      );
+      pulse.start();
+
+      locationService.startTracking((loc) => {
+        setCurrentLocation(loc);
+        setMapKey(k => k + 1);
+      });
+
+      rideRequestService.start({
+        onNewRideRequest: (requests) => {
+          if (requests.length > 0) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Alert.alert(
+              'New Ride Request!',
+              `${requests[0].pickup_location} → ${requests[0].dropoff_location}`,
+              [
+                { text: 'View', onPress: () => navigation.navigate('RideRequest', { rideId: requests[0].id }) },
+                { text: 'Later', style: 'cancel' },
+              ]
+            );
+          }
+        },
+      });
+
+      return () => {
+        pulse.stop();
+        locationService.stopTracking();
+        rideRequestService.stop();
+      };
+    } else {
+      locationService.stopTracking();
+      rideRequestService.stop();
+    }
+  }, [isOnline]);
+
+  const initializeLocation = async () => {
+    const loc = await locationService.getCurrentLocation();
+    if (loc) {
+      setCurrentLocation(loc);
+      setMapKey(k => k + 1);
+    }
+  };
+
+  const fetchData = async () => {
     try {
-      setLoading(true);
-      const [activeRideRes, availableRidesRes, statsRes, profileRes] = await Promise.all([
-        rideAPI.getActiveRide().catch(() => ({ success: false })),
-        rideAPI.getAvailableRides().catch(() => ({ success: false })),
+      const [statsRes, profileRes] = await Promise.all([
         rideAPI.getDriverStats().catch(() => ({ success: false })),
         rideAPI.getDriverProfile().catch(() => ({ success: false })),
       ]);
-
-      if (activeRideRes.success) {
-        setActiveRide(activeRideRes.ride || null);
-      }
-
-      if (availableRidesRes.success) {
-        setAvailableRides(availableRidesRes.rides || []);
-      }
 
       if (statsRes.success && statsRes.data) {
         setStats({
           today_earnings: statsRes.data.today_earnings || 0,
           today_rides: statsRes.data.today_rides || 0,
-          week_earnings: statsRes.data.week_earnings || 0,
-          week_rides: statsRes.data.week_rides || 0,
-          total_rides: statsRes.data.total_rides || 0,
           rating: statsRes.data.rating || 5.0,
         });
         setIsOnline(statsRes.data.is_online || false);
       }
-
       if (profileRes.success && profileRes.driver) {
         setIsOnline(profileRes.driver.is_online || false);
       }
     } catch (error) {
-      console.error('Fetch dashboard error:', error);
-    } finally {
-      setLoading(false);
+      console.log('Fetch error:', error.message);
     }
   };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchDashboardData();
-    setRefreshing(false);
-  };
+  const toggleOnline = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-  const toggleOnlineStatus = async (value) => {
+    // Press animation
+    Animated.sequence([
+      Animated.timing(goButtonScale, { toValue: 0.9, duration: 100, useNativeDriver: true }),
+      Animated.spring(goButtonScale, { toValue: 1, friction: 3, useNativeDriver: true }),
+    ]).start();
+
     try {
-      // Get current location when going online
-      let lat = null;
-      let lng = null;
-
-      if (value) {
-        // TODO: Get actual location from device
-        // For now use default Lahore coordinates
-        lat = 31.5204;
-        lng = 74.3587;
+      let loc = currentLocation;
+      if (!isOnline && !loc) {
+        loc = await locationService.getCurrentLocation();
+        if (loc) {
+          setCurrentLocation(loc);
+          setMapKey(k => k + 1);
+        }
       }
 
-      const response = await rideAPI.updateDriverStatus(value, lat, lng);
+      const response = await locationService.updateDriverStatus(!isOnline, loc?.latitude, loc?.longitude);
       if (response.success) {
-        setIsOnline(value);
-        Alert.alert('Status Updated', value ? 'You are now online' : 'You are now offline');
+        setIsOnline(!isOnline);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } catch (error) {
-      console.error('Toggle status error:', error);
       Alert.alert('Error', error.response?.data?.message || 'Failed to update status');
     }
   };
 
-  const handleAcceptRide = async (rideId) => {
-    try {
-      const response = await rideAPI.acceptRide(rideId);
-      if (response.success) {
-        Alert.alert('Success', 'Ride accepted!');
-        navigation.navigate('RideRequest', { rideId });
-      }
-    } catch (error) {
-      console.error('Accept ride error:', error);
-      Alert.alert('Error', 'Failed to accept ride');
+  const getUserName = () => {
+    if (user?.name) return user.name.split(' ')[0];
+    if (user?.first_name) return user.first_name;
+    return 'Driver';
+  };
+
+  const getMapHtml = () => {
+    const lat = currentLocation?.latitude || 31.5204;
+    const lng = currentLocation?.longitude || 74.3587;
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { margin: 0; padding: 0; }
+    html, body, #map { width: 100%; height: 100%; }
+    .marker {
+      width: 48px; height: 48px;
+      background: ${PRIMARY_COLOR};
+      border-radius: 50%;
+      border: 4px solid #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      display: flex; align-items: center; justify-content: center;
     }
+    .marker::after {
+      content: ''; width: 22px; height: 22px;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23000"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>') center/contain no-repeat;
+    }
+    .pulse {
+      position: absolute; width: 70px; height: 70px; top: -11px; left: -11px;
+      background: rgba(252, 192, 20, 0.3); border-radius: 50%;
+      animation: pulse 2s ease-out infinite;
+    }
+    @keyframes pulse { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([${lat}, ${lng}], 16);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+    const icon = L.divIcon({ html: '<div class="pulse"></div><div class="marker"></div>', className: '', iconSize: [48, 48], iconAnchor: [24, 24] });
+    L.marker([${lat}, ${lng}], { icon }).addTo(map);
+  </script>
+</body>
+</html>`;
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.greeting, { color: colors.textSecondary }]}>
-              Good Morning
-            </Text>
-            <Text style={[styles.name, { color: colors.text }]}>
-              {user?.first_name || 'Driver'} 👋
-            </Text>
-          </View>
-          
-          <View style={styles.onlineToggle}>
-            <Text style={[styles.onlineText, { color: colors.text }]}>
-              {isOnline ? 'Online' : 'Offline'}
-            </Text>
-            <Switch
-              value={isOnline}
-              onValueChange={toggleOnlineStatus}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor="#FFFFFF"
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+
+      {/* Full Screen Map */}
+      <View style={styles.mapContainer}>
+        <WebView
+          key={mapKey}
+          source={{ html: getMapHtml() }}
+          style={styles.map}
+          scrollEnabled={false}
+          javaScriptEnabled
+          domStorageEnabled
+        />
+
+        {/* Status Bar Accent */}
+        <View style={[
+          styles.statusAccent,
+          { top: insets.top, backgroundColor: isOnline ? '#10B981' : '#EF4444' },
+        ]} />
+
+        {/* Top Bar */}
+        <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => navigation.navigate('Profile')}
+          >
+            <Ionicons name="menu" size={26} color="#1A1A2E" />
+          </TouchableOpacity>
+
+          <View style={styles.logoBox}>
+            <Image
+              source={require('../../../assets/icon.png')}
+              style={styles.logoIcon}
+              resizeMode="contain"
             />
           </View>
+
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <Ionicons name="notifications-outline" size={26} color="#1A1A2E" />
+          </TouchableOpacity>
         </View>
 
-        {/* Stats Cards */}
-        <View style={styles.statsContainer}>
-          <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-            <Text style={styles.statIcon}>💰</Text>
-            <Text style={[styles.statValue, { color: colors.text }]}>
-              Rs. {stats.today_earnings}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Today's Earnings
-            </Text>
-          </View>
+        {/* Center Location Button */}
+        <TouchableOpacity
+          style={[styles.centerBtn, { bottom: 290 + insets.bottom }]}
+          onPress={initializeLocation}
+        >
+          <Ionicons name="locate" size={24} color={PRIMARY_COLOR} />
+        </TouchableOpacity>
 
-          <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-            <Text style={styles.statIcon}>🚗</Text>
-            <Text style={[styles.statValue, { color: colors.text }]}>
-              {stats.today_rides}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Today's Rides
-            </Text>
-          </View>
-
-          <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-            <Text style={styles.statIcon}>⭐</Text>
-            <Text style={[styles.statValue, { color: colors.text }]}>
-              {stats.rating.toFixed(1)}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Your Rating
-            </Text>
-          </View>
-        </View>
-
-        {/* Active Ride */}
-        {activeRide && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Active Ride 🚗
-            </Text>
+        {/* GO Button - Centered above bottom panel */}
+        <View style={[styles.goButtonContainer, { bottom: 248 + insets.bottom }]}>
+          {isOnline && (
+            <Animated.View style={[
+              styles.goButtonPulse,
+              {
+                transform: [{ scale: pulseAnim }],
+                opacity: pulseAnim.interpolate({
+                  inputRange: [1, 1.4],
+                  outputRange: [0.4, 0],
+                }),
+              },
+            ]} />
+          )}
+          <Animated.View style={{ transform: [{ scale: goButtonScale }] }}>
             <TouchableOpacity
-              style={[styles.rideCard, { backgroundColor: colors.primary }]}
-              onPress={() => navigation.navigate('RideRequest', { rideId: activeRide.id })}
+              style={[
+                styles.goButton,
+                { backgroundColor: isOnline ? '#10B981' : '#1A1A2E' },
+              ]}
+              onPress={toggleOnline}
+              activeOpacity={0.8}
             >
-              <View style={styles.rideCardHeader}>
-                <Text style={styles.rideCardTitle}>Ongoing Ride</Text>
-                <Text style={styles.rideCardStatus}>{activeRide.status}</Text>
-              </View>
-              <Text style={styles.rideCardLocation}>
-                📍 {activeRide.pickup_location}
+              <Text style={styles.goButtonText}>
+                {isOnline ? 'ON' : 'GO'}
               </Text>
-              <Text style={styles.rideCardLocation}>
-                🎯 {activeRide.dropoff_location}
-              </Text>
-              <Text style={styles.rideCardFare}>Rs. {activeRide.fare}</Text>
             </TouchableOpacity>
-          </View>
-        )}
+          </Animated.View>
+        </View>
+      </View>
 
-        {/* Available Rides */}
-        {!activeRide && availableRides.length > 0 && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Available Rides 🎯
-            </Text>
-            {availableRides.map((ride) => (
-              <View
-                key={ride.id}
-                style={[styles.availableRideCard, { backgroundColor: colors.surface }]}
-              >
-                <View style={styles.rideInfo}>
-                  <Text style={[styles.rideLocation, { color: colors.text }]}>
-                    📍 {ride.pickup_location}
-                  </Text>
-                  <Text style={[styles.rideLocation, { color: colors.text }]}>
-                    🎯 {ride.dropoff_location}
-                  </Text>
-                  <View style={styles.rideDetails}>
-                    <Text style={[styles.rideDetailText, { color: colors.textSecondary }]}>
-                      {ride.distance_km} km • {ride.duration_minutes} min
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.rideActions}>
-                  <Text style={[styles.rideFare, { color: colors.primary }]}>
-                    Rs. {ride.fare}
-                  </Text>
-                  <TouchableOpacity
-                    style={[styles.acceptButton, { backgroundColor: colors.primary }]}
-                    onPress={() => handleAcceptRide(ride.id)}
-                  >
-                    <Text style={styles.acceptButtonText}>Accept</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
+      {/* Bottom Panel */}
+      <View style={[styles.bottomPanel, { paddingBottom: insets.bottom + 80 }]}>
+        {/* Earnings Header */}
+        <View style={styles.earningsRow}>
+          <View>
+            <Text style={styles.earningsLabel}>Today's Earnings</Text>
+            <Text style={styles.earningsAmount}>Rs. {stats.today_earnings}</Text>
           </View>
-        )}
-
-        {/* No Rides */}
-        {!activeRide && availableRides.length === 0 && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🔍</Text>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              No rides available
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-              {isOnline
-                ? 'Waiting for ride requests...'
-                : 'Go online to receive ride requests'}
+          <View style={[
+            styles.statusBadge,
+            { backgroundColor: isOnline ? '#10B98120' : '#EF444420' },
+          ]}>
+            <View style={[
+              styles.statusDot,
+              { backgroundColor: isOnline ? '#10B981' : '#EF4444' },
+            ]} />
+            <Text style={[
+              styles.statusText,
+              { color: isOnline ? '#10B981' : '#EF4444' },
+            ]}>
+              {isOnline ? 'Online' : 'Offline'}
             </Text>
           </View>
-        )}
+        </View>
 
-        {/* Carpooling Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Carpooling 🚗👥
-          </Text>
-          <View style={[styles.carpoolBanner, { backgroundColor: '#6366F1' }]}>
-            <View style={styles.carpoolContent}>
-              <Text style={styles.carpoolTitle}>Share Your Ride</Text>
-              <Text style={styles.carpoolSubtitle}>
-                Post your route and earn extra by sharing seats
-              </Text>
+        {/* Ride Requests Button */}
+        <TouchableOpacity
+          style={styles.rideRequestsBtn}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            navigation.navigate('RideRequests');
+          }}
+          activeOpacity={0.8}
+        >
+          <View style={styles.rideRequestsIcon}>
+            <Ionicons name="people" size={22} color="#FFF" />
+          </View>
+          <View style={styles.rideRequestsContent}>
+            <Text style={styles.rideRequestsTitle}>Ride Requests</Text>
+            <Text style={styles.rideRequestsSub}>See passengers looking for rides</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.5)" />
+        </TouchableOpacity>
+
+        {/* Post Shared Ride Button */}
+        <TouchableOpacity
+          style={styles.postRideBtn}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            navigation.navigate('PostRide', {
+              latitude: currentLocation?.latitude,
+              longitude: currentLocation?.longitude
+            });
+          }}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add-circle" size={24} color={PRIMARY_COLOR} />
+          <Text style={styles.postRideBtnText}>Post Shared Ride</Text>
+          <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+        </TouchableOpacity>
+
+        {/* Quick Stats - Dark Cards */}
+        <View style={styles.statsRow}>
+          <TouchableOpacity
+            style={styles.statCard}
+            onPress={() => navigation.navigate('Earnings')}
+          >
+            <View style={[styles.statIconBg, { backgroundColor: '#FCC01420' }]}>
+              <Ionicons name="wallet" size={18} color={PRIMARY_COLOR} />
             </View>
-            <TouchableOpacity
-              style={styles.carpoolCreateBtn}
-              onPress={() => navigation.navigate('CreateSharedRide')}
-            >
-              <Text style={styles.carpoolCreateText}>Post Ride</Text>
-            </TouchableOpacity>
-          </View>
+            <Text style={styles.statValue}>Rs. {stats.today_earnings}</Text>
+            <Text style={styles.statLabel}>Earned</Text>
+          </TouchableOpacity>
 
-          <View style={styles.carpoolActions}>
-            <TouchableOpacity
-              style={[styles.carpoolAction, { backgroundColor: colors.surface }]}
-              onPress={() => navigation.navigate('MySharedRides')}
-            >
-              <Text style={styles.carpoolActionIcon}>🚙</Text>
-              <Text style={[styles.carpoolActionLabel, { color: colors.text }]}>My Rides</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.carpoolAction, { backgroundColor: colors.surface }]}
-              onPress={() => navigation.navigate('SharedRideRequests')}
-            >
-              <Text style={styles.carpoolActionIcon}>📥</Text>
-              <Text style={[styles.carpoolActionLabel, { color: colors.text }]}>Requests</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.carpoolAction, { backgroundColor: colors.surface }]}
-              onPress={() => navigation.navigate('CreateSharedRide')}
-            >
-              <Text style={styles.carpoolActionIcon}>➕</Text>
-              <Text style={[styles.carpoolActionLabel, { color: colors.text }]}>New Ride</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.statCard}
+            onPress={() => navigation.navigate('RideHistory')}
+          >
+            <View style={[styles.statIconBg, { backgroundColor: '#3B82F620' }]}>
+              <Ionicons name="car" size={18} color="#3B82F6" />
+            </View>
+            <Text style={styles.statValue}>{stats.today_rides}</Text>
+            <Text style={styles.statLabel}>Rides</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.statCard}
+            onPress={() => navigation.navigate('Ratings')}
+          >
+            <View style={[styles.statIconBg, { backgroundColor: '#10B98120' }]}>
+              <Ionicons name="star" size={18} color="#10B981" />
+            </View>
+            <Text style={styles.statValue}>{stats.rating.toFixed(1)}</Text>
+            <Text style={styles.statLabel}>Rating</Text>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 24,
-  },
-  greeting: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  onlineToggle: {
-    alignItems: 'center',
-  },
-  onlineText: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 24,
-    marginBottom: 24,
-  },
-  statCard: {
+  mapContainer: {
     flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    marginHorizontal: 4,
-    alignItems: 'center',
+    position: 'relative',
   },
-  statIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  section: {
-    paddingHorizontal: 24,
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  rideCard: {
-    padding: 20,
-    borderRadius: 16,
-  },
-  rideCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  rideCardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  rideCardStatus: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
-    textTransform: 'uppercase',
-  },
-  rideCardLocation: {
-    fontSize: 16,
-    color: '#000',
-    marginBottom: 8,
-  },
-  rideCardFare: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-    marginTop: 8,
-  },
-  availableRideCard: {
-    flexDirection: 'row',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  rideInfo: {
+  map: {
     flex: 1,
   },
-  rideLocation: {
-    fontSize: 14,
-    marginBottom: 4,
+  statusAccent: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 3,
+    zIndex: 10,
   },
-  rideDetails: {
-    marginTop: 8,
-  },
-  rideDetailText: {
-    fontSize: 12,
-  },
-  rideActions: {
-    alignItems: 'flex-end',
+  topBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
   },
-  rideFare: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  iconBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  acceptButton: {
+  logoBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoIcon: {
+    width: 44,
+    height: 44,
+  },
+  centerBtn: {
+    position: 'absolute',
+    right: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  goButtonContainer: {
+    position: 'absolute',
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  goButtonPulse: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#10B981',
+  },
+  goButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 10,
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+  },
+  goButtonText: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 2,
+  },
+  bottomPanel: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: 20,
     paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 12,
   },
-  acceptButtonText: {
-    color: '#000',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  emptyState: {
+  earningsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyIcon: {
-    fontSize: 64,
     marginBottom: 16,
   },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
+  earningsLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 2,
   },
-  emptySubtitle: {
-    fontSize: 14,
+  earningsAmount: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#1A1A2E',
   },
-  carpoolBanner: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
   },
-  carpoolContent: {
-    marginBottom: 15,
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  carpoolTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 4,
-  },
-  carpoolSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  carpoolCreateBtn: {
-    backgroundColor: '#fff',
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 10,
-    alignSelf: 'flex-start',
-  },
-  carpoolCreateText: {
-    color: '#6366F1',
-    fontSize: 14,
+  statusText: {
+    fontSize: 13,
     fontWeight: '600',
   },
-  carpoolActions: {
+  rideRequestsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1A1A2E',
+    borderRadius: 16,
+    height: 64,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  rideRequestsIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  rideRequestsContent: {
+    flex: 1,
+  },
+  rideRequestsTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  rideRequestsSub: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
+    marginTop: 2,
+  },
+  postRideBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    height: 54,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  postRideBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#000',
+    flex: 1,
+    marginLeft: 12,
+  },
+  statsRow: {
     flexDirection: 'row',
     gap: 10,
   },
-  carpoolAction: {
+  statCard: {
     flex: 1,
+    backgroundColor: '#1A1A2E',
+    borderRadius: 16,
+    padding: 14,
     alignItems: 'center',
-    padding: 15,
-    borderRadius: 12,
   },
-  carpoolActionIcon: {
-    fontSize: 28,
+  statIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 8,
   },
-  carpoolActionLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+  statValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.5)',
   },
 });
 

@@ -1,11 +1,14 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { View, TouchableOpacity, Platform, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import Loading from '../components/Loading';
+import { spacing } from '../theme/colors';
 
 // Auth Screens
 import PhoneScreen from '../screens/auth/PhoneScreen';
@@ -25,6 +28,7 @@ import WalletScreen from '../screens/main/WalletScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 import RideRequestScreen from '../screens/main/RideRequestScreen';
 import ChatScreen from '../screens/chat/ChatScreen';
+import SharedRideChatScreen from '../screens/chat/SharedRideChatScreen';
 
 // Profile Screens
 import RideHistoryScreen from '../screens/profile/RideHistoryScreen';
@@ -46,70 +50,128 @@ import {
 // Loyalty Screens
 import { LoyaltyScreen } from '../screens/loyalty';
 
+// Location Search
+import LocationSearchScreen from '../screens/location/LocationSearchScreen';
+
+// Notifications
+import NotificationsScreen from '../screens/notifications/NotificationsScreen';
+
+// Live Map
+import LiveMapScreen from '../screens/map/LiveMapScreen';
+
+// Rides
+import PostRideScreen from '../screens/rides/PostRideScreen';
+import RideRequestsScreen from '../screens/rides/RideRequestsScreen';
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const TabIcon = ({ name, color }) => {
-  const icons = {
-    home: '🏠',
-    calendar: '📅',
-    wallet: '💰',
-    person: '👤',
-  };
-  return <Text style={{ fontSize: 24, color }}>{icons[name]}</Text>;
-};
+const TAB_ICON_SIZE = 26;
 
-const MainTabs = () => {
+const tabConfig = [
+  { name: 'Dashboard', label: 'Home', iconBase: 'home' },
+  { name: 'Schedule', label: 'Schedule', iconBase: 'calendar' },
+  { name: 'Wallet', label: 'Wallet', iconBase: 'wallet' },
+  { name: 'Profile', label: 'Profile', iconBase: 'person' },
+];
+
+const CustomTabBar = ({ state, descriptors, navigation }) => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Platform.OS === 'ios' ? Math.max(insets.bottom - 8, 8) : 12;
 
   return (
+    <View style={[
+      tabBarStyles.container,
+      {
+        bottom: Platform.OS === 'ios' ? insets.bottom > 0 ? 20 : 12 : 12,
+        backgroundColor: colors.card,
+        shadowColor: '#000',
+      },
+    ]}>
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
+        const config = tabConfig[index];
+        const isFocused = state.index === index;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
+        const iconName = isFocused ? config.iconBase : `${config.iconBase}-outline`;
+
+        return (
+          <TouchableOpacity
+            key={route.key}
+            onPress={onPress}
+            activeOpacity={0.7}
+            style={tabBarStyles.tabItem}
+          >
+            <View style={[
+              tabBarStyles.iconWrapper,
+              isFocused && { backgroundColor: colors.primary + '20' },
+            ]}>
+              <Ionicons
+                name={iconName}
+                size={TAB_ICON_SIZE}
+                color={isFocused ? colors.primary : colors.textTertiary}
+              />
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+};
+
+const tabBarStyles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    marginHorizontal: 16,
+    flexDirection: 'row',
+    borderRadius: 28,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconWrapper: {
+    width: 52,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
+
+const MainTabs = () => {
+  return (
     <Tab.Navigator
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-        },
       }}
     >
-      <Tab.Screen
-        name="Dashboard"
-        component={DashboardScreen}
-        options={{
-          tabBarIcon: ({ color }) => <TabIcon name="home" color={color} />,
-          tabBarLabel: 'Home',
-        }}
-      />
-      <Tab.Screen
-        name="Schedule"
-        component={ScheduleScreen}
-        options={{
-          tabBarIcon: ({ color }) => <TabIcon name="calendar" color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Wallet"
-        component={WalletScreen}
-        options={{
-          tabBarIcon: ({ color }) => <TabIcon name="wallet" color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarIcon: ({ color }) => <TabIcon name="person" color={color} />,
-        }}
-      />
+      <Tab.Screen name="Dashboard" component={DashboardScreen} />
+      <Tab.Screen name="Schedule" component={ScheduleScreen} />
+      <Tab.Screen name="Wallet" component={WalletScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 };
@@ -125,11 +187,11 @@ const AppNavigator = () => {
   const getInitialRoute = () => {
     if (!isAuthenticated) return 'Phone';
     if (!user?.driver) return 'PersonalInfo';
-    
+
     const driver = user.driver;
     if (driver.status === 'pending' || driver.status === 'rejected') return 'Pending';
     if (driver.status === 'approved') return 'MainTabs';
-    
+
     return 'PersonalInfo';
   };
 
@@ -140,18 +202,25 @@ const AppNavigator = () => {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
+          animation: 'slide_from_right',
         }}
       >
+        {/* Auth Screens */}
         <Stack.Screen name="Phone" component={PhoneScreen} />
         <Stack.Screen name="OTP" component={OTPScreen} />
+
+        {/* Onboarding Screens */}
         <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
         <Stack.Screen name="VehicleInfo" component={VehicleInfoScreen} />
         <Stack.Screen name="Documents" component={DocumentsScreen} />
         <Stack.Screen name="Selfie" component={SelfieScreen} />
         <Stack.Screen name="Pending" component={PendingScreen} />
+
+        {/* Main Screens */}
         <Stack.Screen name="MainTabs" component={MainTabs} />
         <Stack.Screen name="RideRequest" component={RideRequestScreen} />
         <Stack.Screen name="Chat" component={ChatScreen} />
+        <Stack.Screen name="SharedRideChat" component={SharedRideChatScreen} />
 
         {/* Profile Screens */}
         <Stack.Screen name="RideHistory" component={RideHistoryScreen} />
@@ -170,6 +239,19 @@ const AppNavigator = () => {
 
         {/* Loyalty & Rewards */}
         <Stack.Screen name="Loyalty" component={LoyaltyScreen} />
+
+        {/* Location Search */}
+        <Stack.Screen name="LocationSearch" component={LocationSearchScreen} />
+
+        {/* Notifications */}
+        <Stack.Screen name="Notifications" component={NotificationsScreen} />
+
+        {/* Live Map */}
+        <Stack.Screen name="LiveMap" component={LiveMapScreen} />
+
+        {/* Rides */}
+        <Stack.Screen name="PostRide" component={PostRideScreen} />
+        <Stack.Screen name="RideRequests" component={RideRequestsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

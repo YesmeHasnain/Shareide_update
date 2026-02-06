@@ -3,184 +3,281 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
+  TextInput,
+  TouchableOpacity,
+  Alert,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  StatusBar,
+  ActivityIndicator,
   Image,
 } from 'react-native';
-import { useTheme } from '../../context/ThemeContext';
-import Button from '../../components/Button';
-import Input from '../../components/Input';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { authAPI } from '../../api/auth';
 
+const PRIMARY_COLOR = '#FCC014';
+
 const PhoneScreen = ({ navigation }) => {
-  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
-  const validatePhone = () => {
-    const phoneRegex = /^03[0-9]{9}$/;
-    return phoneRegex.test(phone);
-  };
-
-  const handleSendOTP = async () => {
-    if (!validatePhone()) {
-      Alert.alert('Error', 'Please enter a valid phone number (03XXXXXXXXX)');
+  const handleContinue = async () => {
+    if (phone.length < 10) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Invalid Number', 'Please enter a valid phone number');
       return;
     }
 
-    setLoading(true);
     try {
+      setLoading(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const response = await authAPI.sendOTP(phone);
-      
-      if (response.success) {
-        Alert.alert('Success', 'OTP sent successfully!');
-        navigation.navigate('OTP', { phone });
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigation.navigate('OTP', { phone });
+
+      if (response.debug_code) {
+        Alert.alert('Dev Mode', `OTP: ${response.debug_code}`);
       }
     } catch (error) {
-      console.error('Send OTP error:', error);
-      Alert.alert(
-        'Error',
-        error.response?.data?.message || 'Failed to send OTP. Please try again.'
-      );
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      const message = error.response?.data?.message || 'Failed to send OTP';
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }
   };
 
+  const isValidPhone = phone.length >= 10;
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
+
       <KeyboardAvoidingView
+        style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.content}
       >
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <View style={[styles.logoCircle, { backgroundColor: colors.primary }]}>
-            <Text style={styles.logoText}>🚗</Text>
+        {/* Dark Top Section */}
+        <View style={[styles.darkSection, { paddingTop: insets.top + 16 }]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={20} color="#FFF" />
+          </TouchableOpacity>
+
+          <View style={styles.logoSection}>
+            <Image
+              source={require('../../../assets/logowhitemode.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.tagline}>Drive. Earn. Grow.</Text>
           </View>
-          <Text style={[styles.appName, { color: colors.text }]}>
-            Shareide Fleet
-          </Text>
-          <Text style={[styles.tagline, { color: colors.textSecondary }]}>
-            Drive. Earn. Grow.
-          </Text>
         </View>
 
-        {/* Phone Input */}
-        <View style={styles.formContainer}>
-          <Text style={[styles.title, { color: colors.text }]}>
-            Welcome Driver! 👋
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Enter your phone number to get started
+        {/* Content */}
+        <View style={styles.content}>
+          {/* Title */}
+          <Text style={styles.title}>Enter Your Phone Number</Text>
+          <Text style={styles.subtitle}>
+            Enter your phone number to get started as a driver partner
           </Text>
 
-          <View style={styles.phoneInputContainer}>
-            <View style={[styles.countryCode, { backgroundColor: colors.surface }]}>
-              <Text style={[styles.countryCodeText, { color: colors.text }]}>
-                🇵🇰 +92
-              </Text>
+          {/* Phone Input */}
+          <View style={styles.inputRow}>
+            {/* Country Code */}
+            <TouchableOpacity style={[
+              styles.countryBox,
+              isFocused && styles.countryBoxFocused,
+            ]}>
+              <Text style={styles.flag}>🇵🇰</Text>
+              <Ionicons name="chevron-down" size={16} color="#666" />
+            </TouchableOpacity>
+
+            {/* Phone Input */}
+            <View style={[
+              styles.phoneInputBox,
+              isFocused && styles.phoneInputBoxFocused,
+            ]}>
+              <TextInput
+                style={styles.phoneInput}
+                value={phone}
+                onChangeText={(t) => setPhone(t.replace(/[^0-9]/g, '').slice(0, 11))}
+                placeholder="Phone number"
+                placeholderTextColor="#9CA3AF"
+                keyboardType="phone-pad"
+                editable={!loading}
+                maxLength={11}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+              />
             </View>
-            <Input
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="3001234567"
-              keyboardType="phone-pad"
-              maxLength={11}
-              style={styles.phoneInput}
-            />
           </View>
+        </View>
 
-          <Button
-            title="Send OTP"
-            onPress={handleSendOTP}
-            loading={loading}
-            style={styles.button}
-          />
+        {/* Bottom Button */}
+        <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 24 }]}>
+          <TouchableOpacity
+            style={[
+              styles.continueButton,
+              {
+                backgroundColor: isValidPhone ? PRIMARY_COLOR : '#F3F4F6',
+                shadowOpacity: isValidPhone ? 0.15 : 0,
+              },
+            ]}
+            onPress={handleContinue}
+            disabled={!isValidPhone || loading}
+            activeOpacity={0.8}
+          >
+            {loading ? (
+              <ActivityIndicator color="#000" />
+            ) : (
+              <Text style={[
+                styles.continueText,
+                { color: isValidPhone ? '#000' : '#9CA3AF' }
+              ]}>
+                Send verification code
+              </Text>
+            )}
+          </TouchableOpacity>
 
-          <Text style={[styles.disclaimer, { color: colors.textSecondary }]}>
-            By continuing, you agree to our Terms & Privacy Policy
+          {/* Terms */}
+          <Text style={styles.termsText}>
+            By continuing, you agree to our{' '}
+            <Text style={styles.linkText}>Terms</Text> &{' '}
+            <Text style={styles.linkText}>Privacy Policy</Text>
           </Text>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  // Dark top section
+  darkSection: {
+    backgroundColor: '#1A1A2E',
+    paddingHorizontal: 20,
+    paddingBottom: 28,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logoSection: {
+    alignItems: 'center',
+  },
+  logo: {
+    width: 220,
+    height: 70,
+    marginBottom: 8,
+  },
+  tagline: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.5)',
+    fontWeight: '500',
   },
   content: {
     flex: 1,
     paddingHorizontal: 24,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginTop: 60,
-    marginBottom: 40,
-  },
-  logoCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  logoText: {
-    fontSize: 50,
-  },
-  appName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  tagline: {
-    fontSize: 16,
-  },
-  formContainer: {
-    flex: 1,
+    paddingTop: 32,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 12,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
+    color: '#6B7280',
+    lineHeight: 22,
     marginBottom: 32,
   },
-  phoneInputContainer: {
+  inputRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 24,
+    gap: 12,
   },
-  countryCode: {
-    height: 50,
-    paddingHorizontal: 16,
+  countryBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 52,
+    paddingHorizontal: 14,
     borderRadius: 12,
-    justifyContent: 'center',
-    marginRight: 12,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    gap: 6,
   },
-  countryCodeText: {
+  countryBoxFocused: {
+    borderColor: PRIMARY_COLOR,
+  },
+  flag: {
+    fontSize: 20,
+  },
+  phoneInputBox: {
+    flex: 1,
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: '#F9FAFB',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  phoneInputBoxFocused: {
+    borderColor: PRIMARY_COLOR,
+    backgroundColor: '#FFFFFF',
+  },
+  phoneInput: {
+    fontSize: 16,
+    color: '#000',
+  },
+  bottomSection: {
+    paddingHorizontal: 24,
+  },
+  continueButton: {
+    height: 54,
+    borderRadius: 27,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  continueText: {
     fontSize: 16,
     fontWeight: '600',
   },
-  phoneInput: {
-    flex: 1,
-    marginBottom: 0,
-  },
-  button: {
-    marginTop: 8,
-  },
-  disclaimer: {
+  termsText: {
     fontSize: 12,
+    color: '#9CA3AF',
     textAlign: 'center',
-    marginTop: 24,
+    marginTop: 16,
     lineHeight: 18,
+  },
+  linkText: {
+    color: PRIMARY_COLOR,
   },
 });
 
