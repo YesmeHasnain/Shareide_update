@@ -1,108 +1,58 @@
-import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
+import React, { forwardRef, useImperativeHandle, useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Platform,
   Text,
-  Image,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
-import { shadows, borderRadius, spacing } from '../../theme/colors';
 
-// Try to import react-native-maps, fallback to null if not available
-let MapView = null;
-let Marker = null;
-let PROVIDER_GOOGLE = null;
-
-try {
-  const Maps = require('react-native-maps');
-  MapView = Maps.default;
-  Marker = Maps.Marker;
-  PROVIDER_GOOGLE = Maps.PROVIDER_GOOGLE;
-} catch (e) {
-  console.log('react-native-maps not available, using placeholder');
-}
-
-// Dark theme map style for premium look
-const darkMapStyle = [
-  {
-    elementType: 'geometry',
-    stylers: [{ color: '#1a1a2e' }],
-  },
-  {
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#8a8a9e' }],
-  },
-  {
-    elementType: 'labels.text.stroke',
-    stylers: [{ color: '#1a1a2e' }],
-  },
-  {
-    featureType: 'administrative',
-    elementType: 'geometry.stroke',
-    stylers: [{ color: '#2d2d4a' }],
-  },
-  {
-    featureType: 'poi',
-    elementType: 'geometry',
-    stylers: [{ color: '#252540' }],
-  },
-  {
-    featureType: 'road',
-    elementType: 'geometry',
-    stylers: [{ color: '#2d2d4a' }],
-  },
-  {
-    featureType: 'road',
-    elementType: 'geometry.stroke',
-    stylers: [{ color: '#1a1a2e' }],
-  },
-  {
-    featureType: 'road.highway',
-    elementType: 'geometry',
-    stylers: [{ color: '#FFD70030' }],
-  },
-  {
-    featureType: 'water',
-    elementType: 'geometry',
-    stylers: [{ color: '#0e0e1a' }],
-  },
-];
-
-// Placeholder Map Component for Expo Go
-const PlaceholderMap = forwardRef(({
+const MapViewComponent = forwardRef(({
   style,
-  userLocation,
   pickupLocation,
   dropoffLocation,
   drivers = [],
   showUserLocation = true,
+  showCenterButton = false,
   onMapReady,
   onRegionChange,
   onPress,
+  initialRegion,
+  centerOnUser = false,
 }, ref) => {
-  const { colors, isDark } = useTheme();
-  const [location, setLocation] = useState(userLocation);
+  const { colors, isDark } = useTheme() || { colors: { primary: '#FCC014' }, isDark: false };
+  const [userLocation, setUserLocation] = useState(initialRegion || {
+    latitude: 24.8607,
+    longitude: 67.0011,
+  });
   const [loading, setLoading] = useState(true);
+  const [mapKey, setMapKey] = useState(0);
 
   useEffect(() => {
-    getCurrentLocation();
+    if (showUserLocation || centerOnUser) {
+      getCurrentLocation();
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const getCurrentLocation = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
-        const loc = await Location.getCurrentPositionAsync({});
-        setLocation({
+        const loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        setUserLocation({
           latitude: loc.coords.latitude,
           longitude: loc.coords.longitude,
         });
+        setMapKey(prev => prev + 1);
       }
     } catch (e) {
       console.log('Location error:', e);
@@ -113,227 +63,220 @@ const PlaceholderMap = forwardRef(({
   };
 
   useImperativeHandle(ref, () => ({
-    animateToRegion: () => {},
-    animateToCoordinate: () => {},
-    fitToCoordinates: () => {},
+    animateToRegion: (region) => {
+      setUserLocation({ latitude: region.latitude, longitude: region.longitude });
+      setMapKey(prev => prev + 1);
+    },
+    animateToCoordinate: (coordinate) => {
+      setUserLocation({ latitude: coordinate.latitude, longitude: coordinate.longitude });
+      setMapKey(prev => prev + 1);
+    },
+    fitToCoordinates: () => {
+      setMapKey(prev => prev + 1);
+    },
   }));
 
+  const getMapHtml = () => {
+    const hasPickup = pickupLocation?.latitude && pickupLocation?.longitude;
+    const hasDropoff = dropoffLocation?.latitude && dropoffLocation?.longitude;
+
+    // Always use light/white map tiles
+    const tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          html, body, #map { width: 100%; height: 100%; background: ${isDark ? '#1a1a2e' : '#E5E3DF'}; }
+
+          .user-marker .dot {
+            width: 18px; height: 18px;
+            background: #22C55E;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(34,197,94,0.4);
+          }
+          .user-marker .pulse {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px; height: 40px;
+            background: rgba(34,197,94,0.2);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+          }
+          @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.3); opacity: 0; }
+          }
+
+          .pickup-marker .dot {
+            width: 14px; height: 14px;
+            background: #22C55E;
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+          }
+
+          .dropoff-marker .pin {
+            width: 26px; height: 26px;
+            background: #000;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+          }
+          .dropoff-marker .pin-inner {
+            width: 8px; height: 8px;
+            background: #FCC014;
+            border-radius: 50%;
+            transform: rotate(45deg);
+          }
+
+          .car-marker {
+            width: 40px; height: 40px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+          }
+          .car-marker::before {
+            content: '';
+            width: 22px; height: 12px;
+            background: #FCC014;
+            border-radius: 4px 4px 2px 2px;
+          }
+        </style>
+      </head>
+      <body>
+        <div id="map"></div>
+        <script>
+          const userPos = [${userLocation.latitude}, ${userLocation.longitude}];
+
+          const map = L.map('map', {
+            zoomControl: false,
+            attributionControl: false
+          }).setView(userPos, 15);
+
+          L.tileLayer('${tileUrl}', {
+            maxZoom: 19
+          }).addTo(map);
+
+          // User location marker
+          ${showUserLocation ? `
+            const userIcon = L.divIcon({
+              html: '<div class="user-marker" style="position:relative"><div class="pulse"></div><div class="dot"></div></div>',
+              className: '',
+              iconSize: [40, 40],
+              iconAnchor: [20, 20]
+            });
+            L.marker(userPos, { icon: userIcon }).addTo(map);
+          ` : ''}
+
+          // Pickup marker
+          ${hasPickup ? `
+            const pickupIcon = L.divIcon({
+              html: '<div class="pickup-marker"><div class="dot"></div></div>',
+              className: '',
+              iconSize: [14, 14],
+              iconAnchor: [7, 7]
+            });
+            L.marker([${pickupLocation.latitude}, ${pickupLocation.longitude}], { icon: pickupIcon }).addTo(map);
+          ` : ''}
+
+          // Dropoff marker
+          ${hasDropoff ? `
+            const dropoffIcon = L.divIcon({
+              html: '<div class="dropoff-marker"><div class="pin"><div class="pin-inner"></div></div></div>',
+              className: '',
+              iconSize: [26, 34],
+              iconAnchor: [13, 30]
+            });
+            L.marker([${dropoffLocation.latitude}, ${dropoffLocation.longitude}], { icon: dropoffIcon }).addTo(map);
+          ` : ''}
+
+          // Driver markers (car icons)
+          ${drivers.map((driver, idx) => `
+            const carIcon${idx} = L.divIcon({
+              html: '<div class="car-marker"></div>',
+              className: '',
+              iconSize: [40, 40],
+              iconAnchor: [20, 20]
+            });
+            L.marker([${driver.latitude}, ${driver.longitude}], { icon: carIcon${idx} }).addTo(map);
+          `).join('')}
+
+          // Draw route if both points exist
+          ${hasPickup && hasDropoff ? `
+            // Fetch real route from OSRM
+            fetch('https://router.project-osrm.org/route/v1/driving/${pickupLocation.longitude},${pickupLocation.latitude};${dropoffLocation.longitude},${dropoffLocation.latitude}?overview=full&geometries=geojson')
+              .then(res => res.json())
+              .then(data => {
+                if (data.routes && data.routes[0]) {
+                  const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+
+                  // Route shadow
+                  L.polyline(coords, { color: '#000', weight: 7, opacity: 0.15 }).addTo(map);
+
+                  // Main route
+                  const route = L.polyline(coords, { color: '#000', weight: 4, opacity: 1 }).addTo(map);
+
+                  map.fitBounds(route.getBounds(), { padding: [50, 50] });
+                }
+              })
+              .catch(() => {
+                // Fallback straight line
+                L.polyline([[${pickupLocation.latitude}, ${pickupLocation.longitude}], [${dropoffLocation.latitude}, ${dropoffLocation.longitude}]], {
+                  color: '#000', weight: 4, opacity: 0.8, dashArray: '8, 8'
+                }).addTo(map);
+                map.fitBounds([[${pickupLocation.latitude}, ${pickupLocation.longitude}], [${dropoffLocation.latitude}, ${dropoffLocation.longitude}]], { padding: [50, 50] });
+              });
+          ` : ''}
+        </script>
+      </body>
+      </html>
+    `;
+  };
+
   return (
-    <View style={[styles.placeholderContainer, { backgroundColor: isDark ? '#1a1a2e' : '#e5e5e5' }, style]}>
-      {loading ? (
-        <ActivityIndicator size="large" color={colors.primary} />
-      ) : (
+    <View style={[styles.container, style]}>
+      <WebView
+        key={mapKey}
+        style={styles.map}
+        source={{ html: getMapHtml() }}
+        scrollEnabled={false}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+      />
+
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={colors?.primary || '#FCC014'} />
+        </View>
+      )}
+
+      {showCenterButton && (
         <TouchableOpacity
-          style={styles.placeholderContent}
-          onPress={onPress}
-          activeOpacity={0.8}
+          style={[styles.centerButton, { backgroundColor: colors?.card || '#fff' }]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            getCurrentLocation();
+          }}
         >
-          {/* Grid pattern to simulate map */}
-          <View style={styles.gridPattern}>
-            {[...Array(20)].map((_, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.gridLine,
-                  { backgroundColor: isDark ? '#2d2d4a' : '#d0d0d0' },
-                  i % 5 === 0 && { backgroundColor: isDark ? '#3d3d5a' : '#c0c0c0', height: 2 }
-                ]}
-              />
-            ))}
-          </View>
-
-          {/* Road pattern */}
-          <View style={[styles.road, styles.roadHorizontal, { backgroundColor: colors.primary + '30' }]} />
-          <View style={[styles.road, styles.roadVertical, { backgroundColor: colors.primary + '30' }]} />
-
-          {/* Center marker */}
-          <View style={styles.centerMarker}>
-            <View style={[styles.markerPulse, { backgroundColor: colors.primary + '30' }]} />
-            <View style={[styles.markerDot, { backgroundColor: colors.primary }]}>
-              <Ionicons name="location" size={24} color="#000" />
-            </View>
-          </View>
-
-          {/* Location info */}
-          {location && (
-            <View style={[styles.locationBadge, { backgroundColor: colors.card }]}>
-              <Ionicons name="navigate" size={14} color={colors.primary} />
-              <Text style={[styles.locationText, { color: colors.text }]}>
-                {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
-              </Text>
-            </View>
-          )}
-
-          {/* Drivers indicators */}
-          {drivers.length > 0 && (
-            <View style={styles.driversIndicator}>
-              {drivers.slice(0, 5).map((driver, index) => (
-                <View
-                  key={driver.id || index}
-                  style={[
-                    styles.driverDot,
-                    {
-                      backgroundColor: colors.primary,
-                      left: 30 + (index * 40) + (Math.random() * 20),
-                      top: 50 + (index * 30) + (Math.random() * 20),
-                    }
-                  ]}
-                >
-                  <Ionicons name="car" size={12} color="#000" />
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* Development mode banner */}
-          <View style={[styles.devBanner, { backgroundColor: colors.primary }]}>
-            <Ionicons name="construct" size={14} color="#000" />
-            <Text style={styles.devBannerText}>Map Preview - Build for full experience</Text>
-          </View>
+          <Ionicons name="locate" size={20} color={colors?.primary || '#FCC014'} />
         </TouchableOpacity>
       )}
     </View>
   );
-});
-
-// Real Map Component
-const RealMapView = forwardRef(({
-  style,
-  userLocation,
-  pickupLocation,
-  dropoffLocation,
-  drivers = [],
-  showUserLocation = true,
-  onMapReady,
-  onRegionChange,
-  onPress,
-  onMarkerPress,
-  initialRegion,
-  children,
-}, ref) => {
-  const { colors, isDark } = useTheme();
-  const mapRef = useRef(null);
-  const [location, setLocation] = useState(userLocation);
-  const [loading, setLoading] = useState(!userLocation);
-
-  useEffect(() => {
-    if (!userLocation) {
-      getCurrentLocation();
-    }
-  }, []);
-
-  const getCurrentLocation = async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const loc = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-        });
-        setLocation({
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
-        });
-      }
-    } catch (e) {
-      console.log('Location error:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useImperativeHandle(ref, () => ({
-    animateToRegion: (region, duration = 500) => {
-      mapRef.current?.animateToRegion(region, duration);
-    },
-    animateToCoordinate: (coordinate, duration = 500) => {
-      mapRef.current?.animateCamera({ center: coordinate }, { duration });
-    },
-    fitToCoordinates: (coordinates, options) => {
-      mapRef.current?.fitToCoordinates(coordinates, options);
-    },
-  }));
-
-  const defaultRegion = {
-    latitude: location?.latitude || 31.5204,
-    longitude: location?.longitude || 74.3587,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  };
-
-  if (!MapView) {
-    return <PlaceholderMap {...{ style, userLocation, pickupLocation, dropoffLocation, drivers, showUserLocation, onMapReady, onRegionChange, onPress }} ref={ref} />;
-  }
-
-  return (
-    <View style={[styles.container, style]}>
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        provider={PROVIDER_GOOGLE}
-        initialRegion={initialRegion || defaultRegion}
-        customMapStyle={isDark ? darkMapStyle : []}
-        showsUserLocation={showUserLocation}
-        showsMyLocationButton={false}
-        showsCompass={false}
-        onMapReady={() => {
-          setLoading(false);
-          onMapReady?.();
-        }}
-        onRegionChangeComplete={onRegionChange}
-        onPress={onPress}
-      >
-        {/* Pickup Marker */}
-        {pickupLocation && (
-          <Marker coordinate={pickupLocation}>
-            <View style={[styles.customMarker, { backgroundColor: colors.success }]}>
-              <Ionicons name="radio-button-on" size={16} color="#fff" />
-            </View>
-          </Marker>
-        )}
-
-        {/* Dropoff Marker */}
-        {dropoffLocation && (
-          <Marker coordinate={dropoffLocation}>
-            <View style={[styles.customMarker, { backgroundColor: colors.error }]}>
-              <Ionicons name="location" size={16} color="#fff" />
-            </View>
-          </Marker>
-        )}
-
-        {/* Driver Markers */}
-        {drivers.map((driver) => (
-          <Marker
-            key={driver.id}
-            coordinate={{
-              latitude: driver.latitude,
-              longitude: driver.longitude,
-            }}
-            onPress={() => onMarkerPress?.(driver)}
-          >
-            <View style={[styles.driverMarker, { backgroundColor: colors.primary }]}>
-              <Ionicons name="car" size={18} color="#000" />
-            </View>
-          </Marker>
-        ))}
-
-        {children}
-      </MapView>
-
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      )}
-    </View>
-  );
-});
-
-// Main export - automatically chooses the right component
-const MapViewComponent = forwardRef((props, ref) => {
-  if (MapView) {
-    return <RealMapView {...props} ref={ref} />;
-  }
-  return <PlaceholderMap {...props} ref={ref} />;
 });
 
 const styles = StyleSheet.create({
@@ -346,125 +289,24 @@ const styles = StyleSheet.create({
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.8)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  customMarker: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...shadows.md,
-  },
-  driverMarker: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#fff',
-    ...shadows.md,
-  },
-  // Placeholder styles
-  placeholderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  placeholderContent: {
-    flex: 1,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  gridPattern: {
-    ...StyleSheet.absoluteFillObject,
-    flexDirection: 'column',
-    justifyContent: 'space-evenly',
-  },
-  gridLine: {
-    height: 1,
-    width: '100%',
-  },
-  road: {
+  centerButton: {
     position: 'absolute',
-  },
-  roadHorizontal: {
-    height: 20,
-    width: '100%',
-    top: '50%',
-    marginTop: -10,
-  },
-  roadVertical: {
-    width: 20,
-    height: '100%',
-    left: '50%',
-    marginLeft: -10,
-  },
-  centerMarker: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  markerPulse: {
-    position: 'absolute',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-  },
-  markerDot: {
+    right: 16,
+    bottom: 16,
     width: 44,
     height: 44,
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    ...shadows.lg,
-  },
-  locationBadge: {
-    position: 'absolute',
-    bottom: 60,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
-    ...shadows.md,
-  },
-  locationText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  driversIndicator: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  driverDot: {
-    position: 'absolute',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...shadows.sm,
-  },
-  devBanner: {
-    position: 'absolute',
-    top: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-    gap: 6,
-  },
-  devBannerText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#000',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
 });
 

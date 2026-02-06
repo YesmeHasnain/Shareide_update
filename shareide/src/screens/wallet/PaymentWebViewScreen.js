@@ -2,15 +2,53 @@ import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useTheme } from '../../context/ThemeContext';
+import apiClient from '../../api/client';
+
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  background: '#FFFFFF',
+  surface: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+};
 
 const PaymentWebViewScreen = ({ route, navigation }) => {
-  const { colors } = useTheme();
-  const { paymentUrl, formData, orderId, amount } = route.params;
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
+  const params = route?.params || {};
+  const { paymentUrl, formData, orderId, amount, testMode, testHtml } = params;
   const webViewRef = useRef(null);
   const [loading, setLoading] = useState(true);
 
+  // Debug logging
+  console.log('PaymentWebView params:', {
+    paymentUrl,
+    formData: formData ? Object.keys(formData) : null,
+    orderId,
+    amount,
+    testMode,
+    hasTestHtml: !!testHtml,
+  });
+
+  // Validate params (skip for test mode with inline HTML)
+  if (!testHtml && (!paymentUrl || !formData)) {
+    console.error('Missing payment parameters:', { paymentUrl, formData });
+    Alert.alert(
+      'Error',
+      'Payment configuration error. Please try again.',
+      [{ text: 'OK', onPress: () => navigation.goBack() }]
+    );
+    return null;
+  }
+
   // Generate HTML form that auto-submits to Bank Alfalah
   const generateFormHtml = () => {
+    // If test HTML is provided, use it directly
+    if (testHtml) {
+      return testHtml;
+    }
+
     const formFields = Object.entries(formData || {})
       .map(([key, value]) => `<input type="hidden" name="${key}" value="${value}" />`)
       .join('\n');
@@ -71,13 +109,20 @@ const PaymentWebViewScreen = ({ route, navigation }) => {
   };
 
   const handleNavigationStateChange = (navState) => {
-    const { url } = navState;
+    const { url, title } = navState;
+    console.log('WebView navigation:', url, title);
 
-    // Check for success callback URL
-    if (url.includes('/wallet/topup/success')) {
+    // Check for success page (callback returns HTML with success marker)
+    if (url.includes('/wallet/payment-callback') || url.includes('/payment/callback')) {
+      // The callback page will be loaded - we'll detect success/failure via injected JS
+      return;
+    }
+
+    // Check for success in URL or title
+    if (url.includes('payment-success') || url.includes('/wallet/topup/success') || title === 'Payment Successful') {
       Alert.alert(
         'Payment Successful',
-        `Rs. ${amount.toLocaleString()} has been added to your wallet!`,
+        `Rs. ${amount?.toLocaleString()} has been added to your wallet!`,
         [
           {
             text: 'OK',
@@ -92,8 +137,8 @@ const PaymentWebViewScreen = ({ route, navigation }) => {
       );
     }
 
-    // Check for failed callback URL
-    if (url.includes('/wallet/topup/failed')) {
+    // Check for failure
+    if (url.includes('payment-failed') || url.includes('/wallet/topup/failed') || title === 'Payment Failed') {
       const errorMatch = url.match(/error=([^&]+)/);
       const errorMessage = errorMatch ? decodeURIComponent(errorMatch[1]) : 'Payment was not successful';
 
@@ -112,6 +157,101 @@ const PaymentWebViewScreen = ({ route, navigation }) => {
           },
         ]
       );
+    }
+  };
+
+  // Handle messages from the WebView
+  const handleMessage = async (event) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      console.log('WebView message:', data);
+
+      // Handle test payment request from WebView
+      if (data.type === 'test_payment') {
+        console.log('Processing test payment:', data);
+        try {
+          const response = await apiClient.post('/wallet/test-payment/process', {
+            order_id: data.order_id,
+            action: data.action,
+          });
+          console.log('Test payment response:', response.data);
+
+          if (data.action === 'success') {
+            Alert.alert(
+              'Payment Successful',
+              `Rs. ${amount?.toLocaleString()} has been added to your wallet!`,
+              [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    navigation.reset({
+                      index: 0,
+                      routes: [{ name: 'MainTabs' }],
+                    });
+                  },
+                },
+              ]
+            );
+          } else {
+            Alert.alert(
+              'Payment Cancelled',
+              'You have cancelled the payment.',
+              [
+                {
+                  text: 'OK',
+                  onPress: () => navigation.goBack(),
+                },
+              ]
+            );
+          }
+        } catch (error) {
+          console.error('Test payment error:', error);
+          Alert.alert(
+            'Error',
+            error.response?.data?.message || 'Payment processing failed. Please try again.',
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+          );
+        }
+        return;
+      }
+
+      if (data.type === 'payment_result') {
+        if (data.success) {
+          Alert.alert(
+            'Payment Successful',
+            `Rs. ${data.amount?.toLocaleString()} has been added to your wallet!`,
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'MainTabs' }],
+                  });
+                },
+              },
+            ]
+          );
+        } else {
+          Alert.alert(
+            'Payment Failed',
+            data.error || 'Payment was not successful',
+            [
+              {
+                text: 'Try Again',
+                onPress: () => navigation.goBack(),
+              },
+              {
+                text: 'Cancel',
+                onPress: () => navigation.navigate('Wallet'),
+                style: 'cancel',
+              },
+            ]
+          );
+        }
+      }
+    } catch (e) {
+      // Not a JSON message, ignore
     }
   };
 
@@ -162,10 +302,57 @@ const PaymentWebViewScreen = ({ route, navigation }) => {
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}
         onNavigationStateChange={handleNavigationStateChange}
+        onMessage={handleMessage}
+        onError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          console.warn('WebView error:', nativeEvent);
+          Alert.alert(
+            'Connection Error',
+            'Failed to connect to payment gateway. Please check your internet connection and try again.',
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+          );
+        }}
+        onHttpError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          console.warn('WebView HTTP error:', nativeEvent.statusCode, nativeEvent.url);
+        }}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         startInLoadingState={true}
         scalesPageToFit={true}
+        mixedContentMode="compatibility"
+        originWhitelist={['*']}
+        cacheEnabled={false}
+        thirdPartyCookiesEnabled={true}
+        sharedCookiesEnabled={true}
+        injectedJavaScript={`
+          // Check for payment result markers in the page
+          (function() {
+            var successMarker = document.getElementById('payment-success');
+            var failedMarker = document.getElementById('payment-failed');
+
+            if (successMarker) {
+              var amount = successMarker.getAttribute('data-amount');
+              var balance = successMarker.getAttribute('data-balance');
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'payment_result',
+                success: true,
+                amount: parseFloat(amount),
+                balance: parseFloat(balance)
+              }));
+            }
+
+            if (failedMarker) {
+              var error = failedMarker.getAttribute('data-error');
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'payment_result',
+                success: false,
+                error: error
+              }));
+            }
+          })();
+          true;
+        `}
       />
     </View>
   );

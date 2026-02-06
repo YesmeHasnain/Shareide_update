@@ -13,11 +13,28 @@ export const walletAPI = {
     return response.data;
   },
 
-  // Initiate wallet top-up (supports Bank Alfalah, JazzCash, Easypaisa)
-  topUp: async (amount, method) => {
-    const response = await apiClient.post('/rider-wallet/topup', {
+  // Initiate wallet top-up
+  // Supports: 'card', 'alfa_wallet', 'bank_account', 'jazzcash', 'easypaisa'
+  topUp: async (amount, method, accountNumber = null) => {
+    const payload = {
       amount,
-      method, // 'card', 'bank_alfalah', 'jazzcash', 'easypaisa'
+      method,
+    };
+
+    // Add account number for Alfa Wallet / Bank Account methods
+    if (accountNumber && (method === 'alfa_wallet' || method === 'bank_account')) {
+      payload.account_number = accountNumber;
+    }
+
+    const response = await apiClient.post('/rider-wallet/topup', payload);
+    return response.data;
+  },
+
+  // Verify OTP for Alfa Wallet / Bank Account payments
+  verifyOTP: async (orderId, otp) => {
+    const response = await apiClient.post('/rider-wallet/verify-otp', {
+      order_id: orderId,
+      otp,
     });
     return response.data;
   },

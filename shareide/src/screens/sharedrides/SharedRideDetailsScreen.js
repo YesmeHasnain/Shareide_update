@@ -15,9 +15,27 @@ import { useTheme } from '../../context/ThemeContext';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 import { getSharedRide, bookSharedRide } from '../../api/sharedRides';
 
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  secondary: '#FFA500',
+  background: '#FFFFFF',
+  surface: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textMuted: '#9CA3AF',
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  gradientStart: '#FFFFFF',
+  gradientEnd: '#F5F5F5',
+};
+
 const SharedRideDetailsScreen = ({ navigation, route }) => {
-  const { colors } = useTheme();
-  const { rideId } = route.params;
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
+  const params = route?.params || {};
+  const { rideId } = params;
   const [ride, setRide] = useState(null);
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(false);

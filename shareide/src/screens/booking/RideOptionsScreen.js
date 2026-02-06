@@ -10,15 +10,32 @@ import {
   Animated,
   ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
-import { Card, Button } from '../../components/common';
+import { Card } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 import { ridesAPI } from '../../api/rides';
+
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  background: '#FFFFFF',
+  surface: '#F5F5F5',
+  card: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  inputBackground: '#F5F5F5',
+  border: '#E5E7EB',
+  success: '#10B981',
+  error: '#EF4444',
+  info: '#3B82F6',
+  infoLight: '#EFF6FF',
+  successLight: '#D1FAE5',
+};
 
 // Ride Type Selection Component
 const RideTypeOption = ({ type, isSelected, onPress, colors }) => {
@@ -33,27 +50,17 @@ const RideTypeOption = ({ type, isSelected, onPress, colors }) => {
       activeOpacity={0.7}
       style={styles.rideTypeOption}
     >
-      {isSelected ? (
-        <LinearGradient
-          colors={colors.gradients?.premium || ['#FFD700', '#FFA500']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.rideTypeInner, shadows.gold]}
-        >
-          <Ionicons name={type.icon} size={24} color="#000" />
-          <Text style={[styles.rideTypeName, { color: '#000' }]}>{type.name}</Text>
-        </LinearGradient>
-      ) : (
-        <View
-          style={[
-            styles.rideTypeInner,
-            { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
-          ]}
-        >
-          <Ionicons name={type.icon} size={24} color={colors.textSecondary} />
-          <Text style={[styles.rideTypeName, { color: colors.text }]}>{type.name}</Text>
-        </View>
-      )}
+      <View
+        style={[
+          styles.rideTypeInner,
+          isSelected
+            ? { backgroundColor: colors.primary }
+            : { backgroundColor: colors.inputBackground || '#F5F5F5' },
+        ]}
+      >
+        <Ionicons name={type.icon} size={24} color={isSelected ? '#000' : colors.textSecondary} />
+        <Text style={[styles.rideTypeName, { color: isSelected ? '#000' : colors.text }]}>{type.name}</Text>
+      </View>
     </TouchableOpacity>
   );
 };
@@ -301,9 +308,11 @@ const OptionToggle = ({ icon, title, subtitle, value, onToggle, colors, badge })
 };
 
 const RideOptionsScreen = ({ navigation, route }) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
   const insets = useSafeAreaInsets();
-  const { pickup, dropoff } = route.params || {};
+  const params = route?.params || {};
+  const { pickup, dropoff } = params;
 
   // Ride type state
   const [rideType, setRideType] = useState('one_time');
@@ -596,28 +605,20 @@ const RideOptionsScreen = ({ navigation, route }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Premium Header */}
-      <LinearGradient
-        colors={colors.gradients?.premium || ['#FFD700', '#FFA500']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.header, { paddingTop: insets.top + spacing.md }]}
-      >
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + spacing.lg }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: colors.inputBackground || '#F5F5F5' }]}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             navigation.goBack();
           }}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Ride Options</Text>
-          <Text style={styles.headerSubtitle}>Customize your trip</Text>
-        </View>
-        <View style={{ width: 40 }} />
-      </LinearGradient>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Ride Options</Text>
+        <View style={styles.placeholder} />
+      </View>
 
       <ScrollView
         style={styles.content}
@@ -948,14 +949,14 @@ const RideOptionsScreen = ({ navigation, route }) => {
           </View>
         </View>
 
-        <Button
-          title="Find Drivers"
+        <TouchableOpacity
+          style={[styles.findButton, { backgroundColor: colors.primary }]}
           onPress={handleFindDrivers}
-          variant="primary"
-          size="large"
-          icon="search"
-          fullWidth
-        />
+          activeOpacity={0.8}
+        >
+          <Ionicons name="search" size={20} color="#000" />
+          <Text style={styles.findButtonText}>Find Drivers</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -968,7 +969,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
   },
@@ -976,22 +976,17 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerCenter: {
-    alignItems: 'center',
-  },
   headerTitle: {
-    fontSize: typography.h4,
-    fontWeight: '700',
-    color: '#000',
+    flex: 1,
+    fontSize: typography.h5,
+    fontWeight: '600',
+    textAlign: 'center',
   },
-  headerSubtitle: {
-    fontSize: typography.caption,
-    color: 'rgba(0,0,0,0.6)',
-    marginTop: 2,
+  placeholder: {
+    width: 40,
   },
   content: {
     flex: 1,
@@ -1414,6 +1409,19 @@ const styles = StyleSheet.create({
   },
   fareDetailText: {
     fontSize: typography.caption,
+  },
+  findButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 56,
+    borderRadius: borderRadius.md,
+    gap: spacing.sm,
+  },
+  findButtonText: {
+    fontSize: typography.body,
+    fontWeight: '600',
+    color: '#000',
   },
 
   // Dynamic seats info styles

@@ -19,8 +19,26 @@ import { Header, Card, Button } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 import { createSharedRide } from '../../api/sharedRides';
 
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  secondary: '#FFA500',
+  background: '#FFFFFF',
+  surface: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textMuted: '#9CA3AF',
+  success: '#10B981',
+  warning: '#F59E0B',
+  info: '#3B82F6',
+  error: '#EF4444',
+  gradientStart: '#FFFFFF',
+  gradientEnd: '#F5F5F5',
+};
+
 const CreateSharedRideScreen = ({ navigation }) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
   const [formData, setFormData] = useState({
     from_address: '',
     from_lat: null,

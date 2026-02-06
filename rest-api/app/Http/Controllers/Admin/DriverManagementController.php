@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\BannedCnic;
 use App\Models\LiveSelfieVerification;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -153,7 +154,9 @@ class DriverManagementController extends Controller
                 ]);
             }
 
-            // TODO: Send approval notification to driver (SMS/Push)
+            // Send approval notification to driver
+            $notificationService = app(NotificationService::class);
+            $notificationService->notifyDriverApproved($driver->id);
         });
 
         return back()->with('success', 'Driver approved successfully!');
@@ -183,7 +186,9 @@ class DriverManagementController extends Controller
             ]);
         }
 
-        // TODO: Send rejection notification to driver
+        // Send rejection notification to driver
+        $notificationService = app(NotificationService::class);
+        $notificationService->notifyDriverRejected($driver->id, $request->rejection_reason);
 
         return back()->with('success', 'Driver rejected.');
     }

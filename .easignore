@@ -1,0 +1,16 @@
+# Ignore backend API
+rest-api/
+
+# Ignore website
+website/
+
+# Ignore payment process
+Paymentprocess/
+
+# Ignore git
+.git/
+
+# Ignore temp files
+*.log
+.DS_Store
+nul

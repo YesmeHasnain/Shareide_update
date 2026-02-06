@@ -17,6 +17,21 @@ import { ridesAPI } from '../../api/rides';
 import { Header, Card, Avatar, Button, Input } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  background: '#FFFFFF',
+  surface: '#FFFFFF',
+  card: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  border: '#E5E7EB',
+  success: '#10B981',
+  error: '#EF4444',
+  gradients: { primary: ['#FFD700', '#FFA500'] },
+};
+
 const PaymentOption = ({ id, icon, label, isSelected, onPress, colors }) => {
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -64,9 +79,11 @@ const PaymentOption = ({ id, icon, label, isSelected, onPress, colors }) => {
 };
 
 const BookingConfirmScreen = ({ route, navigation }) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
   const insets = useSafeAreaInsets();
-  const { driver, pickup, dropoff } = route.params;
+  const params = route?.params || {};
+  const { driver, pickup, dropoff } = params;
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);

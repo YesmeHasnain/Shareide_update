@@ -6,79 +6,68 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
-import { Header, Card, Avatar, Rating, Button, Badge } from '../../components/common';
+import { Card, Avatar } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
-const StatItem = ({ icon, value, label, colors }) => (
-  <View style={styles.statItem}>
-    <View style={[styles.statIconContainer, { backgroundColor: colors.primary + '15' }]}>
-      <Ionicons name={icon} size={20} color={colors.primary} />
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  background: '#FFFFFF',
+  card: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  inputBackground: '#F5F5F5',
+  border: '#E5E7EB',
+  success: '#10B981',
+  price: '#F5A623',
+};
+
+const VerifiedItem = ({ icon, label, verified, colors }) => (
+  <View style={styles.verifiedItem}>
+    <View style={[styles.verifiedIcon, { backgroundColor: verified ? colors.success + '15' : colors.border }]}>
+      <Ionicons
+        name={verified ? 'checkmark' : 'close'}
+        size={14}
+        color={verified ? colors.success : colors.textTertiary}
+      />
     </View>
-    <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
+    <Text style={[styles.verifiedLabel, { color: colors.text }]}>{label}</Text>
   </View>
 );
 
-const BadgeCard = ({ icon, label, colors, index }) => {
-  return (
-    <View style={styles.badgeCard}>
-      <TouchableOpacity
-        activeOpacity={0.7}
-        style={[styles.badgeCardContent, { backgroundColor: colors.surface }]}
-      >
-        <View style={[styles.badgeIconContainer, { backgroundColor: colors.primary + '15' }]}>
-          <Ionicons name={icon} size={24} color={colors.primary} />
-        </View>
-        <Text style={[styles.badgeLabel, { color: colors.text }]}>{label}</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-const ReviewCard = ({ review, colors, index }) => (
-  <View>
-    <Card style={styles.reviewCard} shadow="sm">
-      <View style={styles.reviewHeader}>
-        <View style={styles.reviewerInfo}>
-          <Avatar name={review.name} size="small" />
-          <View style={styles.reviewerDetails}>
-            <Text style={[styles.reviewerName, { color: colors.text }]}>
-              {review.name}
-            </Text>
-            <Text style={[styles.reviewDate, { color: colors.textSecondary }]}>
-              {review.date}
-            </Text>
-          </View>
-        </View>
+const ReviewCard = ({ review, colors }) => (
+  <View style={styles.reviewCard}>
+    <View style={styles.reviewHeader}>
+      <Avatar name={review.name} size="small" />
+      <View style={styles.reviewerDetails}>
+        <Text style={[styles.reviewerName, { color: colors.text }]}>
+          {review.name}
+        </Text>
         <View style={styles.reviewRating}>
-          <Ionicons name="star" size={14} color={colors.star} />
-          <Text style={[styles.reviewRatingText, { color: colors.text }]}>
+          <Ionicons name="star" size={12} color={colors.primary} />
+          <Text style={[styles.reviewRatingText, { color: colors.textSecondary }]}>
             {review.rating}
           </Text>
         </View>
       </View>
-      <Text style={[styles.reviewComment, { color: colors.textSecondary }]}>
-        {review.comment}
-      </Text>
-    </Card>
+    </View>
+    <Text style={[styles.reviewComment, { color: colors.textSecondary }]}>
+      {review.comment}
+    </Text>
   </View>
 );
 
 const DriverProfileScreen = ({ route, navigation }) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
   const insets = useSafeAreaInsets();
-  const { driver, pickup, dropoff } = route.params;
-
-  const badges = [
-    { id: 1, icon: 'star', label: 'Top Rated' },
-    { id: 2, icon: 'shield-checkmark', label: 'Verified' },
-    { id: 3, icon: 'trophy', label: '500+ Rides' },
-  ];
+  const params = route?.params || {};
+  const { driver, pickup, dropoff } = params;
 
   const reviews = [
     {
@@ -86,21 +75,18 @@ const DriverProfileScreen = ({ route, navigation }) => {
       name: 'Sara K.',
       rating: 5,
       comment: 'Very professional and on time! The car was clean and the ride was smooth.',
-      date: '2 days ago',
     },
     {
       id: 2,
       name: 'Ali M.',
       rating: 5,
       comment: 'Clean car, friendly driver. Great experience overall!',
-      date: '1 week ago',
     },
     {
       id: 3,
       name: 'Hassan R.',
       rating: 4,
       comment: 'Good experience overall. Would recommend.',
-      date: '2 weeks ago',
     },
   ];
 
@@ -115,159 +101,142 @@ const DriverProfileScreen = ({ route, navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Header
-        title="Driver Profile"
-        leftIcon="arrow-back"
-        onLeftPress={() => navigation.goBack()}
-        rightIcon="heart-outline"
-        onRightPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }}
-      />
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + spacing.lg }]}>
+        <TouchableOpacity
+          style={[styles.backButton, { backgroundColor: colors.inputBackground || '#F5F5F5' }]}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>PROFILE</Text>
+        <View style={styles.placeholder} />
+      </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        {/* Profile Card */}
-        <View>
-          <LinearGradient
-            colors={colors.gradients?.premium || ['#FFD700', '#FFA500']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.profileCard, shadows.goldLg]}
-          >
+        {/* Profile Header */}
+        <View style={styles.profileHeader}>
+          {/* Avatar with verified badge */}
+          <View style={styles.avatarSection}>
             <Avatar
               source={driver?.avatar}
               name={driver?.name}
               size="xlarge"
-              showBadge
-              badgeType="verified"
             />
-
-            <Text style={styles.driverName}>{driver?.name || 'Driver'}</Text>
-
-            <View style={styles.ratingRow}>
-              <Rating value={driver?.rating || 4.8} size={18} showValue />
-              <Text style={styles.rideCount}>
-                ({driver?.total_rides || 500}+ rides)
-              </Text>
+            <View style={[styles.verifiedBadge, { backgroundColor: colors.primary }]}>
+              <Ionicons name="checkmark" size={16} color="#000" />
             </View>
-
-            <View style={styles.statsRow}>
-              <StatItem
-                icon="star"
-                value={driver?.rating || '4.8'}
-                label="Rating"
-                colors={{ ...colors, text: '#000', textSecondary: '#00000080' }}
-              />
-              <View style={styles.statDivider} />
-              <StatItem
-                icon="car"
-                value={driver?.total_rides || '500+'}
-                label="Rides"
-                colors={{ ...colors, text: '#000', textSecondary: '#00000080' }}
-              />
-              <View style={styles.statDivider} />
-              <StatItem
-                icon="calendar"
-                value="2y"
-                label="Experience"
-                colors={{ ...colors, text: '#000', textSecondary: '#00000080' }}
-              />
-            </View>
-          </LinearGradient>
-        </View>
-
-        {/* Badges Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Achievements
-          </Text>
-          <View style={styles.badgesRow}>
-            {badges.map((badge, index) => (
-              <BadgeCard
-                key={badge.id}
-                icon={badge.icon}
-                label={badge.label}
-                colors={colors}
-                index={index}
-              />
-            ))}
           </View>
-        </View>
 
-        {/* Vehicle Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Vehicle
+          {/* Name */}
+          <Text style={[styles.driverName, { color: colors.text }]}>
+            {driver?.name || 'Driver'}
           </Text>
-          <View>
-            <Card style={styles.vehicleCard} shadow="md">
-              <View style={styles.vehicleContent}>
-                <View
-                  style={[
-                    styles.vehicleIconContainer,
-                    { backgroundColor: colors.primary + '15' },
-                  ]}
-                >
-                  <Ionicons name="car-sport" size={32} color={colors.primary} />
-                </View>
-                <View style={styles.vehicleInfo}>
-                  <Text style={[styles.vehicleModel, { color: colors.text }]}>
-                    {driver?.vehicle?.model || 'Toyota Corolla'}
-                  </Text>
-                  <View style={styles.vehicleDetailsRow}>
-                    <Badge
-                      label={driver?.vehicle?.color || 'White'}
-                      variant="outline"
-                      size="small"
-                    />
-                    <Text
-                      style={[styles.vehiclePlate, { color: colors.textSecondary }]}
-                    >
-                      {driver?.vehicle?.plate || 'ABC-123'}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.vehicleFeatures}>
-                  <View style={styles.featureItem}>
-                    <Ionicons name="snow-outline" size={16} color={colors.info} />
-                  </View>
-                  <View style={styles.featureItem}>
-                    <Ionicons name="musical-notes-outline" size={16} color={colors.primary} />
-                  </View>
-                </View>
+
+          {/* Stats Row */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <View style={styles.statValue}>
+                <Text style={[styles.statNumber, { color: colors.text }]}>
+                  {driver?.rating?.toFixed(1) || '4.9'}
+                </Text>
+                <Ionicons name="star" size={16} color={colors.primary} />
               </View>
-            </Card>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Rating</Text>
+            </View>
+
+            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: colors.text }]}>
+                {driver?.total_rides || 500}
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Riders</Text>
+            </View>
           </View>
         </View>
 
-        {/* Reviews Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Reviews
-            </Text>
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }}
-            >
-              <Text style={[styles.seeAll, { color: colors.primary }]}>
-                See All
-              </Text>
-            </TouchableOpacity>
+        {/* Profile Details Card */}
+        <Card style={styles.detailsCard} shadow="sm">
+          <Text style={[styles.cardTitle, { color: colors.text }]}>Profile Details</Text>
+
+          <View style={styles.verifiedList}>
+            <VerifiedItem
+              icon="car"
+              label="Verified driver"
+              verified={driver?.is_driver_verified || true}
+              colors={colors}
+            />
+            <VerifiedItem
+              icon="call"
+              label="Verified phone number"
+              verified={true}
+              colors={colors}
+            />
+            <VerifiedItem
+              icon="document"
+              label="Verified Driver's Licence"
+              verified={driver?.is_license_verified || true}
+              colors={colors}
+            />
+            <VerifiedItem
+              icon="calendar"
+              label={`Member since ${driver?.member_since || '2022'}`}
+              verified={true}
+              colors={colors}
+            />
           </View>
-          {reviews.map((review, index) => (
+        </Card>
+
+        {/* Car Details Card */}
+        <Card style={styles.detailsCard} shadow="sm">
+          <Text style={[styles.cardTitle, { color: colors.text }]}>Car Details</Text>
+
+          <View style={styles.carInfo}>
+            <View style={[styles.carImagePlaceholder, { backgroundColor: colors.inputBackground || '#F5F5F5' }]}>
+              <Ionicons name="car" size={32} color={colors.textTertiary} />
+            </View>
+            <View style={styles.carDetails}>
+              <Text style={[styles.carModel, { color: colors.text }]}>
+                {driver?.vehicle?.model || 'Toyota Corolla'}
+              </Text>
+              <Text style={[styles.carPlate, { color: colors.textSecondary }]}>
+                {driver?.vehicle?.plate || 'ABC-123'}
+              </Text>
+              <Text style={[styles.carMeta, { color: colors.textTertiary }]}>
+                {driver?.vehicle?.color || 'White'} • {driver?.vehicle?.year || '2020'}
+              </Text>
+            </View>
+          </View>
+        </Card>
+
+        {/* Ratings & Reviews Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Ratings & Reviews
+          </Text>
+          {reviews.map((review) => (
             <ReviewCard
               key={review.id}
               review={review}
               colors={colors}
-              index={index}
             />
           ))}
         </View>
+
+        {/* Report Issue Button */}
+        <TouchableOpacity
+          style={[styles.reportButton, { borderColor: colors.border }]}
+          onPress={() => navigation.navigate('Support')}
+        >
+          <Ionicons name="flag-outline" size={20} color={colors.textSecondary} />
+          <Text style={[styles.reportText, { color: colors.textSecondary }]}>
+            Report an issue
+          </Text>
+        </TouchableOpacity>
 
         <View style={{ height: 120 }} />
       </ScrollView>
@@ -277,28 +246,25 @@ const DriverProfileScreen = ({ route, navigation }) => {
         style={[
           styles.footer,
           {
-            backgroundColor: colors.surface,
+            backgroundColor: colors.card,
             paddingBottom: insets.bottom + spacing.md,
           },
-          shadows.lg,
         ]}
       >
         <View style={styles.fareInfo}>
           <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>
-            Estimated Fare
+            Fare
           </Text>
-          <Text style={[styles.fareAmount, { color: colors.primary }]}>
+          <Text style={[styles.fareAmount, { color: colors.price || '#F5A623' }]}>
             Rs. {driver?.fare || 350}
           </Text>
         </View>
-        <Button
-          title="Book This Driver"
+        <TouchableOpacity
+          style={[styles.bookButton, { backgroundColor: colors.primary }]}
           onPress={handleBookDriver}
-          variant="primary"
-          size="large"
-          icon="checkmark-circle"
-          style={styles.bookButton}
-        />
+        >
+          <Text style={styles.bookButtonText}>Book This Driver</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -308,179 +274,158 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    padding: spacing.lg,
-  },
-  profileCard: {
-    borderRadius: borderRadius.xxl,
-    padding: spacing.xxl,
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  driverName: {
-    fontSize: typography.h3,
-    fontWeight: '700',
-    color: '#000',
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  ratingRow: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.xl,
-    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
-  rideCount: {
-    fontSize: typography.caption,
-    color: '#00000080',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    width: '100%',
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statIconContainer: {
+  backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.xs,
-    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  headerTitle: {
+    flex: 1,
+    fontSize: typography.h5,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  placeholder: {
+    width: 40,
+  },
+  content: {
+    paddingHorizontal: spacing.lg,
+  },
+  profileHeader: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  avatarSection: {
+    position: 'relative',
+    marginBottom: spacing.md,
+  },
+  verifiedBadge: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  driverName: {
+    fontSize: typography.h4,
+    fontWeight: '700',
+    marginBottom: spacing.lg,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xxl,
+  },
+  statItem: {
+    alignItems: 'center',
   },
   statValue: {
-    fontSize: typography.h5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  statNumber: {
+    fontSize: typography.h4,
     fontWeight: '700',
-    color: '#000',
   },
   statLabel: {
     fontSize: typography.caption,
-    color: '#00000080',
     marginTop: 2,
   },
   statDivider: {
     width: 1,
-    height: 50,
-    backgroundColor: '#00000020',
+    height: 30,
+  },
+  detailsCard: {
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+  },
+  cardTitle: {
+    fontSize: typography.body,
+    fontWeight: '600',
+    marginBottom: spacing.lg,
+  },
+  verifiedList: {
+    gap: spacing.md,
+  },
+  verifiedItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  verifiedIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  verifiedLabel: {
+    fontSize: typography.body,
+  },
+  carInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
+  },
+  carImagePlaceholder: {
+    width: 80,
+    height: 60,
+    borderRadius: borderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  carDetails: {
+    flex: 1,
+  },
+  carModel: {
+    fontSize: typography.body,
+    fontWeight: '600',
+  },
+  carPlate: {
+    fontSize: typography.bodySmall,
+    marginTop: 2,
+  },
+  carMeta: {
+    fontSize: typography.caption,
+    marginTop: 2,
   },
   section: {
     marginBottom: spacing.xl,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
   sectionTitle: {
-    fontSize: typography.h5,
-    fontWeight: '700',
+    fontSize: typography.body,
+    fontWeight: '600',
     marginBottom: spacing.md,
-  },
-  seeAll: {
-    fontSize: typography.body,
-    fontWeight: '600',
-  },
-  badgesRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  badgeCard: {
-    flex: 1,
-  },
-  badgeCardContent: {
-    alignItems: 'center',
-    padding: spacing.lg,
-    borderRadius: borderRadius.lg,
-    ...shadows.sm,
-  },
-  badgeIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  badgeLabel: {
-    fontSize: typography.caption,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  vehicleCard: {
-    padding: spacing.lg,
-  },
-  vehicleContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  vehicleIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  vehicleInfo: {
-    flex: 1,
-  },
-  vehicleModel: {
-    fontSize: typography.body,
-    fontWeight: '700',
-    marginBottom: spacing.xs,
-  },
-  vehicleDetailsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  vehiclePlate: {
-    fontSize: typography.caption,
-    fontWeight: '600',
-  },
-  vehicleFeatures: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  featureItem: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   reviewCard: {
-    marginBottom: spacing.sm,
-    padding: spacing.md,
+    marginBottom: spacing.md,
   },
   reviewHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
-  reviewerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   reviewerDetails: {
     marginLeft: spacing.sm,
+    flex: 1,
   },
   reviewerName: {
     fontSize: typography.body,
-    fontWeight: '600',
-  },
-  reviewDate: {
-    fontSize: typography.caption,
+    fontWeight: '500',
   },
   reviewRating: {
     flexDirection: 'row',
@@ -488,12 +433,25 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   reviewRatingText: {
-    fontSize: typography.body,
-    fontWeight: '600',
+    fontSize: typography.caption,
   },
   reviewComment: {
+    fontSize: typography.bodySmall,
+    lineHeight: 20,
+  },
+  reportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  reportText: {
     fontSize: typography.body,
-    lineHeight: 22,
+    fontWeight: '500',
   },
   footer: {
     position: 'absolute',
@@ -503,6 +461,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.lg,
+    ...shadows.md,
   },
   fareInfo: {
     flex: 1,
@@ -518,6 +477,15 @@ const styles = StyleSheet.create({
   bookButton: {
     flex: 1,
     marginLeft: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+  },
+  bookButtonText: {
+    fontSize: typography.body,
+    fontWeight: '600',
+    color: '#000',
   },
 });
 

@@ -162,8 +162,8 @@ class AuthController extends Controller
             }
         }
 
-        // Check if user exists
-        $user = User::where('phone', $phone)->first();
+        // Check if user exists - eager load driver for driver app
+        $user = User::with('driver')->where('phone', $phone)->first();
 
         // If user does NOT exist -> new user flow (go to Gender -> Profile Setup)
         if (!$user) {
@@ -193,21 +193,40 @@ class AuthController extends Controller
             ['balance' => 0, 'total_spent' => 0, 'total_topped_up' => 0]
         );
 
+        // Build user data with driver info for driver app
+        $userData = [
+            'id' => (string) $user->id,
+            'name' => $user->name,
+            'phone' => $user->phone,
+            'email' => $user->email,
+            'avatar' => $profile?->avatar_path,
+            'gender' => $profile?->gender,
+            'profile_complete' => $isProfileComplete,
+        ];
+
+        // Include driver info if user is a driver (for shareide_fleet app)
+        if ($user->driver) {
+            $userData['driver'] = [
+                'id' => (string) $user->driver->id,
+                'vehicle_type' => $user->driver->vehicle_type,
+                'vehicle_model' => $user->driver->vehicle_model,
+                'plate_number' => $user->driver->plate_number,
+                'seats' => $user->driver->seats,
+                'city' => $user->driver->city,
+                'status' => $user->driver->status,
+                'is_online' => $user->driver->is_online,
+                'rating_average' => $user->driver->rating_average,
+                'completed_rides_count' => $user->driver->completed_rides_count,
+            ];
+        }
+
         return response()->json([
             'success' => true,
             'is_new_user' => false,
             'needs_profile_setup' => !$isProfileComplete,
             'message' => $isProfileComplete ? 'Login successful' : 'Please complete your profile',
             'token' => $token,
-            'user' => [
-                'id' => (string) $user->id,
-                'name' => $user->name,
-                'phone' => $user->phone,
-                'email' => $user->email,
-                'avatar' => $profile?->avatar_path,
-                'gender' => $profile?->gender,
-                'profile_complete' => $isProfileComplete,
-            ],
+            'user' => $userData,
         ]);
     }
 

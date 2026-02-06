@@ -7,19 +7,35 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { ridesAPI } from '../../api/rides';
-import { Card, Button, Avatar, Skeleton } from '../../components/common';
+import { Card, Avatar } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  background: '#FFFFFF',
+  card: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  inputBackground: '#F5F5F5',
+  border: '#E5E7EB',
+  success: '#10B981',
+  error: '#EF4444',
+  price: '#F5A623',
+};
+
 const BookingDetailsScreen = ({ route, navigation }) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
   const insets = useSafeAreaInsets();
-  const { booking } = route.params;
+  const params = route?.params || {};
+  const { booking } = params;
   const [loading, setLoading] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [rideDetails, setRideDetails] = useState(booking);
@@ -149,244 +165,174 @@ const BookingDetailsScreen = ({ route, navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Premium Header */}
-      <LinearGradient
-        colors={colors.gradients?.premium || ['#FFD700', '#FFA500']}
-        style={[styles.header, { paddingTop: insets.top + spacing.md }]}
-      >
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + spacing.lg }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: colors.inputBackground || '#F5F5F5' }]}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             navigation.goBack();
           }}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Booking Details</Text>
-        <View style={{ width: 40 }} />
-      </LinearGradient>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>RIDE DETAILS</Text>
+        <View style={styles.placeholder} />
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {/* Driver Info Row */}
+        <View style={styles.driverRow}>
+          <Avatar
+            name={rideDetails.driver?.name}
+            source={rideDetails.driver?.avatar}
+            size="medium"
+          />
+          <View style={styles.driverInfo}>
+            <Text style={[styles.driverName, { color: colors.text }]}>
+              {rideDetails.driver?.name || 'Driver'}
+            </Text>
+            <Text style={[styles.driverDate, { color: colors.textSecondary }]}>
+              {rideDetails.date || new Date(rideDetails.created_at || Date.now()).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+            </Text>
+          </View>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: colors.inputBackground || '#F5F5F5' }]}
+              onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+            >
+              <Ionicons name="call-outline" size={20} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: colors.inputBackground || '#F5F5F5' }]}
+              onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+            >
+              <Ionicons name="chatbubble-outline" size={20} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Status Badge */}
-        <View>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: getStatusColor(rideDetails.status) + '20' },
-            ]}
+        <View
+          style={[
+            styles.statusBadge,
+            { borderColor: getStatusColor(rideDetails.status) },
+          ]}
+        >
+          <Ionicons
+            name={getStatusIcon(rideDetails.status)}
+            size={16}
+            color={getStatusColor(rideDetails.status)}
+          />
+          <Text style={[styles.statusText, { color: getStatusColor(rideDetails.status) }]}>
+            {getStatusLabel(rideDetails.status)}
+          </Text>
+        </View>
+
+        {/* Departure Card */}
+        <Card style={styles.departureCard} shadow="sm">
+          <View style={styles.routeContainer}>
+            {/* Pickup */}
+            <View style={styles.routeRow}>
+              <View style={[styles.routeIcon, { backgroundColor: colors.primary + '20' }]}>
+                <Ionicons name="radio-button-on" size={16} color={colors.primary} />
+              </View>
+              <View style={styles.routeTextContainer}>
+                <Text style={[styles.routeLabel, { color: colors.textSecondary }]}>PICK UP</Text>
+                <Text style={[styles.routeAddress, { color: colors.text }]}>
+                  {rideDetails.pickup?.address || rideDetails.pickup_address || 'Pickup location'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Connector */}
+            <View style={styles.routeConnector}>
+              <View style={[styles.connectorLine, { backgroundColor: colors.border }]} />
+            </View>
+
+            {/* Dropoff */}
+            <View style={styles.routeRow}>
+              <View style={[styles.routeIcon, { backgroundColor: colors.primary + '20' }]}>
+                <Ionicons name="location" size={16} color={colors.primary} />
+              </View>
+              <View style={styles.routeTextContainer}>
+                <Text style={[styles.routeLabel, { color: colors.textSecondary }]}>DROP OFF</Text>
+                <Text style={[styles.routeAddress, { color: colors.text }]}>
+                  {rideDetails.dropoff?.address || rideDetails.drop_address || 'Dropoff location'}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Seats info */}
+          <View style={[styles.seatsRow, { borderTopColor: colors.border }]}>
+            <View style={styles.seatsInfo}>
+              <Ionicons name="people-outline" size={18} color={colors.textSecondary} />
+              <Text style={[styles.seatsText, { color: colors.textSecondary }]}>
+                {rideDetails.seats || 1} seat{(rideDetails.seats || 1) > 1 ? 's' : ''}
+              </Text>
+            </View>
+            {rideDetails.is_monthly && (
+              <View style={[styles.monthlyBadge, { backgroundColor: colors.primary }]}>
+                <Text style={styles.monthlyText}>Monthly</Text>
+              </View>
+            )}
+          </View>
+        </Card>
+
+        {/* Cancel Button */}
+        {rideDetails.status !== 'completed' && rideDetails.status !== 'cancelled' && (
+          <TouchableOpacity
+            style={[styles.cancelButton, { borderColor: colors.error }]}
+            onPress={handleCancelBooking}
+            disabled={cancelling}
           >
-            <Ionicons
-              name={getStatusIcon(rideDetails.status)}
-              size={20}
-              color={getStatusColor(rideDetails.status)}
-            />
-            <Text style={[styles.statusText, { color: getStatusColor(rideDetails.status) }]}>
-              {getStatusLabel(rideDetails.status)}
+            <Text style={[styles.cancelButtonText, { color: colors.error }]}>
+              {cancelling ? 'Cancelling...' : 'Cancel ride'}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Payment Section */}
+        <View style={styles.paymentSection}>
+          <Text style={[styles.paymentLabel, { color: colors.textSecondary }]}>Payment</Text>
+          <View style={styles.paymentRow}>
+            <View style={styles.paymentMethod}>
+              <Ionicons
+                name={getPaymentIcon(rideDetails.payment_method)}
+                size={20}
+                color={colors.text}
+              />
+              <Text style={[styles.paymentMethodText, { color: colors.text }]}>
+                {rideDetails.payment_method || 'Cash'}
+              </Text>
+            </View>
+            <Text style={[styles.fareAmount, { color: colors.price || '#F5A623' }]}>
+              Rs. {rideDetails.fare || rideDetails.total || rideDetails.estimated_price || 350}
             </Text>
           </View>
         </View>
 
-        {/* Fare Card */}
-        <View>
-          <Card style={styles.fareCard} shadow="lg">
-            <View style={styles.fareMain}>
-              <View style={[styles.fareIconBg, { backgroundColor: colors.primary + '15' }]}>
-                <Ionicons name="cash" size={28} color={colors.primary} />
-              </View>
-              <View style={styles.fareInfo}>
-                <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Total Fare</Text>
-                <Text style={[styles.fareAmount, { color: colors.text }]}>
-                  Rs. {rideDetails.fare || rideDetails.total || rideDetails.estimated_price || 350}
-                </Text>
-              </View>
-            </View>
-            <View style={[styles.paymentBadge, { backgroundColor: colors.background }]}>
-              <Ionicons
-                name={getPaymentIcon(rideDetails.payment_method)}
-                size={18}
-                color={colors.primary}
-              />
-              <Text style={[styles.paymentText, { color: colors.text }]}>
-                {rideDetails.payment_method || 'Cash'}
-              </Text>
-            </View>
-          </Card>
-        </View>
-
-        {/* Route Card */}
-        <View>
-          <Card style={styles.routeCard} shadow="md">
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconBg, { backgroundColor: colors.primary + '15' }]}>
-                <Ionicons name="navigate" size={18} color={colors.primary} />
-              </View>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Route</Text>
-            </View>
-            <View style={styles.routeContainer}>
-              <View style={styles.routeRow}>
-                <View style={styles.routeDotContainer}>
-                  <View style={[styles.dot, { backgroundColor: '#22c55e' }]} />
-                  <View style={[styles.routeLine, { backgroundColor: colors.border }]} />
-                </View>
-                <View style={styles.routeTextContainer}>
-                  <Text style={[styles.routeLabel, { color: colors.textSecondary }]}>PICKUP</Text>
-                  <Text style={[styles.routeAddress, { color: colors.text }]}>
-                    {rideDetails.pickup?.address || rideDetails.pickup_address || 'N/A'}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.routeRow}>
-                <View style={styles.routeDotContainer}>
-                  <View style={[styles.dot, { backgroundColor: '#ef4444' }]} />
-                </View>
-                <View style={styles.routeTextContainer}>
-                  <Text style={[styles.routeLabel, { color: colors.textSecondary }]}>DROP-OFF</Text>
-                  <Text style={[styles.routeAddress, { color: colors.text }]}>
-                    {rideDetails.dropoff?.address || rideDetails.drop_address || 'N/A'}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </Card>
-        </View>
-
-        {/* Driver Card */}
-        <View>
-          <Card style={styles.driverCard} shadow="md">
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconBg, { backgroundColor: colors.primary + '15' }]}>
-                <Ionicons name="person" size={18} color={colors.primary} />
-              </View>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Driver</Text>
-            </View>
-            <View style={styles.driverContent}>
-              <Avatar
-                name={rideDetails.driver?.name}
-                source={rideDetails.driver?.avatar}
-                size="large"
-                showBadge
-                badgeType="verified"
-              />
-              <View style={styles.driverInfo}>
-                <Text style={[styles.driverName, { color: colors.text }]}>
-                  {rideDetails.driver?.name || 'Driver'}
-                </Text>
-                <View style={styles.ratingRow}>
-                  <Ionicons name="star" size={14} color={colors.star || '#FFD700'} />
-                  <Text style={[styles.ratingText, { color: colors.text }]}>
-                    {rideDetails.driver?.rating || 4.5}
-                  </Text>
-                </View>
-                <View style={styles.vehicleRow}>
-                  <Ionicons name="car-outline" size={14} color={colors.textSecondary} />
-                  <Text style={[styles.vehicleText, { color: colors.textSecondary }]}>
-                    {rideDetails.driver?.vehicle?.model || 'Vehicle'} •{' '}
-                    {rideDetails.driver?.vehicle?.plate || rideDetails.driver?.plate_number || 'N/A'}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </Card>
-        </View>
-
-        {/* Trip Details Card */}
-        <View>
-          <Card style={styles.detailsCard} shadow="md">
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconBg, { backgroundColor: colors.primary + '15' }]}>
-                <Ionicons name="information-circle" size={18} color={colors.primary} />
-              </View>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Trip Details</Text>
-            </View>
-
-            <View style={styles.detailsGrid}>
-              <View style={styles.detailItem}>
-                <Ionicons name="receipt-outline" size={18} color={colors.textSecondary} />
-                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Booking ID</Text>
-                <Text style={[styles.detailValue, { color: colors.text }]}>
-                  #{rideDetails.id || 'N/A'}
-                </Text>
-              </View>
-
-              <View style={styles.detailItem}>
-                <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} />
-                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Date</Text>
-                <Text style={[styles.detailValue, { color: colors.text }]}>
-                  {rideDetails.date || new Date(rideDetails.created_at || Date.now()).toLocaleDateString()}
-                </Text>
-              </View>
-
-              <View style={styles.detailItem}>
-                <Ionicons name="time-outline" size={18} color={colors.textSecondary} />
-                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Time</Text>
-                <Text style={[styles.detailValue, { color: colors.text }]}>
-                  {rideDetails.time || new Date(rideDetails.created_at || Date.now()).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-              </View>
-
-              <View style={styles.detailItem}>
-                <Ionicons name="navigate-outline" size={18} color={colors.textSecondary} />
-                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Distance</Text>
-                <Text style={[styles.detailValue, { color: colors.text }]}>
-                  {rideDetails.distance || rideDetails.distance_km || '5.2'} km
-                </Text>
-              </View>
-
-              <View style={styles.detailItem}>
-                <Ionicons name="hourglass-outline" size={18} color={colors.textSecondary} />
-                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Duration</Text>
-                <Text style={[styles.detailValue, { color: colors.text }]}>
-                  {rideDetails.duration || '15'} mins
-                </Text>
-              </View>
-
-              <View style={styles.detailItem}>
-                <Ionicons name="car-outline" size={18} color={colors.textSecondary} />
-                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Vehicle</Text>
-                <Text style={[styles.detailValue, { color: colors.text }]}>
-                  {rideDetails.vehicle_type?.replace('_', ' ') || 'Car'}
-                </Text>
-              </View>
-            </View>
-          </Card>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.actionsSection}>
-          {rideDetails.status !== 'completed' && rideDetails.status !== 'cancelled' && (
-            <Button
-              title="Cancel Booking"
-              onPress={handleCancelBooking}
-              variant="danger"
-              size="large"
-              loading={cancelling}
-              icon="close-circle"
-              fullWidth
-            />
-          )}
-
-          {rideDetails.status === 'completed' && !rideDetails.rated && (
-            <Button
-              title="Rate This Ride"
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                navigation.navigate('RateRide', {
-                  ride: rideDetails,
-                  driver: rideDetails.driver,
-                  fare: rideDetails.fare,
-                });
-              }}
-              variant="primary"
-              size="large"
-              icon="star"
-              fullWidth
-            />
-          )}
-        </View>
+        {/* Rate Button */}
+        {rideDetails.status === 'completed' && !rideDetails.rated && (
+          <TouchableOpacity
+            style={[styles.rateButton, { backgroundColor: colors.primary }]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              navigation.navigate('RateRide', {
+                ride: rideDetails,
+                driver: rideDetails.driver,
+                fare: rideDetails.fare,
+              });
+            }}
+          >
+            <Ionicons name="star" size={20} color="#000" />
+            <Text style={styles.rateButtonText}>Rate This Ride</Text>
+          </TouchableOpacity>
+        )}
 
         <View style={{ height: spacing.xxxl }} />
       </ScrollView>
@@ -401,7 +347,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
   },
@@ -409,17 +354,48 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: typography.h4,
-    fontWeight: '700',
-    color: '#000',
+    flex: 1,
+    fontSize: typography.h5,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  placeholder: {
+    width: 40,
   },
   content: {
     padding: spacing.lg,
+  },
+  driverRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  driverInfo: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  driverName: {
+    fontSize: typography.body,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  driverDate: {
+    fontSize: typography.caption,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  actionBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statusBadge: {
     flexDirection: 'row',
@@ -428,167 +404,131 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
+    borderWidth: 1,
     marginBottom: spacing.lg,
     gap: spacing.xs,
   },
   statusText: {
-    fontSize: typography.body,
-    fontWeight: '700',
-  },
-  fareCard: {
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  fareMain: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  fareIconBg: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  fareInfo: {
-    flex: 1,
-  },
-  fareLabel: {
-    fontSize: typography.caption,
-    marginBottom: spacing.xs,
-  },
-  fareAmount: {
-    fontSize: typography.h3,
-    fontWeight: '700',
-  },
-  paymentBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    gap: spacing.xs,
-  },
-  paymentText: {
     fontSize: typography.bodySmall,
     fontWeight: '600',
-    textTransform: 'capitalize',
   },
-  routeCard: {
+  departureCard: {
     padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  sectionIconBg: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    fontSize: typography.body,
-    fontWeight: '700',
+    marginBottom: spacing.lg,
   },
   routeContainer: {
-    paddingLeft: spacing.xs,
+    marginBottom: spacing.md,
   },
   routeRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
-  routeDotContainer: {
+  routeIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,
   },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+  routeConnector: {
+    marginLeft: 15,
+    paddingVertical: spacing.xs,
   },
-  routeLine: {
+  connectorLine: {
     width: 2,
-    height: 24,
-    marginVertical: spacing.xs,
+    height: 20,
   },
   routeTextContainer: {
     flex: 1,
-    paddingBottom: spacing.sm,
   },
   routeLabel: {
-    fontSize: typography.caption,
+    fontSize: typography.tiny,
     fontWeight: '600',
+    letterSpacing: 0.5,
     marginBottom: 2,
   },
   routeAddress: {
     fontSize: typography.body,
-    lineHeight: 20,
+    fontWeight: '500',
   },
-  driverCard: {
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  driverContent: {
+  seatsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
   },
-  driverInfo: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  driverName: {
-    fontSize: typography.h5,
-    fontWeight: '700',
-    marginBottom: spacing.xs,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-    gap: spacing.xs,
-  },
-  ratingText: {
-    fontSize: typography.body,
-    fontWeight: '600',
-  },
-  vehicleRow: {
+  seatsInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
   },
-  vehicleText: {
+  seatsText: {
     fontSize: typography.bodySmall,
   },
-  detailsCard: {
-    padding: spacing.lg,
-    marginBottom: spacing.md,
+  monthlyBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
   },
-  detailsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  detailItem: {
-    width: '50%',
-    paddingVertical: spacing.sm,
-    gap: spacing.xs,
-  },
-  detailLabel: {
+  monthlyText: {
     fontSize: typography.caption,
+    fontWeight: '600',
+    color: '#000',
   },
-  detailValue: {
+  cancelButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.lg,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    marginBottom: spacing.xl,
+  },
+  cancelButtonText: {
     fontSize: typography.body,
     fontWeight: '600',
   },
-  actionsSection: {
-    marginTop: spacing.md,
+  paymentSection: {
+    marginBottom: spacing.lg,
+  },
+  paymentLabel: {
+    fontSize: typography.caption,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    marginBottom: spacing.sm,
+  },
+  paymentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  paymentMethod: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  paymentMethodText: {
+    fontSize: typography.body,
+    fontWeight: '500',
+    textTransform: 'capitalize',
+  },
+  fareAmount: {
+    fontSize: typography.h4,
+    fontWeight: '700',
+  },
+  rateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.lg,
+    borderRadius: borderRadius.md,
+    gap: spacing.sm,
+  },
+  rateButtonText: {
+    fontSize: typography.body,
+    fontWeight: '600',
+    color: '#000',
   },
 });
 

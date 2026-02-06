@@ -142,12 +142,29 @@ const SharedRideRequestsScreen = ({ navigation }) => {
               </View>
             )}
           </View>
-          <TouchableOpacity
-            style={[styles.viewProfileBtn, { backgroundColor: colors.primary + '15' }]}
-            onPress={() => navigation.navigate('PassengerProfile', { passengerId: passenger?.id })}
-          >
-            <Ionicons name="person" size={18} color={colors.primary} />
-          </TouchableOpacity>
+          <View style={styles.passengerActions}>
+            <TouchableOpacity
+              style={[styles.chatBtn, { backgroundColor: '#25D366' + '20' }]}
+              onPress={() => navigation.navigate('SharedRideChat', {
+                rideId: ride?.id,
+                passengerId: passenger?.id,
+                passengerName: passenger?.name,
+                passengerPhone: passenger?.phone,
+                rideInfo: {
+                  pickup_address: ride?.from?.address || ride?.from_address,
+                  dropoff_address: ride?.to?.address || ride?.to_address,
+                }
+              })}
+            >
+              <Ionicons name="chatbubble" size={18} color="#25D366" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.viewProfileBtn, { backgroundColor: colors.primary + '15' }]}
+              onPress={() => navigation.navigate('PassengerProfile', { passengerId: passenger?.id })}
+            >
+              <Ionicons name="person" size={18} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Booking Details */}
@@ -438,6 +455,17 @@ const styles = StyleSheet.create({
   },
   genderText: {
     fontSize: 12,
+  },
+  passengerActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  chatBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   viewProfileBtn: {
     width: 40,

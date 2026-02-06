@@ -3,26 +3,31 @@ import client from './client';
 export const scheduleAPI = {
   // Get all schedules
   getSchedules: async () => {
-    return await client.get('/schedules');
+    const response = await client.get('/schedules');
+    return response.data;
   },
 
   // Create schedule
   createSchedule: async (data) => {
-    return await client.post('/schedules', data);
+    const response = await client.post('/schedules', data);
+    return response.data;
   },
 
   // Update schedule
   updateSchedule: async (id, data) => {
-    return await client.put(`/schedules/${id}`, data);
+    const response = await client.put(`/schedules/${id}`, data);
+    return response.data;
   },
 
   // Delete schedule
   deleteSchedule: async (id) => {
-    return await client.delete(`/schedules/${id}`);
+    const response = await client.delete(`/schedules/${id}`);
+    return response.data;
   },
 
   // Toggle schedule active status
   toggleSchedule: async (id) => {
-    return await client.post(`/schedules/${id}/toggle`);
+    const response = await client.post(`/schedules/${id}/toggle`);
+    return response.data;
   },
 };

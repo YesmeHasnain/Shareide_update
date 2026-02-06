@@ -17,6 +17,19 @@ import { walletAPI } from '../../api/wallet';
 import { Header, Card, Button } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  background: '#FFFFFF',
+  surface: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  border: '#E5E7EB',
+  success: '#10B981',
+  gradients: { primary: ['#FFD700', '#FFA500'] },
+};
+
 const QuickAmountButton = ({ amount, isSelected, onPress, colors }) => {
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -54,6 +67,7 @@ const QuickAmountButton = ({ amount, isSelected, onPress, colors }) => {
 
 const PaymentMethodCard = ({ method, isSelected, onPress, colors }) => {
   const handlePress = () => {
+    if (method.disabled) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress(method.id);
   };
@@ -61,63 +75,74 @@ const PaymentMethodCard = ({ method, isSelected, onPress, colors }) => {
   return (
     <TouchableOpacity
       onPress={handlePress}
-      activeOpacity={0.7}
+      activeOpacity={method.disabled ? 1 : 0.7}
     >
       <Card
         style={[
           styles.methodCard,
-          isSelected && { borderColor: colors.primary, borderWidth: 2 },
+          isSelected && !method.disabled && { borderColor: colors.primary, borderWidth: 2 },
+          method.disabled && { opacity: 0.5 },
         ]}
-        shadow={isSelected ? 'md' : 'sm'}
+        shadow={isSelected && !method.disabled ? 'md' : 'sm'}
       >
         <View
           style={[
             styles.methodIconContainer,
-            { backgroundColor: isSelected ? colors.primary + '20' : colors.background },
+            { backgroundColor: isSelected && !method.disabled ? colors.primary + '20' : colors.background },
           ]}
         >
           <Ionicons
             name={method.icon}
             size={24}
-            color={isSelected ? colors.primary : colors.textSecondary}
+            color={isSelected && !method.disabled ? colors.primary : colors.textSecondary}
           />
         </View>
         <View style={styles.methodInfo}>
-          <Text style={[styles.methodName, { color: colors.text }]}>
+          <Text style={[styles.methodName, { color: method.disabled ? colors.textTertiary : colors.text }]}>
             {method.name}
           </Text>
           <Text style={[styles.methodDesc, { color: colors.textSecondary }]}>
             {method.desc}
           </Text>
         </View>
-        <View
-          style={[
-            styles.radioOuter,
-            { borderColor: isSelected ? colors.primary : colors.border },
-          ]}
-        >
-          {isSelected && (
-            <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />
-          )}
-        </View>
+        {!method.disabled && (
+          <View
+            style={[
+              styles.radioOuter,
+              { borderColor: isSelected ? colors.primary : colors.border },
+            ]}
+          >
+            {isSelected && (
+              <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />
+            )}
+          </View>
+        )}
       </Card>
     </TouchableOpacity>
   );
 };
 
 const TopUpScreen = ({ navigation }) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
   const insets = useSafeAreaInsets();
   const [amount, setAmount] = useState('');
   const [selectedMethod, setSelectedMethod] = useState('card');
+  const [accountNumber, setAccountNumber] = useState('');
   const [loading, setLoading] = useState(false);
 
   const quickAmounts = [500, 1000, 2000, 5000];
 
+  // Check if method requires account number
+  const requiresAccountNumber = selectedMethod === 'alfa_wallet' || selectedMethod === 'bank_account';
+  const accountPlaceholder = selectedMethod === 'alfa_wallet' ? '03XX XXXXXXX' : 'Account Number';
+
   const paymentMethods = [
-    { id: 'card', name: 'Debit/Credit Card', icon: 'card-outline', desc: 'Bank Alfalah Gateway' },
-    { id: 'jazzcash', name: 'JazzCash', icon: 'phone-portrait-outline', desc: 'Mobile Wallet' },
-    { id: 'easypaisa', name: 'Easypaisa', icon: 'wallet-outline', desc: 'Mobile Wallet' },
+    { id: 'card', name: 'Debit/Credit Card', icon: 'card-outline', desc: 'Visa, Mastercard via Bank Alfalah' },
+    { id: 'alfa_wallet', name: 'Alfa Wallet', icon: 'phone-portrait-outline', desc: 'Bank Alfalah Mobile Wallet' },
+    { id: 'bank_account', name: 'Bank Account', icon: 'business-outline', desc: 'Alfalah Bank Account' },
+    { id: 'jazzcash', name: 'JazzCash', icon: 'phone-portrait-outline', desc: 'Coming Soon', disabled: true },
+    { id: 'easypaisa', name: 'Easypaisa', icon: 'wallet-outline', desc: 'Coming Soon', disabled: true },
   ];
 
   const handleTopUp = async () => {
@@ -134,22 +159,77 @@ const TopUpScreen = ({ navigation }) => {
       return;
     }
 
+    // Validate account number for Alfa Wallet / Bank Account
+    if (requiresAccountNumber && !accountNumber.trim()) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Required', selectedMethod === 'alfa_wallet'
+        ? 'Please enter your Alfa Wallet mobile number'
+        : 'Please enter your bank account number');
+      return;
+    }
+
     try {
       setLoading(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const response = await walletAPI.topUp(numAmount, selectedMethod);
+
+      // Build request data
+      const requestData = {
+        amount: numAmount,
+        method: selectedMethod,
+      };
+
+      // Add account number if required
+      if (requiresAccountNumber) {
+        requestData.account_number = accountNumber.replace(/\s/g, ''); // Remove spaces
+      }
+
+      const response = await walletAPI.topUp(requestData.amount, requestData.method, requestData.account_number);
+
+      console.log('TopUp API Response:', JSON.stringify(response, null, 2));
 
       if (response.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        // For Alfa Wallet / Bank Account - need OTP verification
+        if ((selectedMethod === 'alfa_wallet' || selectedMethod === 'bank_account') && response.data?.requires_otp) {
+          console.log('Navigating to OTP Verification');
+          navigation.navigate('OTPVerification', {
+            orderId: response.data.order_id,
+            amount: numAmount,
+            method: selectedMethod,
+            otpLength: response.data.otp_length || 8,
+            message: response.message,
+          });
+          return;
+        }
+
         // For card/bank_alfalah - redirect to payment gateway
         if (selectedMethod === 'card' || selectedMethod === 'bank_alfalah') {
-          if (response.data?.payment_url) {
+          // Check if test mode with inline HTML
+          if (response.data?.test_mode && response.data?.test_html) {
+            console.log('Navigating to PaymentWebView (TEST MODE)');
+            navigation.navigate('PaymentWebView', {
+              paymentUrl: response.data.payment_url,
+              formData: response.data.form_data,
+              orderId: response.data.order_id,
+              amount: numAmount,
+              testMode: true,
+              testHtml: response.data.test_html,
+            });
+          } else if (response.data?.payment_url && response.data?.form_data) {
+            console.log('Navigating to PaymentWebView with:', {
+              paymentUrl: response.data.payment_url,
+              formDataKeys: Object.keys(response.data.form_data),
+              orderId: response.data.order_id,
+            });
             navigation.navigate('PaymentWebView', {
               paymentUrl: response.data.payment_url,
               formData: response.data.form_data,
               orderId: response.data.order_id,
               amount: numAmount,
             });
+          } else {
+            Alert.alert('Error', 'Payment gateway not available. Please try again later.');
           }
         } else {
           Alert.alert(
@@ -170,6 +250,8 @@ const TopUpScreen = ({ navigation }) => {
 
   const numAmount = parseInt(amount, 10) || 0;
   const isValidAmount = numAmount >= 100 && numAmount <= 50000;
+  const isAccountValid = !requiresAccountNumber || accountNumber.trim().length >= 10;
+  const canProceed = isValidAmount && isAccountValid;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -238,9 +320,7 @@ const TopUpScreen = ({ navigation }) => {
         </View>
 
         {/* Payment Methods */}
-        <View
-                    style={styles.section}
-        >
+        <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Payment Method
           </Text>
@@ -254,6 +334,34 @@ const TopUpScreen = ({ navigation }) => {
             />
           ))}
         </View>
+
+        {/* Account Number Input (for Alfa Wallet / Bank Account) */}
+        {requiresAccountNumber && (
+          <View style={styles.section}>
+            <Card style={styles.amountCard} shadow="md">
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                {selectedMethod === 'alfa_wallet' ? 'Alfa Wallet Number' : 'Bank Account Number'}
+              </Text>
+              <TextInput
+                style={[styles.accountInput, { color: colors.text, borderColor: colors.border }]}
+                value={accountNumber}
+                onChangeText={(text) => {
+                  setAccountNumber(text);
+                  Haptics.selectionAsync();
+                }}
+                placeholder={accountPlaceholder}
+                placeholderTextColor={colors.textTertiary}
+                keyboardType={selectedMethod === 'alfa_wallet' ? 'phone-pad' : 'number-pad'}
+                maxLength={selectedMethod === 'alfa_wallet' ? 11 : 20}
+              />
+              <Text style={[styles.accountHint, { color: colors.textSecondary }]}>
+                {selectedMethod === 'alfa_wallet'
+                  ? 'Enter your registered Alfa Wallet mobile number'
+                  : 'Enter your Alfalah Bank account number'}
+              </Text>
+            </Card>
+          </View>
+        )}
 
         {/* Security Note */}
         <View >
@@ -290,16 +398,16 @@ const TopUpScreen = ({ navigation }) => {
       >
         <Button
           title={
-            isValidAmount
-              ? `${selectedMethod === 'card' ? 'Pay with Card' : 'Top Up'} - Rs. ${numAmount.toLocaleString()}`
-              : 'Enter Amount'
+            canProceed
+              ? `${selectedMethod === 'card' ? 'Pay with Card' : selectedMethod === 'alfa_wallet' ? 'Pay with Alfa Wallet' : selectedMethod === 'bank_account' ? 'Pay with Bank Account' : 'Top Up'} - Rs. ${numAmount.toLocaleString()}`
+              : !isValidAmount ? 'Enter Amount' : 'Enter Account Number'
           }
           onPress={handleTopUp}
           variant="primary"
           size="large"
           loading={loading}
-          disabled={!isValidAmount}
-          icon={selectedMethod === 'card' ? 'card' : 'wallet'}
+          disabled={!canProceed}
+          icon={selectedMethod === 'card' ? 'card' : selectedMethod === 'alfa_wallet' ? 'phone-portrait' : 'wallet'}
           fullWidth
         />
       </View>
@@ -406,6 +514,19 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
+  },
+  accountInput: {
+    fontSize: typography.h4,
+    fontWeight: '600',
+    textAlign: 'center',
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.sm,
+  },
+  accountHint: {
+    fontSize: typography.caption,
+    textAlign: 'center',
   },
   securityCard: {
     padding: spacing.lg,

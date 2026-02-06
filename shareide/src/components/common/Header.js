@@ -1,13 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, typography } from '../../theme/colors';
 
-const HeaderButton = ({ icon, onPress, badge, color = '#000' }) => {
+const HeaderButton = ({ icon, onPress, badge, style }) => {
+  const { colors } = useTheme();
+
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress?.();
@@ -16,10 +17,14 @@ const HeaderButton = ({ icon, onPress, badge, color = '#000' }) => {
   return (
     <TouchableOpacity
       onPress={handlePress}
-      style={styles.headerButton}
+      style={[
+        styles.headerButton,
+        { backgroundColor: colors.inputBackground || '#F5F5F5' },
+        style,
+      ]}
       activeOpacity={0.7}
     >
-      <Ionicons name={icon} size={24} color={color} />
+      <Ionicons name={icon} size={22} color={colors.text} />
       {badge > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
@@ -39,38 +44,12 @@ const Header = ({
   onRightPress,
   onRight2Press,
   rightBadge,
-  variant = 'primary', // primary, transparent, solid
-  gradient,
   centerComponent,
   style,
+  transparent = false,
 }) => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-
-  const getVariantStyles = () => {
-    switch (variant) {
-      case 'transparent':
-        return {
-          backgroundColor: 'transparent',
-          textColor: colors.text,
-          iconColor: colors.text,
-        };
-      case 'solid':
-        return {
-          backgroundColor: colors.background,
-          textColor: colors.text,
-          iconColor: colors.text,
-        };
-      default:
-        return {
-          backgroundColor: colors.primary,
-          textColor: '#000000',
-          iconColor: '#000000',
-        };
-    }
-  };
-
-  const variantStyles = getVariantStyles();
 
   const headerContent = (
     <>
@@ -79,7 +58,6 @@ const Header = ({
           <HeaderButton
             icon={leftIcon}
             onPress={onLeftPress}
-            color={variantStyles.iconColor}
           />
         ) : (
           <View style={styles.placeholder} />
@@ -90,14 +68,14 @@ const Header = ({
         {centerComponent || (
           <>
             <Text
-              style={[styles.title, { color: variantStyles.textColor }]}
+              style={[styles.title, { color: colors.text }]}
               numberOfLines={1}
             >
               {title}
             </Text>
             {subtitle && (
               <Text
-                style={[styles.subtitle, { color: variantStyles.textColor, opacity: 0.7 }]}
+                style={[styles.subtitle, { color: colors.textSecondary }]}
                 numberOfLines={1}
               >
                 {subtitle}
@@ -112,7 +90,6 @@ const Header = ({
           <HeaderButton
             icon={rightIcon2}
             onPress={onRight2Press}
-            color={variantStyles.iconColor}
           />
         )}
         {rightIcon && onRightPress ? (
@@ -120,7 +97,6 @@ const Header = ({
             icon={rightIcon}
             onPress={onRightPress}
             badge={rightBadge}
-            color={variantStyles.iconColor}
           />
         ) : (
           <View style={styles.placeholder} />
@@ -131,32 +107,17 @@ const Header = ({
 
   const headerStyle = [
     styles.header,
-    { paddingTop: insets.top + spacing.sm },
+    {
+      paddingTop: insets.top + spacing.sm,
+      backgroundColor: transparent ? 'transparent' : colors.background,
+    },
     style,
   ];
 
-  if (variant === 'primary' && (gradient || colors.gradients?.primary)) {
-    return (
-      <>
-        <StatusBar barStyle="dark-content" />
-        <LinearGradient
-          colors={gradient || colors.gradients.primary}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={headerStyle}
-        >
-          {headerContent}
-        </LinearGradient>
-      </>
-    );
-  }
-
   return (
     <>
-      <StatusBar
-        barStyle={variant === 'primary' ? 'dark-content' : 'default'}
-      />
-      <View style={[headerStyle, { backgroundColor: variantStyles.backgroundColor }]}>
+      <StatusBar barStyle="dark-content" />
+      <View style={headerStyle}>
         {headerContent}
       </View>
     </>
@@ -169,7 +130,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
   },
   leftContainer: {
     width: 48,
@@ -189,7 +150,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.h5,
-    fontWeight: '700',
+    fontWeight: '600',
     textAlign: 'center',
   },
   subtitle: {

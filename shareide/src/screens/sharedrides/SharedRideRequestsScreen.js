@@ -20,8 +20,24 @@ import { getPendingRequests, acceptBookingRequest, rejectBookingRequest } from '
 
 const { width } = Dimensions.get('window');
 
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  background: '#FFFFFF',
+  surface: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textMuted: '#9CA3AF',
+  success: '#10B981',
+  warning: '#F59E0B',
+  info: '#3B82F6',
+  gradientStart: '#FFFFFF',
+  gradientEnd: '#F5F5F5',
+};
+
 const SharedRideRequestsScreen = ({ navigation }) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

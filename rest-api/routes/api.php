@@ -19,10 +19,12 @@ use App\Http\Controllers\Api\SavedPlacesController;
 use App\Http\Controllers\Api\RiderWalletController;
 use App\Http\Controllers\Api\ScheduledRideController;
 use App\Http\Controllers\Api\SharedRideController;
+use App\Http\Controllers\Api\RideRequestController;
 use App\Http\Controllers\Api\PushNotificationController;
 use App\Http\Controllers\Api\RideBidController;
 use App\Http\Controllers\Api\LoyaltyController;
 use App\Http\Controllers\Admin\ChatManagementController;
+use App\Http\Controllers\Api\ContactController;
 
 // Health check
 Route::get('/ping', function () {
@@ -43,8 +45,21 @@ Route::prefix('auth')->group(function () {
 // ============================================
 // PAYMENT CALLBACKS (Public - No Auth Required)
 // ============================================
-Route::post('/payment/callback', [PaymentController::class, 'paymentCallback']);
-Route::post('/wallet/payment-callback', [RiderWalletController::class, 'paymentCallback']);
+Route::match(['get', 'post'], '/payment/callback', [PaymentController::class, 'paymentCallback']);
+Route::match(['get', 'post'], '/wallet/payment-callback', [RiderWalletController::class, 'paymentCallback']);
+
+// Test payment endpoints (for development)
+Route::match(['get', 'post'], '/wallet/test-payment', [RiderWalletController::class, 'testPaymentPage']);
+Route::post('/wallet/test-payment/process', [RiderWalletController::class, 'processTestPayment']);
+
+// Check Bank Alfalah IPN Status (for testing)
+Route::get('/wallet/check-ipn/{orderId}', [RiderWalletController::class, 'checkIPNStatus']);
+Route::get('/wallet/recent-orders', [RiderWalletController::class, 'recentOrders']);
+
+// ============================================
+// WEBSITE CONTACT FORM (Public - No Auth Required)
+// ============================================
+Route::post('/contact', [ContactController::class, 'submit']);
 
 // Protected routes (authentication required)
 Route::middleware('auth:sanctum')->group(function () {
@@ -77,6 +92,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/balance', [RiderWalletController::class, 'getBalance']);
         Route::get('/transactions', [RiderWalletController::class, 'getTransactions']);
         Route::post('/topup', [RiderWalletController::class, 'topUp']);
+        Route::post('/verify-otp', [RiderWalletController::class, 'verifyOTP']); // For Alfa Wallet / Bank Account
         Route::get('/payment-methods', [RiderWalletController::class, 'getPaymentMethods']);
         Route::post('/payment-methods', [RiderWalletController::class, 'addPaymentMethod']);
         Route::post('/payment-methods/{id}/default', [RiderWalletController::class, 'setDefaultMethod']);
@@ -101,6 +117,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('shared-rides')->group(function () {
         // Search & Browse
         Route::get('/search', [SharedRideController::class, 'search']);
+        Route::get('/available', [SharedRideController::class, 'available']); // Simple nearby rides
         Route::get('/my-rides', [SharedRideController::class, 'myRides']); // Driver's posted rides
         Route::get('/my-bookings', [SharedRideController::class, 'myBookings']); // Passenger's bookings
         Route::get('/pending-requests', [SharedRideController::class, 'pendingRequests']); // Driver's pending requests
@@ -111,6 +128,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/start', [SharedRideController::class, 'startRide']);
         Route::post('/{id}/complete', [SharedRideController::class, 'completeRide']);
         Route::post('/{id}/cancel', [SharedRideController::class, 'cancelRide']);
+
+        // Bidding System
+        Route::post('/{id}/bid', [SharedRideController::class, 'placeBid']);
+        Route::get('/{id}/bids', [SharedRideController::class, 'getBids']);
+        Route::post('/{id}/bids/{bidId}/respond', [SharedRideController::class, 'respondToBid']);
+
+        // Chat System
+        Route::get('/{id}/chat', [SharedRideController::class, 'getChat']);
+        Route::post('/{id}/chat', [SharedRideController::class, 'sendChat']);
 
         // Passenger Actions
         Route::post('/{id}/book', [SharedRideController::class, 'book']);
@@ -127,6 +153,17 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ============================================
+    // RIDE REQUESTS (Passenger requests ride, Driver accepts)
+    // ============================================
+    Route::prefix('ride-requests')->group(function () {
+        Route::post('/create', [RideRequestController::class, 'create']);
+        Route::get('/available', [RideRequestController::class, 'available']);
+        Route::get('/my-requests', [RideRequestController::class, 'myRequests']);
+        Route::post('/{id}/accept', [RideRequestController::class, 'accept']);
+        Route::post('/{id}/cancel', [RideRequestController::class, 'cancel']);
+    });
+
+    // ============================================
     // SHAREIDE PLUS (Driver App) Routes
     // ============================================
 
@@ -138,6 +175,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/upload-selfies', [OnboardingController::class, 'uploadSelfies']);
         Route::post('/submit', [OnboardingController::class, 'submitForApproval']);
         Route::get('/status', [OnboardingController::class, 'getStatus']);
+    });
+
+    // Driver real-time routes
+    Route::prefix('driver')->group(function () {
+        Route::post('/location', [DriverController::class, 'updateLocation']);
+        Route::post('/status', [DriverController::class, 'updateStatus']);
+        Route::get('/pending-requests', [DriverController::class, 'getPendingRequests']);
+        Route::get('/active-ride', [DriverController::class, 'getActiveRide']);
+        Route::get('/nearby-users', [DriverController::class, 'getNearbyUsers']);
     });
 
     // Schedule routes (Daily routes management)
@@ -295,6 +341,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/rides/active', [DriverController::class, 'getActiveRide']);
         Route::post('/rides/{id}/accept', [DriverController::class, 'acceptRide']);
         Route::post('/rides/{id}/status', [DriverController::class, 'updateRideStatus']);
+        Route::get('/nearby-users', [DriverController::class, 'getNearbyUsers']);
     });
 
     // Ride routes (for riders)

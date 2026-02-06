@@ -16,6 +16,21 @@ import { ridesAPI } from '../../api/rides';
 import { Header, Card, Avatar, Button, IconButton } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  background: '#FFFFFF',
+  surface: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  border: '#E5E7EB',
+  success: '#10B981',
+  error: '#EF4444',
+  info: '#3B82F6',
+  star: '#FFD700',
+};
+
 const PulsingDot = ({ color }) => {
   return (
     <View style={styles.pulsingContainer}>
@@ -70,9 +85,11 @@ const ActionButton = ({ icon, label, onPress, colors, danger }) => {
 };
 
 const RideTrackingScreen = ({ route, navigation }) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
   const insets = useSafeAreaInsets();
-  const { ride, driver, pickup, dropoff, fare } = route.params;
+  const params = route?.params || {};
+  const { ride, driver, pickup, dropoff, fare } = params;
   const [status, setStatus] = useState(ride?.status || 'arriving');
   const [eta, setEta] = useState(driver?.eta || 5);
 

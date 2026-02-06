@@ -16,7 +16,13 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.shareide.fleet"
+      "bundleIdentifier": "com.shareide.fleet",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Shareide Fleet needs your location to show your position on the map and match you with nearby ride requests.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Shareide Fleet needs your location to track your position while you are online and accepting rides.",
+        "NSLocationAlwaysUsageDescription": "Shareide Fleet needs your location to track your position in the background while on a ride.",
+        "UIBackgroundModes": ["location", "fetch"]
+      }
     },
     "android": {
       "adaptiveIcon": {

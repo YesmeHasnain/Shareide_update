@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Notification;
+use App\Models\PushNotification;
 use App\Models\DeviceToken;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -16,7 +16,7 @@ class NotificationService
     {
         try {
             // Save notification in database
-            $notification = Notification::create([
+            $notification = PushNotification::create([
                 'user_id' => $userId,
                 'title' => $title,
                 'body' => $body,
@@ -38,9 +38,16 @@ class NotificationService
                 ];
             }
 
-            // Try FCM first, fallback to OneSignal
-            $result = $this->sendViaFCM($tokens, $title, $body, $data);
-            
+            // Add type to data for notification handling
+            $data['type'] = $type;
+
+            // Try Expo first (for React Native/Expo apps), then FCM, then OneSignal
+            $result = $this->sendViaExpo($tokens, $title, $body, $data);
+
+            if (!$result['success']) {
+                $result = $this->sendViaFCM($tokens, $title, $body, $data);
+            }
+
             if (!$result['success']) {
                 $result = $this->sendViaOneSignal($tokens, $title, $body, $data);
             }
@@ -60,6 +67,52 @@ class NotificationService
                 'success' => false,
                 'error' => $e->getMessage()
             ];
+        }
+    }
+
+    /**
+     * Send via Expo Push Notifications
+     */
+    private function sendViaExpo($tokens, $title, $body, $data = [])
+    {
+        // Filter only Expo tokens
+        $expoTokens = array_filter($tokens, function ($token) {
+            return str_starts_with($token, 'ExponentPushToken[');
+        });
+
+        if (empty($expoTokens)) {
+            return ['success' => false, 'message' => 'No Expo tokens found'];
+        }
+
+        $messages = [];
+        foreach ($expoTokens as $token) {
+            $messages[] = [
+                'to' => $token,
+                'sound' => 'default',
+                'title' => $title,
+                'body' => $body,
+                'data' => array_merge($data, ['type' => $data['type'] ?? 'general']),
+            ];
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Accept-Encoding' => 'gzip, deflate',
+                'Content-Type' => 'application/json',
+            ])->post('https://exp.host/--/api/v2/push/send', $messages);
+
+            if ($response->successful()) {
+                Log::info('Expo notification sent successfully', ['tokens' => count($expoTokens)]);
+                return ['success' => true, 'message' => 'Sent via Expo'];
+            }
+
+            Log::warning('Expo failed: ' . $response->body());
+            return ['success' => false, 'message' => 'Expo request failed'];
+
+        } catch (\Exception $e) {
+            Log::error('Expo exception: ' . $e->getMessage());
+            return ['success' => false, 'error' => $e->getMessage()];
         }
     }
 

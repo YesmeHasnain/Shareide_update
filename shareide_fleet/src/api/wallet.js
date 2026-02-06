@@ -3,31 +3,37 @@ import client from './client';
 export const walletAPI = {
   // Get wallet balance
   getBalance: async () => {
-    return await client.get('/wallet/balance');
+    const response = await client.get('/wallet/balance');
+    return response.data;
   },
 
   // Get transactions
   getTransactions: async (page = 1) => {
-    return await client.get(`/wallet/transactions?page=${page}`);
+    const response = await client.get(`/wallet/transactions?page=${page}`);
+    return response.data;
   },
 
   // Get earnings stats
   getEarnings: async () => {
-    return await client.get('/wallet/earnings');
+    const response = await client.get('/wallet/earnings');
+    return response.data;
   },
 
   // Request withdrawal
   requestWithdrawal: async (data) => {
-    return await client.post('/wallet/withdraw', data);
+    const response = await client.post('/wallet/withdraw', data);
+    return response.data;
   },
 
   // Get withdrawals
   getWithdrawals: async () => {
-    return await client.get('/wallet/withdrawals');
+    const response = await client.get('/wallet/withdrawals');
+    return response.data;
   },
 
   // Cancel withdrawal
   cancelWithdrawal: async (id) => {
-    return await client.post(`/wallet/withdrawals/${id}/cancel`);
+    const response = await client.post(`/wallet/withdrawals/${id}/cancel`);
+    return response.data;
   },
 };

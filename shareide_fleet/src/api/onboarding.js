@@ -3,39 +3,45 @@ import client from './client';
 export const onboardingAPI = {
   // Step 1: Personal Info
   submitPersonalInfo: async (data) => {
-    return await client.post('/onboarding/personal-info', data);
+    const response = await client.post('/onboarding/personal-info', data);
+    return response.data;
   },
 
   // Step 2: Vehicle Info
   submitVehicleInfo: async (data) => {
-    return await client.post('/onboarding/vehicle-info', data);
+    const response = await client.post('/onboarding/vehicle-info', data);
+    return response.data;
   },
 
   // Step 3: Upload Documents
   uploadDocuments: async (formData) => {
-    return await client.post('/onboarding/upload-documents', formData, {
+    const response = await client.post('/onboarding/upload-documents', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+    return response.data;
   },
 
   // Step 4: Upload Selfies
   uploadSelfies: async (formData) => {
-    return await client.post('/onboarding/upload-selfies', formData, {
+    const response = await client.post('/onboarding/upload-selfies', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+    return response.data;
   },
 
   // Step 5: Submit for Approval
   submitForApproval: async () => {
-    return await client.post('/onboarding/submit');
+    const response = await client.post('/onboarding/submit');
+    return response.data;
   },
 
   // Get Status
   getStatus: async () => {
-    return await client.get('/onboarding/status');
+    const response = await client.get('/onboarding/status');
+    return response.data;
   },
 };

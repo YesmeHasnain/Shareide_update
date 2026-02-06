@@ -17,8 +17,22 @@ import { ridesAPI } from '../../api/rides';
 import { Header, Card, Avatar, Button } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  background: '#FFFFFF',
+  surface: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  border: '#E5E7EB',
+  star: '#FFD700',
+  gradients: { gold: ['#FFD700', '#FFA500'] },
+};
+
 const Star = ({ filled, onPress, index }) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -72,9 +86,11 @@ const FeedbackTag = ({ icon, label, isSelected, onPress, colors }) => {
 };
 
 const RateRideScreen = ({ route, navigation }) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
   const insets = useSafeAreaInsets();
-  const { ride, driver, fare } = route.params;
+  const params = route?.params || {};
+  const { ride, driver, fare } = params;
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);

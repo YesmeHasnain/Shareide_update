@@ -18,6 +18,18 @@ import { createScheduledRide } from '../../api/scheduledRides';
 import { Button, Card } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  background: '#FFFFFF',
+  surface: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  border: '#E5E7EB',
+  gradients: { premium: ['#FFD700', '#FFA500'] },
+};
+
 const VehicleOption = ({ vehicle, isSelected, onPress, colors }) => {
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -99,9 +111,11 @@ const PaymentOption = ({ method, isSelected, onPress, colors }) => {
 };
 
 const ScheduleRideScreen = ({ navigation, route }) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
   const insets = useSafeAreaInsets();
-  const { pickup, dropoff, vehicleType = 'car', paymentMethod = 'cash', estimatedFare, distance } = route.params || {};
+  const params = route?.params || {};
+  const { pickup, dropoff, vehicleType = 'car', paymentMethod = 'cash', estimatedFare, distance } = params;
 
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());

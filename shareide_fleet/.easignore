@@ -1,0 +1,15 @@
+# Ignore parent project folders
+../rest-api
+../website
+../Paymentprocess
+../shareide
+
+# Ignore node_modules (handled by EAS)
+node_modules
+
+# Ignore git
+.git
+
+# Ignore temp files
+*.log
+.DS_Store

@@ -4,23 +4,21 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
-  Image,
+  StatusBar,
+  ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../context/ThemeContext';
-import { Button } from '../../components/common';
-import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
-import { defaultMaleAvatar, defaultFemaleAvatar } from '../../utils/avatars';
+
+const PRIMARY_COLOR = '#FCC014';
 
 const GenderScreen = ({ route, navigation }) => {
-  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { phone, verificationToken, token, user, isNewUser } = route.params;
+  const params = route?.params || {};
+  const { phone, verificationToken, token, user, isNewUser } = params;
   const [gender, setGender] = useState(user?.gender || null);
+  const [loading, setLoading] = useState(false);
 
   const handleSelect = (selected) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -41,330 +39,163 @@ const GenderScreen = ({ route, navigation }) => {
     }
   };
 
-  const GenderCard = ({ type, avatarImage, label, isSelected }) => (
-    <TouchableOpacity
-      onPress={() => handleSelect(type)}
-      activeOpacity={0.8}
-    >
-      <LinearGradient
-        colors={
-          isSelected
-            ? colors.gradients?.premium || ['#FFD700', '#FFA500']
-            : [colors.surface, colors.surface]
-        }
-        style={[
-          styles.genderCard,
-          isSelected && shadows.goldLg,
-          !isSelected && { borderWidth: 2, borderColor: colors.border },
-        ]}
-      >
-        <View
-          style={[
-            styles.avatarContainer,
-            {
-              backgroundColor: isSelected ? 'rgba(0,0,0,0.1)' : colors.background,
-              borderWidth: isSelected ? 3 : 0,
-              borderColor: '#000',
-            },
-          ]}
-        >
-          <Image
-            source={avatarImage}
-            style={styles.avatarImage}
-            resizeMode="cover"
-          />
-        </View>
-
-        <Text
-          style={[
-            styles.genderLabel,
-            { color: isSelected ? '#000' : colors.text },
-          ]}
-        >
-          {label}
-        </Text>
-
-        {isSelected && (
-          <View style={styles.checkContainer}>
-            <Ionicons name="checkmark-circle" size={28} color="#000" />
-          </View>
-        )}
-      </LinearGradient>
-    </TouchableOpacity>
-  );
-
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={[
-        styles.scrollContent,
-        { paddingTop: insets.top + spacing.xl },
-      ]}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Back Button */}
-      <View>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity
-          style={[styles.backButton, { backgroundColor: colors.surface }]}
+          style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={20} color="#000" />
         </TouchableOpacity>
       </View>
 
-      {/* Header Section */}
-      <View style={styles.header}>
-        <LinearGradient
-          colors={colors.gradients?.premium || ['#FFD700', '#FFA500']}
-          style={[styles.iconContainer, shadows.goldLg]}
-        >
-          <Ionicons name="people" size={48} color="#000" />
-        </LinearGradient>
+      {/* Content */}
+      <View style={styles.content}>
+        {/* Title */}
+        <Text style={styles.title}>Select your Gender</Text>
+        <Text style={styles.subtitle}>Please select your gender</Text>
 
-        <Text style={[styles.title, { color: colors.text }]}>
-          Select Your Gender
-        </Text>
-
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          This helps us personalize your ride experience
-        </Text>
-      </View>
-
-      {/* Progress Indicator */}
-      <View style={styles.progressContainer}>
-        <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-          <View
-            style={[
-              styles.progressFill,
-              { backgroundColor: colors.primary, width: '33%' },
-            ]}
-          />
-        </View>
-        <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-          Step 1 of 3
-        </Text>
-      </View>
-
-      {/* Gender Selection */}
-      <View style={styles.genderSection}>
+        {/* Gender Cards */}
         <View style={styles.genderRow}>
-          <GenderCard
-            type="male"
-            avatarImage={defaultMaleAvatar}
-            label="Male"
-            isSelected={gender === 'male'}
-          />
-          <GenderCard
-            type="female"
-            avatarImage={defaultFemaleAvatar}
-            label="Female"
-            isSelected={gender === 'female'}
-          />
+          {/* Female Card */}
+          <TouchableOpacity
+            style={[
+              styles.genderCard,
+              gender === 'female' && styles.genderCardSelected,
+            ]}
+            onPress={() => handleSelect('female')}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.iconCircle, { backgroundColor: '#FFE4E6' }]}>
+              <Ionicons name="female" size={32} color="#FB7185" />
+            </View>
+            <Text style={styles.genderLabel}>Female</Text>
+          </TouchableOpacity>
+
+          {/* Male Card */}
+          <TouchableOpacity
+            style={[
+              styles.genderCard,
+              gender === 'male' && styles.genderCardSelected,
+            ]}
+            onPress={() => handleSelect('male')}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.iconCircle, { backgroundColor: '#DBEAFE' }]}>
+              <Ionicons name="male" size={32} color="#60A5FA" />
+            </View>
+            <Text style={styles.genderLabel}>Male</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Info Box */}
-      <View style={[styles.infoBox, { backgroundColor: colors.primary + '15' }]}>
-        <View
-          style={[styles.infoIconContainer, { backgroundColor: colors.primary + '20' }]}
-        >
-          <Ionicons name="shield-checkmark" size={20} color={colors.primary} />
-        </View>
-        <Text style={[styles.infoText, { color: colors.text }]}>
-          Female riders can choose female-only drivers for added comfort and safety
-        </Text>
-      </View>
-
-      {/* Button Section */}
-      <View style={styles.buttonSection}>
-        <Button
-          title="Continue"
+      {/* Bottom Button */}
+      <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 24 }]}>
+        <TouchableOpacity
+          style={[
+            styles.continueButton,
+            { backgroundColor: gender ? PRIMARY_COLOR : '#F3F4F6' },
+          ]}
           onPress={handleContinue}
-          variant="primary"
-          size="large"
-          disabled={!gender}
-          icon="arrow-forward"
-          fullWidth
-        />
+          disabled={!gender || loading}
+          activeOpacity={0.8}
+        >
+          {loading ? (
+            <ActivityIndicator color="#000" />
+          ) : (
+            <Text style={[
+              styles.continueText,
+              { color: gender ? '#000' : '#9CA3AF' }
+            ]}>
+              Continue
+            </Text>
+          )}
+        </TouchableOpacity>
       </View>
-
-      {/* Features */}
-      <View style={styles.featuresSection}>
-        <View style={styles.featureRow}>
-          <FeatureItem
-            icon="heart"
-            label="Personalized"
-            colors={colors}
-          />
-          <FeatureItem
-            icon="lock-closed"
-            label="Private"
-            colors={colors}
-          />
-          <FeatureItem
-            icon="star"
-            label="Premium"
-            colors={colors}
-          />
-        </View>
-      </View>
-    </ScrollView>
+    </View>
   );
 };
-
-const FeatureItem = ({ icon, label, colors }) => (
-  <View style={styles.featureItem}>
-    <View
-      style={[styles.featureIconContainer, { backgroundColor: colors.primary + '15' }]}
-    >
-      <Ionicons name={icon} size={18} color={colors.primary} />
-    </View>
-    <Text style={[styles.featureLabel, { color: colors.textSecondary }]}>
-      {label}
-    </Text>
-  </View>
-);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xxxl,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
+    backgroundColor: '#FFFFFF',
   },
   header: {
-    alignItems: 'center',
-    marginBottom: spacing.xl,
+    paddingHorizontal: 20,
+    marginBottom: 24,
   },
-  iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.xl,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
   },
   title: {
-    fontSize: typography.h2,
+    fontSize: 24,
     fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-    letterSpacing: -0.5,
+    color: '#000',
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: typography.body,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  progressContainer: {
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  progressBar: {
-    width: '100%',
-    height: 4,
-    borderRadius: 2,
-    marginBottom: spacing.sm,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  progressText: {
-    fontSize: typography.caption,
-    fontWeight: '600',
-  },
-  genderSection: {
-    marginBottom: spacing.xl,
+    fontSize: 15,
+    color: '#6B7280',
+    marginBottom: 48,
   },
   genderRow: {
     flexDirection: 'row',
-    gap: spacing.lg,
+    gap: 16,
   },
   genderCard: {
     flex: 1,
-    aspectRatio: 0.85,
-    borderRadius: borderRadius.xl,
+    aspectRatio: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.lg,
+    padding: 20,
   },
-  avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  genderCardSelected: {
+    borderWidth: 2,
+    borderColor: PRIMARY_COLOR,
+    backgroundColor: '#FFFBEB',
+  },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.md,
-    overflow: 'hidden',
-  },
-  avatarImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    marginBottom: 12,
   },
   genderLabel: {
-    fontSize: typography.h4,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
   },
-  checkContainer: {
-    position: 'absolute',
-    top: spacing.md,
-    right: spacing.md,
+  bottomSection: {
+    paddingHorizontal: 24,
   },
-  infoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    gap: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  infoIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  continueButton: {
+    height: 54,
+    borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  infoText: {
-    flex: 1,
-    fontSize: typography.bodySmall,
-    lineHeight: 20,
-  },
-  buttonSection: {
-    marginBottom: spacing.xl,
-  },
-  featuresSection: {
-    marginTop: 'auto',
-  },
-  featureRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  featureItem: {
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  featureIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  featureLabel: {
-    fontSize: typography.caption,
+  continueText: {
+    fontSize: 16,
     fontWeight: '600',
   },
 });

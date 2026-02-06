@@ -40,7 +40,6 @@ class NotificationController extends Controller
                 ],
                 [
                     'platform' => $request->platform,
-                    'device_id' => $request->device_id,
                     'device_name' => $request->device_name,
                     'is_active' => true,
                     'last_used_at' => now(),

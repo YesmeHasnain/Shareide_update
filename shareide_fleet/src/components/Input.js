@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, TextInput, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
-import PropTypes from 'prop-types';
+import { typography, borderRadius, spacing } from '../theme/colors';
 
 const Input = React.forwardRef(
   (
@@ -15,7 +16,12 @@ const Input = React.forwardRef(
       error,
       maxLength,
       multiline = false,
+      leftIcon,
+      rightIcon,
+      onRightIconPress,
+      editable = true,
       style,
+      inputStyle,
       ...rest
     },
     ref
@@ -25,30 +31,59 @@ const Input = React.forwardRef(
     return (
       <View style={[styles.container, style]}>
         {label && (
-          <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>
+            {label}
+          </Text>
         )}
-        <TextInput
+        <View
           style={[
-            styles.input,
+            styles.inputContainer,
             {
-              backgroundColor: colors.surface,
-              color: colors.text,
-              borderColor: error ? colors.error : colors.border,
+              backgroundColor: colors.inputBackground,
+              borderColor: error ? colors.error : 'transparent',
+              borderWidth: error ? 1 : 0,
             },
-            multiline && styles.multiline,
+            multiline && styles.multilineContainer,
           ]}
-          ref={ref}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={colors.textSecondary}
-          keyboardType={keyboardType}
-          secureTextEntry={secureTextEntry}
-          maxLength={maxLength}
-          multiline={multiline}
-          numberOfLines={multiline ? 4 : 1}
-          {...rest}
-        />
+        >
+          {leftIcon && (
+            <Ionicons
+              name={leftIcon}
+              size={20}
+              color={colors.textSecondary}
+              style={styles.leftIcon}
+            />
+          )}
+          <TextInput
+            style={[
+              styles.input,
+              { color: colors.text },
+              multiline && styles.multilineInput,
+              inputStyle,
+            ]}
+            ref={ref}
+            value={value}
+            onChangeText={onChangeText}
+            placeholder={placeholder}
+            placeholderTextColor={colors.textTertiary}
+            keyboardType={keyboardType}
+            secureTextEntry={secureTextEntry}
+            maxLength={maxLength}
+            multiline={multiline}
+            numberOfLines={multiline ? 4 : 1}
+            editable={editable}
+            {...rest}
+          />
+          {rightIcon && (
+            <Ionicons
+              name={rightIcon}
+              size={20}
+              color={colors.textSecondary}
+              style={styles.rightIcon}
+              onPress={onRightIconPress}
+            />
+          )}
+        </View>
         {error && (
           <Text style={[styles.error, { color: colors.error }]}>{error}</Text>
         )}
@@ -59,49 +94,49 @@ const Input = React.forwardRef(
 
 Input.displayName = 'Input';
 
-Input.propTypes = {
-  label: PropTypes.string,
-  value: PropTypes.string,
-  onChangeText: PropTypes.func,
-  placeholder: PropTypes.string,
-  keyboardType: PropTypes.string,
-  secureTextEntry: PropTypes.bool,
-  error: PropTypes.string,
-  maxLength: PropTypes.number,
-  multiline: PropTypes.bool,
-  style: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
-};
-
-Input.defaultProps = {
-  keyboardType: 'default',
-  secureTextEntry: false,
-  multiline: false,
-};
-
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
+    fontSize: typography.caption,
+    fontWeight: '700',
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 56,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+  },
+  multilineContainer: {
+    height: 120,
+    alignItems: 'flex-start',
+    paddingVertical: spacing.md,
   },
   input: {
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    fontSize: 16,
+    flex: 1,
+    fontSize: typography.body,
+    fontWeight: '500',
   },
-  multiline: {
-    height: 100,
-    paddingTop: 12,
+  multilineInput: {
+    height: '100%',
     textAlignVertical: 'top',
   },
+  leftIcon: {
+    marginRight: spacing.md,
+  },
+  rightIcon: {
+    marginLeft: spacing.md,
+  },
   error: {
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: typography.caption,
+    marginTop: spacing.xs,
+    marginLeft: spacing.xs,
   },
 });
 

@@ -1,15 +1,14 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
-import { shadows, borderRadius } from '../../theme/colors';
+import { borderRadius } from '../../theme/colors';
 
 const Button = ({
   title,
   onPress,
-  variant = 'primary', // primary, secondary, outline, ghost, danger
+  variant = 'primary', // primary, secondary, outline, ghost, danger, text
   size = 'medium', // small, medium, large
   icon,
   iconPosition = 'left',
@@ -19,7 +18,6 @@ const Button = ({
   style,
   textStyle,
   haptic = true,
-  gradient = false,
 }) => {
   const { colors } = useTheme();
 
@@ -35,14 +33,14 @@ const Button = ({
       case 'primary':
         return {
           background: colors.primary,
-          textColor: colors.textOnPrimary,
+          textColor: '#000000',
           borderColor: 'transparent',
         };
       case 'secondary':
         return {
-          background: colors.surface,
+          background: colors.inputBackground || '#F5F5F5',
           textColor: colors.text,
-          borderColor: colors.border,
+          borderColor: 'transparent',
         };
       case 'outline':
         return {
@@ -62,16 +60,16 @@ const Button = ({
           textColor: '#FFFFFF',
           borderColor: 'transparent',
         };
-      case 'dark':
+      case 'text':
         return {
-          background: '#1A1A2E',
+          background: 'transparent',
           textColor: colors.primary,
           borderColor: 'transparent',
         };
       default:
         return {
           background: colors.primary,
-          textColor: colors.textOnPrimary,
+          textColor: '#000000',
           borderColor: 'transparent',
         };
     }
@@ -95,10 +93,10 @@ const Button = ({
         };
       case 'large':
         return {
-          height: 60,
+          height: 56,
           paddingHorizontal: 32,
-          fontSize: 18,
-          iconSize: 24,
+          fontSize: 16,
+          iconSize: 22,
         };
       default:
         return {
@@ -118,7 +116,7 @@ const Button = ({
       {loading ? (
         <ActivityIndicator
           color={variantStyles.textColor}
-          size={size === 'small' ? 'small' : 'small'}
+          size="small"
         />
       ) : (
         <>
@@ -158,41 +156,16 @@ const Button = ({
   const buttonStyle = [
     styles.button,
     {
-      height: sizeStyles.height,
-      paddingHorizontal: sizeStyles.paddingHorizontal,
-      backgroundColor: gradient ? 'transparent' : variantStyles.background,
+      height: variant === 'text' ? 'auto' : sizeStyles.height,
+      paddingHorizontal: variant === 'text' ? 0 : sizeStyles.paddingHorizontal,
+      backgroundColor: variantStyles.background,
       borderColor: variantStyles.borderColor,
-      borderWidth: variant === 'outline' || variant === 'secondary' ? 1.5 : 0,
+      borderWidth: variant === 'outline' ? 1.5 : 0,
       width: fullWidth ? '100%' : 'auto',
     },
-    variant === 'primary' && !gradient && shadows.gold,
     disabled && styles.disabled,
     style,
   ];
-
-  if (gradient && (variant === 'primary' || variant === 'danger')) {
-    const gradientColors = variant === 'danger'
-      ? ['#EF4444', '#DC2626']
-      : colors.gradients?.primary || ['#FFD700', '#FFA500'];
-
-    return (
-      <TouchableOpacity
-        onPress={handlePress}
-        disabled={disabled || loading}
-        style={fullWidth && { width: '100%' }}
-        activeOpacity={0.7}
-      >
-        <LinearGradient
-          colors={gradientColors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[buttonStyle, { backgroundColor: 'transparent' }]}
-        >
-          {buttonContent}
-        </LinearGradient>
-      </TouchableOpacity>
-    );
-  }
 
   return (
     <TouchableOpacity
@@ -208,7 +181,7 @@ const Button = ({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: borderRadius.lg,
+    borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
@@ -219,8 +192,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    fontWeight: '700',
-    letterSpacing: 0.3,
+    fontWeight: '600',
   },
   iconLeft: {
     marginRight: 8,

@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   RefreshControl,
   ScrollView,
+  Alert,
+  AppState,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Notifications from 'expo-notifications';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/Button';
@@ -15,13 +18,46 @@ import { onboardingAPI } from '../../api/onboarding';
 
 const PendingScreen = ({ navigation }) => {
   const { colors } = useTheme();
-  const { logout, user } = useAuth();
-  
+  const { logout, user, updateUser } = useAuth();
+
   const [status, setStatus] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const appState = useRef(AppState.currentState);
+  const notificationListener = useRef();
 
   useEffect(() => {
     fetchStatus();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchStatus();
+    }, 30000);
+
+    // Listen for app state changes (when app comes to foreground)
+    const appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        console.log('App came to foreground - checking status');
+        fetchStatus();
+      }
+      appState.current = nextAppState;
+    });
+
+    // Listen for approval/rejection notifications
+    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
+      const { data } = notification.request.content;
+      if (data?.type === 'driver_approved' || data?.type === 'driver_rejected') {
+        console.log('Received approval notification:', data);
+        fetchStatus();
+      }
+    });
+
+    return () => {
+      clearInterval(interval);
+      appStateSubscription.remove();
+      if (notificationListener.current) {
+        Notifications.removeNotificationSubscription(notificationListener.current);
+      }
+    };
   }, []);
 
   const fetchStatus = async () => {
@@ -29,10 +65,23 @@ const PendingScreen = ({ navigation }) => {
       const response = await onboardingAPI.getStatus();
       if (response.success) {
         setStatus(response.data);
-        
-        // If approved, navigate to main app
+
+        // If approved, update user context and navigate to main app
         if (response.data.driver?.status === 'approved') {
-          navigation.replace('MainTabs');
+          // Update user context with new driver status and documents
+          const updatedUser = {
+            ...(user || {}),
+            driver: {
+              ...response.data.driver,
+              documents: response.data.documents,
+            },
+            documents: response.data.documents,
+          };
+          await updateUser(updatedUser);
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs' }],
+          });
         }
       }
     } catch (error) {

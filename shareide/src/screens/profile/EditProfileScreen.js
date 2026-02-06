@@ -20,10 +20,27 @@ import { Header, Card, Avatar, Button, Input } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 import { defaultMaleAvatar, defaultFemaleAvatar } from '../../utils/avatars';
 
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  background: '#FFFFFF',
+  surface: '#FFFFFF',
+  card: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  inputBackground: '#F5F5F5',
+  border: '#E5E7EB',
+  gradients: { premium: ['#FFD700', '#FFA500'] },
+};
+
 const EditProfileScreen = ({ navigation }) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
   const insets = useSafeAreaInsets();
-  const { user, updateUser } = useAuth();
+  const auth = useAuth();
+  const user = auth?.user;
+  const updateUser = auth?.updateUser;
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [profileImage, setProfileImage] = useState(null);

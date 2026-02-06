@@ -6,16 +6,17 @@ import {
   TouchableOpacity,
   FlatList,
   RefreshControl,
+  StatusBar,
+  ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '../../context/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ridesAPI } from '../../api/rides';
-import { Header, Card, Avatar, Badge, EmptyState, SkeletonList } from '../../components/common';
-import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
-const TabButton = ({ label, isActive, count, onPress, colors }) => {
+const PRIMARY_COLOR = '#FCC014';
+
+const TabButton = ({ label, isActive, onPress }) => {
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
@@ -27,187 +28,111 @@ const TabButton = ({ label, isActive, count, onPress, colors }) => {
       activeOpacity={0.7}
       style={[
         styles.tab,
-        isActive && { borderBottomColor: colors.primary, borderBottomWidth: 3 },
+        isActive && styles.tabActive,
       ]}
     >
-      <Text
-        style={[
-          styles.tabText,
-          { color: isActive ? colors.primary : colors.textSecondary },
-        ]}
-      >
+      <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
         {label}
       </Text>
-      {count > 0 && (
-        <View
-          style={[
-            styles.tabBadge,
-            { backgroundColor: isActive ? colors.primary : colors.border },
-          ]}
-        >
-          <Text
-            style={[
-              styles.tabBadgeText,
-              { color: isActive ? '#000' : colors.textSecondary },
-            ]}
-          >
-            {count}
-          </Text>
+    </TouchableOpacity>
+  );
+};
+
+const TripCard = ({ item, onPress }) => {
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
+  const formatDateTime = (dateStr) => {
+    const date = new Date(dateStr);
+    const day = date.getDate();
+    const month = date.toLocaleString('en-US', { month: 'short' });
+    const hours = date.getHours();
+    const mins = date.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const hour12 = hours % 12 || 12;
+    return `${day} ${month}, ${hour12.toString().padStart(2, '0')}:${mins} ${ampm}`;
+  };
+
+  const isActive = item.status === 'in_progress' || item.status === 'driver_arrived';
+
+  return (
+    <TouchableOpacity onPress={handlePress} activeOpacity={0.7} style={styles.tripCard}>
+      {/* Locations */}
+      <View style={styles.locationsSection}>
+        {/* Pickup */}
+        <View style={styles.locationRow}>
+          <Text style={styles.locationLabel}>PICK UP</Text>
+          <View style={styles.locationValue}>
+            <Ionicons name="location-outline" size={16} color="#6B7280" />
+            <Text style={styles.locationText} numberOfLines={1}>
+              {item.pickup?.address || item.pickup || 'Pickup location'}
+            </Text>
+          </View>
+        </View>
+
+        {/* Dropoff */}
+        <View style={styles.locationRow}>
+          <Text style={styles.locationLabel}>DROP OFF</Text>
+          <View style={styles.locationValue}>
+            <Ionicons name="location-outline" size={16} color="#6B7280" />
+            <Text style={styles.locationText} numberOfLines={1}>
+              {item.dropoff?.address || item.dropoff || 'Dropoff location'}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Footer */}
+      <View style={styles.tripFooter}>
+        <Text style={styles.tripDateTime}>
+          {formatDateTime(item.date || item.created_at)}
+        </Text>
+        <Text style={styles.tripPrice}>Rs. {item.fare || 0}</Text>
+      </View>
+
+      {/* Status Badge */}
+      {isActive && (
+        <View style={styles.statusBadge}>
+          <Text style={styles.statusText}>On trip</Text>
         </View>
       )}
     </TouchableOpacity>
   );
 };
 
-const BookingCard = ({ item, onPress, colors, index }) => {
-  const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onPress();
-  };
-
-  const getStatusConfig = (status) => {
-    switch (status) {
-      case 'completed':
-        return { color: colors.success, icon: 'checkmark-circle', label: 'Completed' };
-      case 'cancelled':
-        return { color: colors.error, icon: 'close-circle', label: 'Cancelled' };
-      case 'ongoing':
-        return { color: colors.info, icon: 'car', label: 'Ongoing' };
-      case 'arriving':
-        return { color: colors.warning, icon: 'time', label: 'Arriving' };
-      default:
-        return { color: colors.primary, icon: 'calendar', label: 'Upcoming' };
-    }
-  };
-
-  const statusConfig = getStatusConfig(item.status);
-
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
-  return (
-    <View>
-      <TouchableOpacity
-        onPress={handlePress}
-        activeOpacity={0.7}
-      >
-        <Card style={styles.bookingCard} shadow="md">
-          {/* Status Badge */}
-          <View style={styles.cardHeader}>
-            <View
-              style={[
-                styles.statusBadge,
-                { backgroundColor: statusConfig.color + '20' },
-              ]}
-            >
-              <Ionicons
-                name={statusConfig.icon}
-                size={14}
-                color={statusConfig.color}
-              />
-              <Text style={[styles.statusText, { color: statusConfig.color }]}>
-                {statusConfig.label}
-              </Text>
-            </View>
-            <Text style={[styles.bookingDate, { color: colors.textSecondary }]}>
-              {formatDate(item.date || item.created_at)}
-            </Text>
-          </View>
-
-          {/* Route Info */}
-          <View style={styles.routeInfo}>
-            <View style={styles.routeRow}>
-              <View style={[styles.routeDot, { backgroundColor: colors.success }]} />
-              <Text
-                style={[styles.routeText, { color: colors.text }]}
-                numberOfLines={1}
-              >
-                {item.pickup?.address || item.pickup}
-              </Text>
-            </View>
-            <View style={[styles.routeLine, { backgroundColor: colors.border }]} />
-            <View style={styles.routeRow}>
-              <View style={[styles.routeDot, { backgroundColor: colors.error }]} />
-              <Text
-                style={[styles.routeText, { color: colors.text }]}
-                numberOfLines={1}
-              >
-                {item.dropoff?.address || item.dropoff}
-              </Text>
-            </View>
-          </View>
-
-          {/* Driver Info */}
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <View style={styles.bookingFooter}>
-            <View style={styles.driverInfo}>
-              <Avatar
-                name={item.driver?.name || 'Driver'}
-                size="small"
-                showBadge={item.status === 'completed'}
-                badgeType="verified"
-              />
-              <View style={styles.driverDetails}>
-                <Text style={[styles.driverName, { color: colors.text }]}>
-                  {item.driver?.name || 'Driver'}
-                </Text>
-                <View style={styles.vehicleRow}>
-                  <Ionicons
-                    name="car-outline"
-                    size={12}
-                    color={colors.textSecondary}
-                  />
-                  <Text style={[styles.vehicleText, { color: colors.textSecondary }]}>
-                    {item.driver?.vehicle?.model || 'Vehicle'}
-                  </Text>
-                </View>
-              </View>
-            </View>
-            <View style={styles.fareContainer}>
-              <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>
-                Fare
-              </Text>
-              <Text style={[styles.fareText, { color: colors.primary }]}>
-                Rs. {item.fare}
-              </Text>
-            </View>
-          </View>
-        </Card>
-      </TouchableOpacity>
+const EmptyState = ({ icon, title, message, actionLabel, onAction }) => (
+  <View style={styles.emptyContainer}>
+    <View style={styles.emptyIconCircle}>
+      <Ionicons name={icon} size={48} color="#9CA3AF" />
     </View>
-  );
-};
+    <Text style={styles.emptyTitle}>{title}</Text>
+    <Text style={styles.emptyMessage}>{message}</Text>
+    {actionLabel && onAction && (
+      <TouchableOpacity style={styles.emptyButton} onPress={onAction}>
+        <Text style={styles.emptyButtonText}>{actionLabel}</Text>
+      </TouchableOpacity>
+    )}
+  </View>
+);
 
 const BookingsScreen = ({ navigation }) => {
-  const { colors } = useTheme();
-  const [activeTab, setActiveTab] = useState('upcoming');
+  const insets = useSafeAreaInsets();
+  const [activeTab, setActiveTab] = useState('booked');
   const [bookings, setBookings] = useState({
-    upcoming: [],
-    completed: [],
-    cancelled: [],
+    booked: [],
+    published: [],
+    active: [],
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
 
-  const fetchBookings = useCallback(async (pageNum = 1, refresh = false) => {
+  const fetchBookings = useCallback(async (refresh = false) => {
     try {
-      if (refresh) {
-        setPage(1);
-        pageNum = 1;
-      }
-
-      const response = await ridesAPI.getRideHistory(pageNum, null);
+      const response = await ridesAPI.getRideHistory(1, null);
       const rawRides = response.data?.rides || response.rides || [];
 
-      // Transform rides to the expected format
       const rides = rawRides.map(ride => ({
         id: ride.id,
         pickup: ride.pickup_address || 'Pickup',
@@ -217,47 +142,23 @@ const BookingsScreen = ({ navigation }) => {
         date: ride.created_at,
         driver: {
           name: ride.driver?.user?.name || 'Driver',
-          vehicle: {
-            model: ride.driver?.vehicle_model || 'Vehicle',
-            color: ride.driver?.vehicle_color || '',
-            plate: ride.driver?.plate_number || '',
-          },
         },
       }));
 
-      // Categorize rides by status
       const categorized = {
-        upcoming: rides.filter(
-          (r) =>
-            r.status === 'pending' ||
-            r.status === 'driver_assigned' ||
-            r.status === 'driver_arrived' ||
-            r.status === 'in_progress' ||
-            r.status === 'searching'
+        booked: rides.filter(r =>
+          r.status === 'pending' || r.status === 'driver_assigned' || r.status === 'confirmed'
         ),
-        completed: rides.filter((r) => r.status === 'completed'),
-        cancelled: rides.filter((r) => r.status === 'cancelled' || r.status === 'cancelled_by_driver'),
+        published: rides.filter(r => r.status === 'completed'),
+        active: rides.filter(r =>
+          r.status === 'in_progress' || r.status === 'driver_arrived'
+        ),
       };
 
-      if (refresh || pageNum === 1) {
-        setBookings(categorized);
-      } else {
-        setBookings((prev) => ({
-          upcoming: [...prev.upcoming, ...categorized.upcoming],
-          completed: [...prev.completed, ...categorized.completed],
-          cancelled: [...prev.cancelled, ...categorized.cancelled],
-        }));
-      }
-
-      setHasMore(rides.length > 0);
-      setPage(pageNum + 1);
+      setBookings(categorized);
     } catch (error) {
       console.log('Error fetching bookings:', error);
-      setBookings({
-        upcoming: [],
-        completed: [],
-        cancelled: [],
-      });
+      setBookings({ booked: [], published: [], active: [] });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -271,48 +172,40 @@ const BookingsScreen = ({ navigation }) => {
   const onRefresh = () => {
     setRefreshing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    fetchBookings(1, true);
-  };
-
-  const loadMore = () => {
-    if (hasMore && !loading) {
-      fetchBookings(page);
-    }
+    fetchBookings(true);
   };
 
   const getEmptyConfig = () => {
     switch (activeTab) {
-      case 'upcoming':
+      case 'booked':
         return {
           icon: 'calendar-outline',
-          title: 'No Upcoming Rides',
-          message: 'You have no scheduled rides at the moment. Book a ride to get started!',
+          title: 'No Booked Trips',
+          message: 'Your booked trips will appear here',
           actionLabel: 'Book a Ride',
           onAction: () => navigation.navigate('HomeTab'),
         };
-      case 'completed':
+      case 'published':
         return {
-          icon: 'checkmark-circle-outline',
-          title: 'No Completed Rides',
-          message: 'Your completed rides will appear here.',
+          icon: 'car-outline',
+          title: 'No Published Trips',
+          message: 'Trips you publish will appear here',
         };
-      case 'cancelled':
+      case 'active':
         return {
-          icon: 'close-circle-outline',
-          title: 'No Cancelled Rides',
-          message: 'Cancelled rides will appear here.',
+          icon: 'navigate-outline',
+          title: 'No Active Trips',
+          message: 'Your ongoing trips will appear here',
         };
       default:
         return {};
     }
   };
 
-  const renderBooking = ({ item, index }) => (
-    <BookingCard
+  const renderTrip = ({ item }) => (
+    <TripCard
       item={item}
       onPress={() => navigation.navigate('BookingDetails', { booking: item })}
-      colors={colors}
-      index={index}
     />
   );
 
@@ -325,53 +218,52 @@ const BookingsScreen = ({ navigation }) => {
         message={config.message}
         actionLabel={config.actionLabel}
         onAction={config.onAction}
-        style={styles.emptyState}
       />
     );
   };
 
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Header
-          title="My Bookings"
-          leftIcon="menu"
-          onLeftPress={() => navigation.navigate('ProfileTab')}
-        />
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+          <Text style={styles.headerTitle}>Trips</Text>
+        </View>
         <View style={styles.loadingContainer}>
-          <SkeletonList count={4} />
+          <ActivityIndicator size="large" color={PRIMARY_COLOR} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Header
-        title="My Bookings"
-        leftIcon="menu"
-        onLeftPress={() => navigation.navigate('ProfileTab')}
-      />
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <Text style={styles.headerTitle}>Trips</Text>
+      </View>
 
       {/* Tabs */}
-      <View
-        style={[styles.tabs, { backgroundColor: colors.surface }]}
-      >
-        {['upcoming', 'completed', 'cancelled'].map((tab) => (
+      <View style={styles.tabs}>
+        {[
+          { key: 'booked', label: 'Booked' },
+          { key: 'published', label: 'Published' },
+          { key: 'active', label: 'Active' },
+        ].map((tab) => (
           <TabButton
-            key={tab}
-            label={tab.charAt(0).toUpperCase() + tab.slice(1)}
-            isActive={activeTab === tab}
-            count={bookings[tab].length}
-            onPress={() => setActiveTab(tab)}
-            colors={colors}
+            key={tab.key}
+            label={tab.label}
+            isActive={activeTab === tab.key}
+            onPress={() => setActiveTab(tab.key)}
           />
         ))}
       </View>
 
       <FlatList
         data={bookings[activeTab]}
-        renderItem={renderBooking}
+        renderItem={renderTrip}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={renderEmpty}
@@ -380,12 +272,10 @@ const BookingsScreen = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
+            tintColor={PRIMARY_COLOR}
+            colors={[PRIMARY_COLOR]}
           />
         }
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
       />
     </View>
   );
@@ -394,131 +284,152 @@ const BookingsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#000',
   },
   loadingContainer: {
     flex: 1,
-    padding: spacing.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   tabs: {
     flexDirection: 'row',
-    ...shadows.sm,
+    paddingHorizontal: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   tab: {
-    flex: 1,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.xs,
+    paddingVertical: 12,
+    marginRight: 32,
+  },
+  tabActive: {
+    borderBottomWidth: 2,
+    borderBottomColor: PRIMARY_COLOR,
   },
   tabText: {
-    fontSize: typography.body,
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  tabTextActive: {
+    color: PRIMARY_COLOR,
     fontWeight: '600',
-  },
-  tabBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: 10,
-    minWidth: 24,
-    alignItems: 'center',
-  },
-  tabBadgeText: {
-    fontSize: typography.caption,
-    fontWeight: '700',
   },
   listContent: {
-    padding: spacing.lg,
+    padding: 24,
     flexGrow: 1,
   },
-  bookingCard: {
-    marginBottom: spacing.md,
+  tripCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
-  cardHeader: {
+  locationsSection: {
+    marginBottom: 16,
+  },
+  locationRow: {
+    marginBottom: 12,
+  },
+  locationLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  locationValue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  locationText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#000',
+  },
+  tripFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md,
+  },
+  tripDateTime: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  tripPrice: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000',
   },
   statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-    gap: spacing.xs,
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   statusText: {
-    fontSize: typography.caption,
-    fontWeight: '700',
-  },
-  bookingDate: {
-    fontSize: typography.caption,
-  },
-  routeInfo: {
-    marginBottom: spacing.md,
-  },
-  routeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  routeDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: spacing.md,
-  },
-  routeLine: {
-    width: 2,
-    height: 20,
-    marginLeft: 4,
-    marginVertical: spacing.xs,
-  },
-  routeText: {
-    flex: 1,
-    fontSize: typography.body,
-  },
-  divider: {
-    height: 1,
-    marginBottom: spacing.md,
-  },
-  bookingFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  driverInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  driverDetails: {
-    marginLeft: spacing.sm,
-  },
-  driverName: {
-    fontSize: typography.body,
+    fontSize: 12,
     fontWeight: '600',
+    color: '#10B981',
   },
-  vehicleRow: {
-    flexDirection: 'row',
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: 2,
+    paddingHorizontal: 40,
+    paddingTop: 60,
   },
-  vehicleText: {
-    fontSize: typography.caption,
+  emptyIconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
   },
-  fareContainer: {
-    alignItems: 'flex-end',
-  },
-  fareLabel: {
-    fontSize: typography.caption,
-  },
-  fareText: {
-    fontSize: typography.h5,
+  emptyTitle: {
+    fontSize: 20,
     fontWeight: '700',
+    color: '#000',
+    marginBottom: 8,
   },
-  emptyState: {
-    marginTop: spacing.xxxl,
+  emptyMessage: {
+    fontSize: 15,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  emptyButton: {
+    backgroundColor: PRIMARY_COLOR,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 27,
+  },
+  emptyButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
   },
 });
 

@@ -55,5 +55,6 @@ export const defaultMaleAvatar = require('../../assets/Male/1.png');
 export const defaultFemaleAvatar = require('../../assets/Female/1.png');
 
 // App logo
-export const appLogo = require('../../assets/Icon .png');
-export const fleetLogo = require('../../assets/Shareide_fleet_logo.png');
+export const appLogo = require('../../assets/icon.png');
+export const logoDarkMode = require('../../assets/logodarkmode.png');
+export const logoLightMode = require('../../assets/logowhitemode.png');

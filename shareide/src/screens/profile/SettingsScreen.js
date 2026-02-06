@@ -16,9 +16,26 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  background: '#FFFFFF',
+  surface: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  border: '#E5E7EB',
+  error: '#EF4444',
+  gradients: { premium: ['#FFD700', '#FFA500'] },
+};
+
 const SettingsScreen = ({ navigation }) => {
-  const { colors, isDark, toggleTheme } = useTheme();
-  const { logout } = useAuth();
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
+  const isDark = theme?.isDark || false;
+  const toggleTheme = theme?.toggleTheme || (() => {});
+  const auth = useAuth();
+  const logout = auth?.logout;
   const insets = useSafeAreaInsets();
 
   const [settings, setSettings] = useState({

@@ -5,12 +5,12 @@ import log from '../utils/logger';
 const AuthContext = createContext();
 
 // TODO: TESTING MODE - Set to false to restore normal auth flow
-const BYPASS_AUTH = true;
+const BYPASS_AUTH = false;
 const MOCK_USER = {
   id: 1,
-  name: 'Test User',
+  name: 'Muzammil Khan',
   phone: '+923001234567',
-  email: 'test@shareide.com',
+  email: 'muzammil@shareide.com',
   gender: 'male',
   avatar: null,
   wallet_balance: 5000,

@@ -3,21 +3,24 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import { onboardingAPI } from '../../api/onboarding';
+import { authAPI } from '../../api/auth';
 
-const PersonalInfoScreen = ({ navigation }) => {
+const PersonalInfoScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
-  const { updateUser } = useAuth();
+  const { updateUser, login } = useAuth();
+  const { verificationToken, isNewUser, phone } = route.params || {};
   
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -84,25 +87,69 @@ const PersonalInfoScreen = ({ navigation }) => {
     if (!validate()) return;
 
     setLoading(true);
+    console.log('=== PersonalInfo Submit ===');
+    console.log('isNewUser:', isNewUser);
+    console.log('verificationToken:', verificationToken ? 'exists' : 'missing');
+    console.log('phone:', phone);
+
     try {
+      // For new users, first complete registration to create user account
+      if (isNewUser && verificationToken) {
+        console.log('New user flow - calling completeRegistration');
+        const fullName = `${formData.first_name} ${formData.last_name}`;
+        const regResponse = await authAPI.completeRegistration({
+          verification_token: verificationToken,
+          name: fullName,
+          gender: 'male', // Default for drivers
+          email: formData.email || null,
+        });
+
+        console.log('completeRegistration response:', JSON.stringify(regResponse, null, 2));
+
+        if (!regResponse.success) {
+          throw new Error(regResponse.message || 'Registration failed');
+        }
+
+        // Login with the new token
+        console.log('Saving token to AsyncStorage...');
+        await login(regResponse.user, regResponse.token);
+        console.log('Token saved successfully');
+      } else {
+        console.log('Existing user flow - token should already be saved');
+      }
+
+      // Verify token exists before making authenticated request
+      const savedToken = await AsyncStorage.getItem('userToken');
+      console.log('Token in AsyncStorage:', savedToken ? 'exists (' + savedToken.substring(0, 20) + '...)' : 'MISSING!');
+
+      if (!savedToken) {
+        throw new Error('Authentication token not found. Please log in again.');
+      }
+
+      // Now submit personal info for driver onboarding
+      console.log('Calling submitPersonalInfo...');
       const response = await onboardingAPI.submitPersonalInfo(formData);
+      console.log('submitPersonalInfo response:', JSON.stringify(response, null, 2));
 
       if (response.success) {
         // Update user context
         await updateUser({
           ...formData,
-          driver: response.data.driver,
+          driver: response.data?.driver,
         });
 
         Alert.alert('Success', 'Personal information saved!', [
           { text: 'Continue', onPress: () => navigation.navigate('VehicleInfo') },
         ]);
+      } else {
+        throw new Error(response.message || 'Failed to save information');
       }
     } catch (error) {
       console.error('Personal info error:', error);
+      console.error('Error response data:', error.response?.data);
       Alert.alert(
         'Error',
-        error.response?.data?.message || 'Failed to save information'
+        error.response?.data?.message || error.message || 'Failed to save information'
       );
     } finally {
       setLoading(false);

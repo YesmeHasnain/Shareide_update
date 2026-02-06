@@ -1,385 +1,273 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
-  RefreshControl,
-  Dimensions,
   StatusBar,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { WebView } from 'react-native-webview';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '../../context/ThemeContext';
+import * as Location from 'expo-location';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
-import { getUpcomingCount } from '../../api/scheduledRides';
-import { ridesAPI } from '../../api/rides';
-import { Card, Avatar, Badge, IconButton, EmptyState } from '../../components/common';
-import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
-const { width } = Dimensions.get('window');
+const PRIMARY_COLOR = '#FCC014';
 
-const QuickActionCard = ({ icon, label, badge, onPress, colors, index }) => {
-  const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onPress?.();
-  };
-
-  return (
-    <View>
-      <TouchableOpacity
-        onPress={handlePress}
-        activeOpacity={0.8}
-        style={[
-          styles.quickActionCard,
-          { backgroundColor: colors.card },
-          shadows.md,
-        ]}
-      >
-        {badge > 0 && (
-          <View style={styles.actionBadge}>
-            <Text style={styles.actionBadgeText}>{badge}</Text>
-          </View>
-        )}
-        <View style={[styles.actionIconContainer, { backgroundColor: colors.primary + '20' }]}>
-          <Ionicons name={icon} size={24} color={colors.primary} />
-        </View>
-        <Text style={[styles.actionLabel, { color: colors.text }]}>{label}</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-const RecentRideCard = ({ ride, colors, onPress }) => {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.8}
-      style={[
-        styles.recentRideCard,
-        { backgroundColor: colors.card },
-        shadows.md,
-      ]}
-    >
-      <View style={styles.rideHeader}>
-        <Avatar name={ride.driver_name} size="small" gradient />
-        <View style={styles.rideInfo}>
-          <Text style={[styles.rideDriver, { color: colors.text }]}>{ride.driver_name}</Text>
-          <Text style={[styles.rideDate, { color: colors.textSecondary }]}>{ride.date}</Text>
-        </View>
-        <View style={styles.rideFare}>
-          <Text style={[styles.rideFareAmount, { color: colors.primary }]}>Rs. {ride.fare}</Text>
-          <Badge label={ride.status} variant={ride.status === 'completed' ? 'success' : 'warning'} size="small" />
-        </View>
-      </View>
-      <View style={styles.rideRoute}>
-        <View style={styles.routePoint}>
-          <View style={[styles.routeDot, { backgroundColor: colors.success }]} />
-          <Text style={[styles.routeText, { color: colors.text }]} numberOfLines={1}>{ride.pickup}</Text>
-        </View>
-        <View style={[styles.routeLine, { backgroundColor: colors.border }]} />
-        <View style={styles.routePoint}>
-          <View style={[styles.routeDot, { backgroundColor: colors.error }]} />
-          <Text style={[styles.routeText, { color: colors.text }]} numberOfLines={1}>{ride.dropoff}</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-const HomeScreen = ({ navigation }) => {
-  const { colors } = useTheme();
+const HomeScreen = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const [scheduledCount, setScheduledCount] = useState(0);
-  const [recentRides, setRecentRides] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [scheduleRes, ridesRes] = await Promise.all([
-        getUpcomingCount().catch(() => ({ success: false })),
-        ridesAPI.getRideHistory(1, null).catch(() => ({ success: false })),
-      ]);
+  const [currentLocation, setCurrentLocation] = useState({
+    latitude: 24.8607,
+    longitude: 67.0011,
+  });
+  const [mapKey, setMapKey] = useState(0);
 
-      if (scheduleRes.success && scheduleRes.data) {
-        setScheduledCount(scheduleRes.data.count || 0);
-      }
-
-      if (ridesRes.success && ridesRes.data) {
-        // Transform rides data for display
-        const rides = (ridesRes.data.rides || []).slice(0, 3).map(ride => ({
-          id: ride.id,
-          driver_name: ride.driver?.user?.name || 'Driver',
-          date: new Date(ride.created_at).toLocaleDateString(),
-          fare: ride.estimated_price || 0,
-          status: ride.status,
-          pickup: ride.pickup_address || 'Pickup',
-          dropoff: ride.drop_address || 'Dropoff',
-        }));
-        setRecentRides(rides);
-      }
-    } catch (error) {
-      console.log('Error fetching home data:', error);
-      setRecentRides([]);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  const pickup = route?.params?.pickup;
+  const dropoff = route?.params?.dropoff;
+  const hasRoute = pickup && dropoff;
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    getCurrentLocation();
+  }, []);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    fetchData();
+  const getCurrentLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return;
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setCurrentLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      setMapKey(k => k + 1);
+    } catch (e) {}
   };
 
-  const quickActions = [
-    { id: 1, icon: 'people-outline', label: 'Carpool', screen: 'SharedRides' },
-    { id: 2, icon: 'calendar-outline', label: 'Scheduled', screen: 'ScheduledRides', badge: scheduledCount },
-    { id: 3, icon: 'bookmark-outline', label: 'Saved Places', screen: 'SavedPlaces' },
-    { id: 4, icon: 'gift-outline', label: 'Promos', screen: 'PromoCodes' },
-  ];
+  const getUserName = () => {
+    if (user?.name) return user.name.split(' ')[0];
+    if (user?.first_name) return user.first_name;
+    return 'there';
+  };
 
-  const greeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+  const getMapHtml = () => {
+    const pLat = pickup?.latitude || currentLocation.latitude;
+    const pLng = pickup?.longitude || currentLocation.longitude;
+    const dLat = dropoff?.latitude;
+    const dLng = dropoff?.longitude;
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { margin: 0; padding: 0; }
+    html, body, #map { width: 100%; height: 100%; }
+    .pickup-dot { width: 20px; height: 20px; background: ${PRIMARY_COLOR}; border: 4px solid #fff; border-radius: 50%; box-shadow: 0 3px 10px rgba(0,0,0,0.3); }
+    .dropoff-marker { width: 20px; height: 28px; position: relative; }
+    .dropoff-marker::before { content: ''; position: absolute; width: 20px; height: 20px; background: ${PRIMARY_COLOR}; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 3px 10px rgba(0,0,0,0.3); }
+    .dropoff-marker::after { content: ''; position: absolute; top: 5px; left: 5px; width: 10px; height: 10px; background: #fff; border-radius: 50%; transform: rotate(-45deg); }
+    .car-marker { width: 36px; height: 36px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,0.2); }
+    .car-marker img { width: 24px; height: 24px; }
+    .percent-label { background: ${PRIMARY_COLOR}; color: #000; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    const pPos = [${pLat}, ${pLng}];
+    ${hasRoute ? `const dPos = [${dLat}, ${dLng}];` : ''}
+    const map = L.map('map', { zoomControl: false, attributionControl: false }).setView(pPos, ${hasRoute ? 14 : 16});
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+    L.marker(pPos, { icon: L.divIcon({ html: '<div class="pickup-dot"></div>', className: '', iconSize: [20, 20], iconAnchor: [10, 10] }) }).addTo(map);
+    ${hasRoute ? `
+    L.marker(dPos, { icon: L.divIcon({ html: '<div class="dropoff-marker"></div>', className: '', iconSize: [20, 28], iconAnchor: [10, 26] }) }).addTo(map);
+    fetch('https://router.project-osrm.org/route/v1/driving/${pLng},${pLat};${dLng},${dLat}?overview=full&geometries=geojson')
+      .then(r => r.json()).then(d => {
+        if (d.routes?.[0]) {
+          const coords = d.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+          L.polyline(coords, { color: '${PRIMARY_COLOR}', weight: 5 }).addTo(map);
+          map.fitBounds(L.latLngBounds(coords), { padding: [60, 60] });
+          const midIdx = Math.floor(coords.length / 2);
+          L.marker(coords[midIdx], { icon: L.divIcon({ html: '<div class="percent-label">45%</div>', className: '', iconSize: [40, 24], iconAnchor: [20, 12] }) }).addTo(map);
+        }
+      });
+    ` : `
+    [[pPos[0]+0.003, pPos[1]+0.002], [pPos[0]-0.002, pPos[1]+0.003], [pPos[0]+0.002, pPos[1]-0.003]].forEach(p => {
+      L.marker(p, { icon: L.divIcon({ html: '<div class="car-marker"><span style="font-size:18px;">🚗</span></div>', className: '', iconSize: [36, 36], iconAnchor: [18, 18] }) }).addTo(map);
+    });
+    `}
+  </script>
+</body>
+</html>`;
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="dark-content" />
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
 
-      {/* Premium Header */}
-      <LinearGradient
-        colors={colors.gradients?.premium || ['#FFD700', '#FFA500']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <View style={styles.headerTop}>
+      {/* Full Screen Map */}
+      <View style={styles.mapContainer}>
+        <WebView
+          key={mapKey}
+          source={{ html: getMapHtml() }}
+          style={styles.map}
+          scrollEnabled={false}
+          javaScriptEnabled
+          domStorageEnabled
+        />
+
+        {/* Notification Button */}
+        <TouchableOpacity
+          style={[styles.notificationBtn, { top: insets.top + 16 }]}
+          onPress={() => navigation.navigate('Notifications')}
+        >
+          <Ionicons name="notifications-outline" size={24} color="#000" />
+        </TouchableOpacity>
+
+        {/* Destination Label (shown when route exists) */}
+        {hasRoute && (
+          <View style={[styles.destinationLabel, { top: insets.top + 120 }]}>
+            <View style={styles.destinationDot}>
+              <Ionicons name="location" size={16} color={PRIMARY_COLOR} />
+            </View>
+            <View>
+              <Text style={styles.destinationLabelText}>Destination</Text>
+              <Text style={styles.destinationName}>{dropoff?.name || 'Selected Location'}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Center Location Button */}
+        <TouchableOpacity
+          style={[styles.centerBtn, { bottom: hasRoute ? 320 + insets.bottom : 280 + insets.bottom }]}
+          onPress={getCurrentLocation}
+        >
+          <Ionicons name="locate" size={24} color={PRIMARY_COLOR} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Bottom Panel */}
+      <View style={[styles.bottomPanel, { paddingBottom: insets.bottom + 16 }]}>
+        {/* Route Info (when route exists) */}
+        {hasRoute && (
+          <View style={styles.routeInfo}>
+            <View style={styles.routeHeader}>
+              <Text style={styles.routeTime}>25 min</Text>
+              <Text style={styles.routeDistance}>(15 km)</Text>
+            </View>
+            <Text style={styles.routeSubtext}>Fastest Route now due to traffic conditions</Text>
+            <View style={styles.progressBar}>
+              <View style={styles.progressFill} />
+              <View style={styles.progressIndicator}>
+                <View style={styles.progressLabel}>
+                  <Text style={styles.progressLabelText}>45%</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Location Inputs */}
+        <View style={styles.locationInputs}>
+          {/* Pickup */}
           <TouchableOpacity
+            style={styles.locationRow}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              navigation.navigate('ProfileTab');
+              navigation.navigate('LocationSearch', { type: 'pickup' });
             }}
-            style={styles.menuButton}
           >
-            <Ionicons name="menu" size={28} color="#000" />
+            <View style={styles.locationDotYellow} />
+            <View style={styles.locationInputBox}>
+              <Text style={styles.locationText} numberOfLines={1}>
+                {pickup?.name || 'Current Location'}
+              </Text>
+            </View>
           </TouchableOpacity>
 
-          <View>
-            <Text style={styles.logoText}>SHAREIDE</Text>
+          {/* Connector Line */}
+          <View style={styles.connectorLine}>
+            <View style={styles.connectorDot} />
+            <View style={styles.connectorDot} />
+            <View style={styles.connectorDot} />
           </View>
 
-          <IconButton
-            icon="notifications-outline"
-            onPress={() => navigation.navigate('Notifications')}
-            variant="ghost"
-            color="#000"
-          />
-        </View>
-
-        <View style={styles.welcomeSection}>
-          <View style={styles.welcomeLeft}>
-            <Text style={styles.greeting}>{greeting()}</Text>
-            <Text style={styles.userName}>{user?.name?.split(' ')[0] || 'Rider'}</Text>
-          </View>
-          <Avatar
-            source={user?.avatar}
-            name={user?.name}
-            size="large"
-            onPress={() => navigation.navigate('ProfileTab')}
-            gradient
-            showBadge
-            badgeType="verified"
-          />
-        </View>
-      </LinearGradient>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
-          />
-        }
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Search Card */}
-        <View>
-          <Card
-            style={styles.searchCard}
-            shadow="lg"
-            onPress={() => navigation.navigate('LocationSearch', { type: 'pickup' })}
-          >
-            <View style={styles.searchHeader}>
-              <Text style={[styles.searchTitle, { color: colors.text }]}>Where to?</Text>
-              <View style={[styles.nowBadge, { backgroundColor: colors.primary + '20' }]}>
-                <Ionicons name="time-outline" size={14} color={colors.primary} />
-                <Text style={[styles.nowText, { color: colors.primary }]}>Now</Text>
-              </View>
-            </View>
-
-            <View style={styles.searchInputs}>
-              <View style={styles.inputRow}>
-                <View style={[styles.inputDot, { backgroundColor: colors.success }]} />
-                <TouchableOpacity
-                  style={[styles.searchInput, { backgroundColor: colors.surface }]}
-                  onPress={() => navigation.navigate('LocationSearch', { type: 'pickup' })}
-                >
-                  <Text style={[styles.searchPlaceholder, { color: colors.textSecondary }]}>
-                    Pickup location
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={[styles.inputConnector, { backgroundColor: colors.border }]} />
-
-              <View style={styles.inputRow}>
-                <View style={[styles.inputDot, { backgroundColor: colors.error }]} />
-                <TouchableOpacity
-                  style={[styles.searchInput, { backgroundColor: colors.surface }]}
-                  onPress={() => navigation.navigate('LocationSearch', { type: 'dropoff' })}
-                >
-                  <Text style={[styles.searchPlaceholder, { color: colors.textSecondary }]}>
-                    Where are you going?
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.findRideButton}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                navigation.navigate('LocationSearch', { type: 'pickup' });
-              }}
-            >
-              <LinearGradient
-                colors={colors.gradients?.primary || ['#FFD700', '#FFA500']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.findRideGradient}
-              >
-                <Ionicons name="car-sport" size={22} color="#000" />
-                <Text style={styles.findRideText}>Find a Ride</Text>
-                <Ionicons name="arrow-forward" size={20} color="#000" />
-              </LinearGradient>
-            </TouchableOpacity>
-          </Card>
-        </View>
-
-        {/* Carpooling Banner */}
-        <View>
+          {/* Dropoff */}
           <TouchableOpacity
-            style={styles.carpoolBanner}
+            style={styles.locationRow}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('LocationSearch', { type: 'dropoff', pickup });
+            }}
+          >
+            <View style={styles.locationDotGray} />
+            <View style={styles.locationInputBox}>
+              <Text style={[styles.locationText, !dropoff && styles.locationPlaceholder]} numberOfLines={1}>
+                {dropoff?.name || 'Where to?'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Continue Button (when route exists) */}
+        {hasRoute && (
+          <TouchableOpacity
+            style={styles.continueBtn}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              navigation.navigate('SharedRides');
+              navigation.navigate('RideOptions', { pickup, dropoff });
             }}
-            activeOpacity={0.9}
+            activeOpacity={0.8}
           >
-            <LinearGradient
-              colors={['#6366F1', '#8B5CF6']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.carpoolGradient}
-            >
-              <View style={styles.carpoolContent}>
-                <View style={styles.carpoolLeft}>
-                  <View style={styles.carpoolBadge}>
-                    <Ionicons name="flash" size={12} color="#fff" />
-                    <Text style={styles.carpoolBadgeText}>NEW</Text>
-                  </View>
-                  <Text style={styles.carpoolTitle}>Carpool & Save</Text>
-                  <Text style={styles.carpoolSubtitle}>Share rides, split costs, meet new people</Text>
-                </View>
-                <View style={styles.carpoolIconWrapper}>
-                  <Ionicons name="people" size={40} color="rgba(255,255,255,0.9)" />
-                </View>
-              </View>
-              <View style={styles.carpoolActions}>
-                <TouchableOpacity
-                  style={styles.carpoolBtn}
-                  onPress={() => navigation.navigate('SharedRides')}
-                >
-                  <Text style={styles.carpoolBtnText}>Find a Ride</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.carpoolBtn, styles.carpoolBtnOutline]}
-                  onPress={() => navigation.navigate('CreateSharedRide')}
-                >
-                  <Text style={[styles.carpoolBtnText, styles.carpoolBtnTextOutline]}>Offer a Ride</Text>
-                </TouchableOpacity>
-              </View>
-            </LinearGradient>
+            <Text style={styles.continueBtnText}>Continue</Text>
           </TouchableOpacity>
-        </View>
+        )}
 
-        {/* Quick Actions */}
-        <View style={styles.quickActionsSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
-          <View style={styles.quickActionsGrid}>
-            {quickActions.map((action, index) => (
-              <QuickActionCard
-                key={action.id}
-                icon={action.icon}
-                label={action.label}
-                badge={action.badge}
-                colors={colors}
-                index={index}
-                onPress={() => navigation.navigate(action.screen)}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* Recent Rides */}
-        <View style={styles.recentSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Rides</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('BookingsTab')}>
-              <Text style={[styles.seeAllText, { color: colors.primary }]}>See All</Text>
+        {/* Quick Action Buttons (when no route) */}
+        {!hasRoute && (
+          <>
+            {/* Request a Ride */}
+            <TouchableOpacity
+              style={styles.primaryBtn}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                navigation.navigate('PostRideRequest', {
+                  pickup: pickup || { latitude: currentLocation.latitude, longitude: currentLocation.longitude }
+                });
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="paper-plane" size={20} color="#000" />
+              <Text style={styles.primaryBtnText}>Request a Ride</Text>
             </TouchableOpacity>
-          </View>
 
-          {recentRides.length === 0 ? (
-            <Card style={styles.emptyCard}>
-              <EmptyState
-                icon="car-outline"
-                title="No rides yet"
-                message="Your ride history will appear here"
-                actionLabel="Book a Ride"
-                onAction={() => navigation.navigate('LocationSearch', { type: 'pickup' })}
-              />
-            </Card>
-          ) : (
-            recentRides.map((ride) => (
-              <RecentRideCard
-                key={ride.id}
-                ride={ride}
-                colors={colors}
-                onPress={() => navigation.navigate('BookingDetails', { rideId: ride.id })}
-              />
-            ))
-          )}
-        </View>
-
-        {/* Bottom Spacing */}
-        <View style={{ height: 100 }} />
-      </ScrollView>
+            {/* Shared Rides */}
+            <TouchableOpacity
+              style={styles.secondaryBtn}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate('AvailableRides', {
+                  latitude: currentLocation.latitude,
+                  longitude: currentLocation.longitude
+                });
+              }}
+              activeOpacity={0.8}
+            >
+              <View style={styles.sharedRidesIcon}>
+                <Ionicons name="people" size={20} color="#000" />
+              </View>
+              <View style={styles.sharedRidesContent}>
+                <Text style={styles.sharedRidesTitle}>Shared Rides</Text>
+                <Text style={styles.sharedRidesSubtitle}>Find rides near you</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
     </View>
   );
 };
@@ -387,322 +275,246 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-  header: {
-    paddingTop: 50,
-    paddingBottom: spacing.xxl,
-    paddingHorizontal: spacing.lg,
-    borderBottomLeftRadius: borderRadius.xxl,
-    borderBottomRightRadius: borderRadius.xxl,
+  mapContainer: {
+    flex: 1,
+    position: 'relative',
   },
-  headerTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xl,
+  map: {
+    flex: 1,
   },
-  menuButton: {
+  notificationBtn: {
+    position: 'absolute',
+    right: 16,
     width: 44,
     height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  destinationLabel: {
+    position: 'absolute',
+    left: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    gap: 10,
+  },
+  destinationDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FEF3C7',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logoText: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#000',
-    letterSpacing: 2,
+  destinationLabelText: {
+    fontSize: 11,
+    color: '#6B7280',
   },
-  welcomeSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  welcomeLeft: {
-    flex: 1,
-  },
-  greeting: {
-    fontSize: typography.bodySmall,
-    color: '#000',
-    opacity: 0.7,
-    marginBottom: 4,
-  },
-  userName: {
-    fontSize: typography.h2,
-    fontWeight: '700',
-    color: '#000',
-  },
-  scrollContent: {
-    paddingTop: spacing.lg,
-  },
-  searchCard: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-    padding: spacing.lg,
-  },
-  searchHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.lg,
-  },
-  searchTitle: {
-    fontSize: typography.h4,
-    fontWeight: '700',
-  },
-  nowBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    gap: 4,
-  },
-  nowText: {
-    fontSize: typography.caption,
+  destinationName: {
+    fontSize: 14,
     fontWeight: '600',
+    color: '#000',
   },
-  searchInputs: {
-    marginBottom: spacing.lg,
+  centerBtn: {
+    position: 'absolute',
+    right: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  inputRow: {
+  bottomPanel: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  routeInfo: {
+    marginBottom: 20,
+  },
+  routeHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+  },
+  routeTime: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#000',
+  },
+  routeDistance: {
+    fontSize: 20,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  routeSubtext: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    position: 'relative',
+  },
+  progressFill: {
+    width: '45%',
+    height: '100%',
+    backgroundColor: PRIMARY_COLOR,
+    borderRadius: 4,
+  },
+  progressIndicator: {
+    position: 'absolute',
+    left: '45%',
+    top: -20,
+    transform: [{ translateX: -20 }],
+  },
+  progressLabel: {
+    backgroundColor: PRIMARY_COLOR,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  progressLabelText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#000',
+  },
+  locationInputs: {
+    marginBottom: 16,
+  },
+  locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
   },
-  inputDot: {
+  locationDotYellow: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    marginRight: spacing.md,
+    backgroundColor: PRIMARY_COLOR,
   },
-  inputConnector: {
-    width: 2,
-    height: 20,
-    marginLeft: 5,
-    marginVertical: spacing.xs,
+  locationDotGray: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#E5E7EB',
   },
-  searchInput: {
+  locationInputBox: {
     flex: 1,
     height: 48,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.lg,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
     justifyContent: 'center',
   },
-  searchPlaceholder: {
-    fontSize: typography.body,
-  },
-  findRideButton: {
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-  },
-  findRideGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 52,
-    gap: spacing.sm,
-  },
-  findRideText: {
-    fontSize: typography.body,
-    fontWeight: '700',
+  locationText: {
+    fontSize: 15,
     color: '#000',
   },
-  quickActionsSection: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
+  locationPlaceholder: {
+    color: '#9CA3AF',
   },
-  sectionTitle: {
-    fontSize: typography.h5,
-    fontWeight: '700',
-    marginBottom: spacing.lg,
-  },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-  },
-  quickActionCard: {
-    width: (width - spacing.lg * 2 - spacing.md) / 2 - spacing.md / 2,
-    padding: spacing.lg,
-    borderRadius: borderRadius.xl,
-    alignItems: 'center',
-  },
-  actionBadge: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    backgroundColor: '#EF4444',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-  },
-  actionBadgeText: {
-    color: '#FFF',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  actionIconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  actionLabel: {
-    fontSize: typography.bodySmall,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  recentSection: {
-    paddingHorizontal: spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.lg,
-  },
-  seeAllText: {
-    fontSize: typography.bodySmall,
-    fontWeight: '600',
-  },
-  emptyCard: {
-    padding: 0,
-    minHeight: 200,
-  },
-  recentRideCard: {
-    padding: spacing.lg,
-    borderRadius: borderRadius.xl,
-    marginBottom: spacing.md,
-  },
-  rideHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  rideInfo: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  rideDriver: {
-    fontSize: typography.body,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  rideDate: {
-    fontSize: typography.caption,
-  },
-  rideFare: {
-    alignItems: 'flex-end',
-    gap: spacing.xs,
-  },
-  rideFareAmount: {
-    fontSize: typography.h5,
-    fontWeight: '700',
-  },
-  rideRoute: {
-    paddingLeft: spacing.sm,
-  },
-  routePoint: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  routeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: spacing.md,
-  },
-  routeLine: {
-    width: 2,
-    height: 16,
-    marginLeft: 3,
-    marginVertical: 2,
-  },
-  routeText: {
-    fontSize: typography.bodySmall,
-    flex: 1,
-  },
-  carpoolBanner: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-    borderRadius: borderRadius.xl,
-    overflow: 'hidden',
-    ...shadows.lg,
-  },
-  carpoolGradient: {
-    padding: spacing.lg,
-  },
-  carpoolContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  carpoolLeft: {
-    flex: 1,
-  },
-  carpoolBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: spacing.sm,
+  connectorLine: {
+    marginLeft: 5,
     paddingVertical: 4,
-    borderRadius: borderRadius.full,
-    alignSelf: 'flex-start',
-    marginBottom: spacing.sm,
     gap: 4,
   },
-  carpoolBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '700',
+  connectorDot: {
+    width: 2,
+    height: 4,
+    backgroundColor: '#E5E7EB',
+    marginLeft: 5,
   },
-  carpoolTitle: {
-    fontSize: typography.h4,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 4,
-  },
-  carpoolSubtitle: {
-    fontSize: typography.bodySmall,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  carpoolIconWrapper: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+  continueBtn: {
+    backgroundColor: PRIMARY_COLOR,
+    height: 54,
+    borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 8,
   },
-  carpoolActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  carpoolBtn: {
-    flex: 1,
-    backgroundColor: '#fff',
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-  },
-  carpoolBtnOutline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.5)',
-  },
-  carpoolBtnText: {
-    fontSize: typography.bodySmall,
+  continueBtnText: {
+    fontSize: 16,
     fontWeight: '600',
-    color: '#6366F1',
+    color: '#000',
   },
-  carpoolBtnTextOutline: {
-    color: '#fff',
+  primaryBtn: {
+    flexDirection: 'row',
+    backgroundColor: PRIMARY_COLOR,
+    height: 54,
+    borderRadius: 27,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+  },
+  primaryBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+  },
+  secondaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 64,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    marginTop: 12,
+  },
+  sharedRidesIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: PRIMARY_COLOR,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  sharedRidesContent: {
+    flex: 1,
+  },
+  sharedRidesTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#000',
+  },
+  sharedRidesSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
   },
 });
 

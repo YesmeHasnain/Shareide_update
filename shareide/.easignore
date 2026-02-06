@@ -1,17 +1,15 @@
-# Explicitly ignore everything outside this directory
-**/../*
+# Ignore parent project folders
+../rest-api
+../website
+../Paymentprocess
+../shareide_fleet
 
-# Node modules
-node_modules/
+# Ignore node_modules (handled by EAS)
+node_modules
 
-# Build artifacts
-.expo/
-dist/
-web-build/
-android/
-ios/
+# Ignore git
+.git
 
-# Development files
+# Ignore temp files
 *.log
 .DS_Store
-*.tgz

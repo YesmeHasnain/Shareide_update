@@ -2,15 +2,17 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration - Change this to your server IP
-const DEV_API_URL = 'http://172.20.128.1/api';
+const DEV_API_URL = 'https://freida-biconical-continually.ngrok-free.dev/api';
 const PROD_API_URL = 'https://api.shareide.com/api';
-const API_BASE_URL = __DEV__ ? DEV_API_URL : PROD_API_URL;
+// Production mode - using live API
+const API_BASE_URL = PROD_API_URL;
 
 const client = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
   },
   timeout: 30000,
 });
@@ -35,7 +37,7 @@ client.interceptors.request.use(
 
 // Handle responses
 client.interceptors.response.use(
-  (response) => response.data,
+  (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
       // Token expired - logout

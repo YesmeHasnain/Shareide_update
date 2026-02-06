@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\SharedRide;
 use App\Models\SharedRideBooking;
+use App\Models\SharedRideBid;
+use App\Models\SharedRideChat;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -820,6 +822,243 @@ class SharedRideController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Rating submitted!',
+        ]);
+    }
+
+    /**
+     * Get available rides within radius (Simple API)
+     */
+    public function available(Request $request)
+    {
+        try {
+            $lat = $request->query('latitude');
+            $lng = $request->query('longitude');
+            $radius = $request->query('radius', 5);
+
+            $query = SharedRide::with(['driver.driver'])
+                ->whereIn('status', ['open', 'active'])
+                ->where('available_seats', '>', 0)
+                ->where('departure_time', '>', now());
+
+            if ($lat && $lng) {
+                $latRange = $radius / 111;
+                $lngRange = $radius / (111 * cos(deg2rad($lat)));
+                $query->whereBetween('from_lat', [$lat - $latRange, $lat + $latRange])
+                      ->whereBetween('from_lng', [$lng - $lngRange, $lng + $lngRange]);
+            }
+
+            $rides = $query->orderBy('departure_time', 'asc')->limit(20)->get();
+
+            return response()->json([
+                'success' => true,
+                'rides' => $rides->map(function ($ride) {
+                    return [
+                        'id' => $ride->id,
+                        'driver_id' => $ride->driver_id,
+                        'driver' => [
+                            'name' => $ride->driver->name ?? 'Driver',
+                            'phone' => $ride->driver->phone,
+                            'rating' => $ride->driver->driver->rating_average ?? 5.0,
+                            'vehicle_model' => $ride->driver->driver->vehicle_model ?? $ride->vehicle_model ?? 'Car',
+                        ],
+                        'pickup_address' => $ride->from_address,
+                        'pickup_lat' => $ride->from_lat,
+                        'pickup_lng' => $ride->from_lng,
+                        'dropoff_address' => $ride->to_address,
+                        'dropoff_lat' => $ride->to_lat,
+                        'dropoff_lng' => $ride->to_lng,
+                        'available_seats' => $ride->available_seats,
+                        'price_per_seat' => $ride->price_per_seat,
+                        'departure_time' => $ride->departure_time,
+                        'notes' => $ride->notes,
+                        'status' => $ride->status,
+                    ];
+                }),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => true, 'rides' => []]);
+        }
+    }
+
+    /**
+     * Place a bid on a ride
+     */
+    public function placeBid(Request $request, $rideId)
+    {
+        $validator = Validator::make($request->all(), [
+            'bid_amount' => 'required|integer|min:1',
+            'seats_requested' => 'required|integer|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => 'Validation failed'], 422);
+        }
+
+        $ride = SharedRide::find($rideId);
+        if (!$ride) {
+            return response()->json(['success' => false, 'message' => 'Ride not found'], 404);
+        }
+
+        $user = $request->user();
+
+        // Check or update existing bid
+        $bid = SharedRideBid::updateOrCreate(
+            ['ride_id' => $rideId, 'user_id' => $user->id],
+            [
+                'bid_amount' => $request->bid_amount,
+                'seats_requested' => $request->seats_requested,
+                'status' => 'pending',
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Bid placed successfully',
+            'bid' => $bid,
+        ]);
+    }
+
+    /**
+     * Get bids for a ride (Driver)
+     */
+    public function getBids(Request $request, $rideId)
+    {
+        $user = $request->user();
+        $ride = SharedRide::where('id', $rideId)->where('driver_id', $user->id)->first();
+
+        if (!$ride) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $bids = SharedRideBid::with('user')
+            ->where('ride_id', $rideId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'bids' => $bids->map(function ($bid) {
+                return [
+                    'id' => $bid->id,
+                    'user_id' => $bid->user_id,
+                    'user_name' => $bid->user->name ?? 'User',
+                    'user_phone' => $bid->user->phone,
+                    'bid_amount' => $bid->bid_amount,
+                    'seats_requested' => $bid->seats_requested,
+                    'status' => $bid->status,
+                    'created_at' => $bid->created_at,
+                ];
+            }),
+        ]);
+    }
+
+    /**
+     * Accept/Reject bid
+     */
+    public function respondToBid(Request $request, $rideId, $bidId)
+    {
+        $action = $request->input('action');
+        if (!in_array($action, ['accept', 'reject'])) {
+            return response()->json(['success' => false, 'message' => 'Invalid action'], 422);
+        }
+
+        $user = $request->user();
+        $ride = SharedRide::where('id', $rideId)->where('driver_id', $user->id)->first();
+
+        if (!$ride) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $bid = SharedRideBid::find($bidId);
+        if (!$bid || $bid->ride_id != $rideId) {
+            return response()->json(['success' => false, 'message' => 'Bid not found'], 404);
+        }
+
+        $bid->status = $action === 'accept' ? 'accepted' : 'rejected';
+        $bid->save();
+
+        if ($action === 'accept' && $bid->seats_requested <= $ride->available_seats) {
+            $ride->available_seats -= $bid->seats_requested;
+            $ride->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Bid ' . $action . 'ed',
+            'bid' => $bid,
+        ]);
+    }
+
+    /**
+     * Get chat messages
+     */
+    public function getChat(Request $request, $rideId)
+    {
+        $user = $request->user();
+        $ride = SharedRide::find($rideId);
+
+        if (!$ride) {
+            return response()->json(['success' => false, 'message' => 'Ride not found'], 404);
+        }
+
+        $messages = SharedRideChat::where('ride_id', $rideId)
+            ->where(function ($q) use ($user) {
+                $q->where('sender_id', $user->id)->orWhere('receiver_id', $user->id);
+            })
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        $otherUserId = $ride->driver_id === $user->id
+            ? SharedRideBid::where('ride_id', $rideId)->first()?->user_id
+            : $ride->driver_id;
+
+        $otherUser = User::find($otherUserId);
+
+        return response()->json([
+            'success' => true,
+            'messages' => $messages,
+            'other_user' => $otherUser ? [
+                'id' => $otherUser->id,
+                'name' => $otherUser->name,
+                'phone' => $otherUser->phone,
+            ] : null,
+        ]);
+    }
+
+    /**
+     * Send chat message
+     */
+    public function sendChat(Request $request, $rideId)
+    {
+        $validator = Validator::make($request->all(), [
+            'message' => 'required|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => 'Message required'], 422);
+        }
+
+        $user = $request->user();
+        $ride = SharedRide::find($rideId);
+
+        if (!$ride) {
+            return response()->json(['success' => false, 'message' => 'Ride not found'], 404);
+        }
+
+        $receiverId = $ride->driver_id === $user->id
+            ? SharedRideBid::where('ride_id', $rideId)->first()?->user_id ?? $ride->driver_id
+            : $ride->driver_id;
+
+        $message = SharedRideChat::create([
+            'ride_id' => $rideId,
+            'sender_id' => $user->id,
+            'receiver_id' => $receiverId,
+            'message' => $request->message,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
         ]);
     }
 

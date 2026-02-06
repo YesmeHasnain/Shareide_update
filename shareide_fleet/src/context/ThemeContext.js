@@ -1,8 +1,11 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getThemeColors } from '../theme/colors';
+import { getThemeColors, lightColors } from '../theme/colors';
 
-const ThemeContext = createContext();
+const ThemeContext = createContext(null);
+
+// Default colors for fallback
+const defaultColors = lightColors;
 
 export const ThemeProvider = ({ children }) => {
   const [isDark, setIsDark] = useState(false);
@@ -42,8 +45,9 @@ export const ThemeProvider = ({ children }) => {
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
+  // Return default colors if context is not available (during initial load)
   if (!context) {
-    throw new Error('useTheme must be used within ThemeProvider');
+    return { isDark: false, colors: defaultColors, toggleTheme: () => {} };
   }
   return context;
 };

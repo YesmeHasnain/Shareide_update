@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import colors from '../../theme/colors';
+import { lightColors as colors } from '../../theme/colors';
 
 const { width } = Dimensions.get('window');
 const SLIDER_WIDTH = width - 80;

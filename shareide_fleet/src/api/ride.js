@@ -3,58 +3,68 @@ import client from './client';
 export const rideAPI = {
   // Get available rides (for driver)
   getAvailableRides: async () => {
-    return await client.get('/rides/available');
+    const response = await client.get('/rides/available');
+    return response.data;
   },
 
   // Accept ride
   acceptRide: async (rideId) => {
-    return await client.post(`/driver/rides/${rideId}/accept`);
+    const response = await client.post(`/driver/rides/${rideId}/accept`);
+    return response.data;
   },
 
   // Update ride status
   updateRideStatus: async (rideId, status) => {
-    return await client.post(`/driver/rides/${rideId}/status`, { status });
+    const response = await client.post(`/driver/rides/${rideId}/status`, { status });
+    return response.data;
   },
 
   // Get active ride
   getActiveRide: async () => {
-    return await client.get('/driver/rides/active');
+    const response = await client.get('/driver/rides/active');
+    return response.data;
   },
 
   // Get my rides
   getMyRides: async () => {
-    return await client.get('/rides/my');
+    const response = await client.get('/rides/my');
+    return response.data;
   },
 
   // Get ride details
   getRideDetails: async (rideId) => {
-    return await client.get(`/rides/${rideId}`);
+    const response = await client.get(`/rides/${rideId}`);
+    return response.data;
   },
 
   // Update location
   updateLocation: async (latitude, longitude) => {
-    return await client.post('/driver/location', {
+    const response = await client.post('/driver/location', {
       latitude,
       longitude,
     });
+    return response.data;
   },
 
   // Update driver status (online/offline)
   updateDriverStatus: async (isOnline, lat = null, lng = null) => {
-    return await client.post('/driver/status', {
+    const response = await client.post('/driver/status', {
       is_online: isOnline,
       lat,
       lng,
     });
+    return response.data;
   },
 
   // Get driver stats (earnings, rides count, rating)
   getDriverStats: async () => {
-    return await client.get('/driver/stats');
+    const response = await client.get('/driver/stats');
+    return response.data;
   },
 
   // Get driver profile
   getDriverProfile: async () => {
-    return await client.get('/driver/profile');
+    const response = await client.get('/driver/profile');
+    return response.data;
   },
 };

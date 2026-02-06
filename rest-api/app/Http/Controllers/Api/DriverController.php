@@ -200,8 +200,6 @@ class DriverController extends Controller
 
         $validator = Validator::make($request->all(), [
             'is_online' => 'required|boolean',
-            'lat' => 'required_if:is_online,true|nullable|numeric',
-            'lng' => 'required_if:is_online,true|nullable|numeric',
         ]);
 
         if ($validator->fails()) {
@@ -215,15 +213,23 @@ class DriverController extends Controller
         // Update status
         $driver->is_online = $request->is_online;
 
-        if ($request->is_online) {
-            $driver->current_lat = $request->lat;
-            $driver->current_lng = $request->lng;
+        // Accept both lat/lng and latitude/longitude
+        $lat = $request->latitude ?? $request->lat;
+        $lng = $request->longitude ?? $request->lng;
+
+        if ($request->is_online && $lat && $lng) {
+            $driver->current_lat = $lat;
+            $driver->current_lng = $lng;
         }
 
         $driver->save();
 
         // Broadcast driver status change for realtime updates
-        broadcast(new DriverStatusChanged($driver))->toOthers();
+        try {
+            broadcast(new DriverStatusChanged($driver))->toOthers();
+        } catch (\Exception $e) {
+            // Silently fail - broadcasting is optional
+        }
 
         return response()->json([
             'success' => true,
@@ -251,37 +257,108 @@ class DriverController extends Controller
             ], 404);
         }
 
-        $validator = Validator::make($request->all(), [
-            'lat' => 'required|numeric',
-            'lng' => 'required|numeric',
-        ]);
+        // Accept both lat/lng and latitude/longitude
+        $lat = $request->latitude ?? $request->lat;
+        $lng = $request->longitude ?? $request->lng;
 
-        if ($validator->fails()) {
+        if (!$lat || !$lng) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
+                'message' => 'Location coordinates required',
             ], 422);
         }
 
         // Update location
-        $driver->current_lat = $request->lat;
-        $driver->current_lng = $request->lng;
+        $driver->current_lat = $lat;
+        $driver->current_lng = $lng;
+        $driver->last_location_update = now();
         $driver->save();
 
         // Broadcast location update for realtime tracking (only if driver is online)
         if ($driver->is_online) {
-            broadcast(new DriverLocationUpdated($driver))->toOthers();
+            try {
+                broadcast(new DriverLocationUpdated($driver))->toOthers();
+            } catch (\Exception $e) {
+                // Silently fail - broadcasting is optional
+            }
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Location updated',
             'location' => [
-                'lat' => $driver->current_lat,
-                'lng' => $driver->current_lng,
+                'latitude' => $driver->current_lat,
+                'longitude' => $driver->current_lng,
             ],
         ]);
+    }
+
+    /**
+     * Get pending ride requests for driver
+     */
+    public function getPendingRequests(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $driver = $user->driver;
+
+            if (!$driver) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                ]);
+            }
+
+            // Get searching rides within 10km radius
+            $query = \App\Models\RideRequest::where('status', 'searching')
+                ->whereNull('driver_id');
+
+            // Filter by location if driver has current location
+            if ($driver->current_lat && $driver->current_lng) {
+                $latRange = 0.09; // ~10km in latitude
+                $lngRange = 0.09; // ~10km in longitude
+                $query->whereBetween('pickup_lat', [
+                    $driver->current_lat - $latRange,
+                    $driver->current_lat + $latRange
+                ])->whereBetween('pickup_lng', [
+                    $driver->current_lng - $lngRange,
+                    $driver->current_lng + $lngRange
+                ]);
+            }
+
+            // Filter by seats if applicable
+            if ($driver->seats) {
+                $query->where('seats', '<=', $driver->seats);
+            }
+
+            $rides = $query->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $rides->map(function ($ride) {
+                    return [
+                        'id' => $ride->id,
+                        'pickup_location' => $ride->pickup_address,
+                        'dropoff_location' => $ride->drop_address,
+                        'pickup_lat' => $ride->pickup_lat,
+                        'pickup_lng' => $ride->pickup_lng,
+                        'drop_lat' => $ride->drop_lat,
+                        'drop_lng' => $ride->drop_lng,
+                        'fare' => $ride->estimated_price ?? $ride->estimated_fare ?? 0,
+                        'seats' => $ride->seats,
+                        'created_at' => $ride->created_at,
+                    ];
+                }),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Get pending requests error: ' . $e->getMessage());
+            return response()->json([
+                'success' => true,
+                'data' => [],
+            ]);
+        }
     }
 
     /**
@@ -449,6 +526,70 @@ class DriverController extends Controller
                 'status' => $ride->status,
             ],
         ]);
+    }
+
+    /**
+     * Get nearby users/passengers looking for rides
+     */
+    public function getNearbyUsers(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $driver = $user->driver;
+
+            if (!$driver) {
+                return response()->json([
+                    'success' => true,
+                    'users' => [],
+                ]);
+            }
+
+            $lat = $request->query('latitude', $driver->current_lat);
+            $lng = $request->query('longitude', $driver->current_lng);
+            $radius = $request->query('radius', 5); // Default 5km
+
+            if (!$lat || !$lng) {
+                return response()->json([
+                    'success' => true,
+                    'users' => [],
+                ]);
+            }
+
+            // Calculate lat/lng range for radius
+            $latRange = $radius / 111; // ~111km per degree of latitude
+            $lngRange = $radius / (111 * cos(deg2rad($lat)));
+
+            // Get users with active ride requests (searching status)
+            $rideRequests = \App\Models\RideRequest::where('status', 'searching')
+                ->whereNull('driver_id')
+                ->whereBetween('pickup_lat', [$lat - $latRange, $lat + $latRange])
+                ->whereBetween('pickup_lng', [$lng - $lngRange, $lng + $lngRange])
+                ->with('rider')
+                ->limit(20)
+                ->get();
+
+            $users = $rideRequests->map(function ($ride) {
+                return [
+                    'id' => $ride->rider_id,
+                    'name' => $ride->rider->name ?? 'Passenger',
+                    'latitude' => $ride->pickup_lat,
+                    'longitude' => $ride->pickup_lng,
+                    'pickup_address' => $ride->pickup_address,
+                    'ride_id' => $ride->id,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'users' => $users,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Get nearby users error: ' . $e->getMessage());
+            return response()->json([
+                'success' => true,
+                'users' => [],
+            ]);
+        }
     }
 
     /**

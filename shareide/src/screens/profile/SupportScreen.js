@@ -17,8 +17,22 @@ import { useTheme } from '../../context/ThemeContext';
 import { Button } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  background: '#FFFFFF',
+  surface: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  border: '#E5E7EB',
+  success: '#10B981',
+  gradients: { premium: ['#FFD700', '#FFA500'] },
+};
+
 const SupportScreen = ({ navigation }) => {
-  const { colors } = useTheme();
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
   const insets = useSafeAreaInsets();
   const [expandedFaq, setExpandedFaq] = useState(null);
   const [message, setMessage] = useState('');

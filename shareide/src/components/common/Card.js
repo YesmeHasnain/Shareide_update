@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import { shadows, borderRadius, spacing } from '../../theme/colors';
@@ -8,14 +7,12 @@ import { shadows, borderRadius, spacing } from '../../theme/colors';
 const Card = ({
   children,
   onPress,
-  variant = 'default', // default, elevated, outlined, gradient
+  variant = 'default', // default, elevated, outlined
   padding = 'medium', // none, small, medium, large
   margin,
   style,
-  gradient,
-  animated = true,
   haptic = true,
-  shadow = 'md', // none, sm, md, lg, xl, gold
+  shadow = 'md', // none, sm, md, lg
 }) => {
   const { colors } = useTheme();
 
@@ -45,20 +42,15 @@ const Card = ({
     switch (variant) {
       case 'elevated':
         return {
-          backgroundColor: colors.cardElevated,
+          backgroundColor: colors.card,
           borderWidth: 0,
           ...shadows[shadow],
         };
       case 'outlined':
         return {
           backgroundColor: colors.card,
-          borderWidth: 1.5,
+          borderWidth: 1,
           borderColor: colors.border,
-        };
-      case 'gradient':
-        return {
-          backgroundColor: 'transparent',
-          borderWidth: 0,
         };
       default:
         return {
@@ -77,32 +69,6 @@ const Card = ({
     style,
   ];
 
-  if (variant === 'gradient' && gradient) {
-    const content = (
-      <LinearGradient
-        colors={gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[cardStyle, shadows[shadow]]}
-      >
-        {children}
-      </LinearGradient>
-    );
-
-    if (onPress) {
-      return (
-        <TouchableOpacity
-          onPress={handlePress}
-          activeOpacity={0.7}
-        >
-          {content}
-        </TouchableOpacity>
-      );
-    }
-
-    return content;
-  }
-
   if (onPress) {
     return (
       <TouchableOpacity
@@ -120,7 +86,7 @@ const Card = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: borderRadius.xl,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
   },
 });

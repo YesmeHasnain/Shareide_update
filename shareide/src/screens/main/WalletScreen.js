@@ -6,164 +6,52 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Dimensions,
+  Switch,
+  StatusBar,
+  ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '../../context/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { walletAPI } from '../../api/wallet';
-import { Header, Card, Button, EmptyState, Skeleton } from '../../components/common';
-import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
-const { width } = Dimensions.get('window');
+const PRIMARY_COLOR = '#FCC014';
 
-const ActionButton = ({ icon, label, onPress, colors }) => {
-  const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onPress?.();
-  };
-
-  return (
-    <TouchableOpacity
-      onPress={handlePress}
-      activeOpacity={0.7}
-      style={styles.actionButton}
-    >
-      <View style={[styles.actionIconBg, { backgroundColor: colors.primary + '20' }]}>
-        <Ionicons name={icon} size={22} color={colors.primary} />
-      </View>
-      <Text style={[styles.actionLabel, { color: colors.text }]}>{label}</Text>
-    </TouchableOpacity>
-  );
-};
-
-const TransactionItem = ({ item, colors, index }) => {
-  const isCredit = item.type === 'credit' || item.type === 'topup';
-
-  const getIcon = () => {
-    switch (item.type) {
-      case 'topup':
-      case 'credit':
-        return 'arrow-down-circle';
-      case 'ride':
-      case 'debit':
-        return 'car';
-      case 'refund':
-        return 'refresh-circle';
-      case 'bonus':
-        return 'gift';
-      default:
-        return 'swap-horizontal';
-    }
-  };
-
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
-  return (
-    <View>
-      <View style={[styles.transactionItem, { backgroundColor: colors.card }]}>
-        <View
-          style={[
-            styles.transactionIcon,
-            { backgroundColor: isCredit ? colors.successLight : colors.errorLight },
-          ]}
-        >
-          <Ionicons
-            name={getIcon()}
-            size={20}
-            color={isCredit ? colors.success : colors.error}
-          />
-        </View>
-        <View style={styles.transactionInfo}>
-          <Text style={[styles.transactionTitle, { color: colors.text }]}>
-            {item.description}
-          </Text>
-          <Text style={[styles.transactionDate, { color: colors.textSecondary }]}>
-            {formatDate(item.date || item.created_at)}
-          </Text>
-        </View>
-        <View style={styles.transactionAmount}>
-          <Text
-            style={[
-              styles.amountText,
-              { color: isCredit ? colors.success : colors.error },
-            ]}
-          >
-            {isCredit ? '+' : '-'}Rs. {item.amount?.toLocaleString()}
-          </Text>
-          {item.status && (
-            <Text
-              style={[
-                styles.statusText,
-                {
-                  color:
-                    item.status === 'completed'
-                      ? colors.success
-                      : item.status === 'pending'
-                      ? colors.warning
-                      : colors.error,
-                },
-              ]}
-            >
-              {item.status}
-            </Text>
-          )}
-        </View>
-      </View>
+const PaymentMethodItem = ({ icon, label, sublabel, onPress }) => (
+  <TouchableOpacity
+    style={styles.paymentMethod}
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <View style={styles.paymentIcon}>
+      <Ionicons name={icon} size={24} color="#000" />
     </View>
-  );
-};
+    <View style={styles.paymentInfo}>
+      <Text style={styles.paymentLabel}>{label}</Text>
+      {sublabel && (
+        <Text style={styles.paymentSublabel}>{sublabel}</Text>
+      )}
+    </View>
+    <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+  </TouchableOpacity>
+);
 
 const WalletScreen = ({ navigation }) => {
-  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [balance, setBalance] = useState(0);
-  const [transactions, setTransactions] = useState([]);
-  const [stats, setStats] = useState({ thisMonth: 0, totalRides: 0, totalSpent: 0 });
+  const [cashEnabled, setCashEnabled] = useState(true);
+  const [balanceEnabled, setBalanceEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchWalletData = useCallback(async () => {
     try {
-      const [balanceRes, transactionsRes] = await Promise.all([
-        walletAPI.getBalance(),
-        walletAPI.getTransactions(),
-      ]);
-
+      const balanceRes = await walletAPI.getBalance();
       const balanceData = balanceRes.data || balanceRes;
       setBalance(balanceData.balance || 0);
-      setStats({
-        thisMonth: balanceData.this_month_spent || 0,
-        totalRides: balanceData.total_rides || 0,
-        totalSpent: balanceData.total_spent || 0,
-      });
-
-      const txData = transactionsRes.data || transactionsRes;
-      const txList = txData.transactions || txData || [];
-
-      const mappedTx = txList.map((tx) => ({
-        id: tx.id?.toString(),
-        type: tx.type === 'topup' ? 'credit' : 'debit',
-        description: tx.description || (tx.type === 'topup' ? 'Wallet top-up' : 'Ride payment'),
-        amount: Math.abs(tx.amount),
-        date: tx.created_at,
-        status: tx.status,
-      }));
-
-      setTransactions(mappedTx);
     } catch (error) {
       console.log('Error fetching wallet data:', error);
-      // Keep empty - show real data only
       setBalance(0);
-      setTransactions([]);
-      setStats({ thisMonth: 0, totalRides: 0, totalSpent: 0 });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -180,30 +68,46 @@ const WalletScreen = ({ navigation }) => {
     fetchWalletData();
   };
 
+  const formatCurrency = (amount) => {
+    return `Rs. ${amount.toLocaleString()}`;
+  };
+
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Header title="My Wallet" onLeftPress={() => navigation.goBack()} />
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={20} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Payment</Text>
+          <View style={styles.placeholder} />
+        </View>
         <View style={styles.loadingContainer}>
-          <Skeleton width="100%" height={180} style={{ marginHorizontal: 16, marginBottom: 20 }} />
-          <View style={{ flexDirection: 'row', gap: 12, paddingHorizontal: 16 }}>
-            <Skeleton width="30%" height={80} />
-            <Skeleton width="30%" height={80} />
-            <Skeleton width="30%" height={80} />
-          </View>
+          <ActivityIndicator size="large" color={PRIMARY_COLOR} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Header
-        title="My Wallet"
-        onLeftPress={() => navigation.goBack()}
-        rightIcon="time-outline"
-        onRightPress={() => navigation.navigate('TransactionHistory')}
-      />
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={20} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Payment</Text>
+        <View style={styles.placeholder} />
+      </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -211,137 +115,126 @@ const WalletScreen = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.primary}
+            tintColor={PRIMARY_COLOR}
+            colors={[PRIMARY_COLOR]}
           />
         }
         contentContainerStyle={styles.scrollContent}
       >
         {/* Balance Card */}
-        <View>
-          <LinearGradient
-            colors={colors.gradients?.premium || ['#FFD700', '#FFA500']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.balanceCard, shadows.goldLg]}
+        <View style={styles.balanceCard}>
+          <View style={styles.balanceHeader}>
+            <Text style={styles.balanceLabel}>Balance</Text>
+            <Ionicons name="wallet-outline" size={24} color="#000" />
+          </View>
+          <Text style={styles.balanceAmount}>
+            {formatCurrency(balance)}
+          </Text>
+          <TouchableOpacity
+            style={styles.addFundsButton}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              navigation.navigate('TopUp');
+            }}
           >
-            <View style={styles.balanceHeader}>
-              <Text style={styles.balanceLabel}>Available Balance</Text>
-              <Ionicons name="wallet" size={32} color="#000" />
+            <Ionicons name="add" size={18} color={PRIMARY_COLOR} />
+            <Text style={styles.addFundsText}>Add funds</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Payment Options */}
+        <View style={styles.section}>
+          {/* Cash Toggle */}
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleInfo}>
+              <View style={styles.toggleIcon}>
+                <Ionicons name="cash-outline" size={20} color="#000" />
+              </View>
+              <Text style={styles.toggleLabel}>Cash</Text>
             </View>
-            <Text style={styles.balanceAmount}>
-              Rs. {balance.toLocaleString()}
-            </Text>
-            <View style={styles.balanceActions}>
-              <TouchableOpacity
-                style={styles.primaryAction}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  navigation.navigate('TopUp');
-                }}
-              >
-                <Ionicons name="add-circle" size={20} color="#FFD700" />
-                <Text style={styles.primaryActionText}>Top Up</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.secondaryAction}
-                onPress={() => navigation.navigate('PaymentMethods')}
-              >
-                <Ionicons name="card" size={18} color="#000" />
-                <Text style={styles.secondaryActionText}>Cards</Text>
-              </TouchableOpacity>
-            </View>
-          </LinearGradient>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          <ActionButton
-            icon="add-circle-outline"
-            label="Top Up"
-            onPress={() => navigation.navigate('TopUp')}
-            colors={colors}
-          />
-          <ActionButton
-            icon="card-outline"
-            label="Cards"
-            onPress={() => navigation.navigate('PaymentMethods')}
-            colors={colors}
-          />
-          <ActionButton
-            icon="time-outline"
-            label="History"
-            onPress={() => navigation.navigate('TransactionHistory')}
-            colors={colors}
-          />
-          <ActionButton
-            icon="gift-outline"
-            label="Promos"
-            onPress={() => navigation.navigate('PromoCodes')}
-            colors={colors}
-          />
-        </View>
-
-        {/* Stats Cards */}
-        <View style={styles.statsContainer}>
-          <Card style={[styles.statCard, shadows.md]}>
-            <Ionicons name="trending-up" size={24} color={colors.primary} />
-            <Text style={[styles.statValue, { color: colors.text }]}>
-              Rs. {stats.thisMonth.toLocaleString()}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              This Month
-            </Text>
-          </Card>
-          <Card style={[styles.statCard, shadows.md]}>
-            <Ionicons name="car-sport" size={24} color={colors.info} />
-            <Text style={[styles.statValue, { color: colors.text }]}>
-              {stats.totalRides}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Total Rides
-            </Text>
-          </Card>
-          <Card style={[styles.statCard, shadows.md]}>
-            <Ionicons name="cash" size={24} color={colors.success} />
-            <Text style={[styles.statValue, { color: colors.text }]}>
-              Rs. {stats.totalSpent.toLocaleString()}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Total Spent
-            </Text>
-          </Card>
-        </View>
-
-        {/* Recent Transactions */}
-        <View style={styles.transactionsSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Recent Transactions
-            </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('TransactionHistory')}>
-              <Text style={[styles.seeAllText, { color: colors.primary }]}>
-                See All
-              </Text>
-            </TouchableOpacity>
+            <Switch
+              value={cashEnabled}
+              onValueChange={(value) => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setCashEnabled(value);
+              }}
+              trackColor={{ false: '#E5E7EB', true: PRIMARY_COLOR + '50' }}
+              thumbColor={cashEnabled ? PRIMARY_COLOR : '#9CA3AF'}
+            />
           </View>
 
-          {transactions.length === 0 ? (
-            <EmptyState
-              icon="receipt-outline"
-              title="No transactions"
-              message="Your transaction history will appear here"
+          {/* Balance Toggle */}
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleInfo}>
+              <View style={styles.toggleIcon}>
+                <Ionicons name="wallet-outline" size={20} color="#000" />
+              </View>
+              <Text style={styles.toggleLabel}>Balance</Text>
+            </View>
+            <Switch
+              value={balanceEnabled}
+              onValueChange={(value) => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setBalanceEnabled(value);
+              }}
+              trackColor={{ false: '#E5E7EB', true: PRIMARY_COLOR + '50' }}
+              thumbColor={balanceEnabled ? PRIMARY_COLOR : '#9CA3AF'}
             />
-          ) : (
-            transactions.slice(0, 5).map((item, index) => (
-              <TransactionItem
-                key={item.id}
-                item={item}
-                colors={colors}
-                index={index}
-              />
-            ))
-          )}
+          </View>
         </View>
+
+        {/* Payment Methods */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Payment methods</Text>
+
+          <View style={styles.methodsCard}>
+            <PaymentMethodItem
+              icon="card"
+              label="VISA"
+              sublabel="****4242"
+              onPress={() => navigation.navigate('PaymentMethods')}
+            />
+            <View style={styles.divider} />
+            <PaymentMethodItem
+              icon="card"
+              label="Mastercard"
+              sublabel="****8888"
+              onPress={() => navigation.navigate('PaymentMethods')}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.addPaymentButton}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('PaymentMethods');
+            }}
+          >
+            <Ionicons name="add-circle-outline" size={20} color={PRIMARY_COLOR} />
+            <Text style={styles.addPaymentText}>Add payment method</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Voucher */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Voucher</Text>
+
+          <TouchableOpacity
+            style={styles.voucherButton}
+            onPress={() => navigation.navigate('PromoCodes')}
+          >
+            <Ionicons name="add-circle-outline" size={20} color={PRIMARY_COLOR} />
+            <Text style={styles.voucherText}>Voucher code</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Transaction History */}
+        <TouchableOpacity
+          style={styles.historyButton}
+          onPress={() => navigation.navigate('TransactionHistory')}
+        >
+          <Text style={styles.historyButtonText}>View Transaction History</Text>
+        </TouchableOpacity>
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -352,170 +245,185 @@ const WalletScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+  },
+  placeholder: {
+    width: 40,
   },
   loadingContainer: {
     flex: 1,
-    paddingTop: spacing.xl,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollContent: {
-    paddingTop: spacing.lg,
+    paddingHorizontal: 24,
   },
   balanceCard: {
-    marginHorizontal: spacing.lg,
-    borderRadius: borderRadius.xxl,
-    padding: spacing.xxl,
-    marginBottom: spacing.xl,
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 24,
+    backgroundColor: PRIMARY_COLOR,
   },
   balanceHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: 8,
   },
   balanceLabel: {
-    fontSize: typography.body,
+    fontSize: 15,
     color: '#000',
-    opacity: 0.7,
+    fontWeight: '500',
   },
   balanceAmount: {
-    fontSize: 42,
-    fontWeight: '800',
+    fontSize: 32,
+    fontWeight: '700',
     color: '#000',
-    marginBottom: spacing.xl,
+    marginBottom: 16,
   },
-  balanceActions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  primaryAction: {
-    flex: 1,
+  addFundsButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    alignSelf: 'flex-start',
     backgroundColor: '#000',
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-    gap: spacing.sm,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 27,
+    gap: 6,
   },
-  primaryActionText: {
-    color: '#FFD700',
-    fontSize: typography.body,
-    fontWeight: '700',
-  },
-  secondaryAction: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-    gap: spacing.sm,
-  },
-  secondaryActionText: {
-    color: '#000',
-    fontSize: typography.body,
+  addFundsText: {
+    fontSize: 14,
     fontWeight: '600',
+    color: PRIMARY_COLOR,
   },
-  quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  actionButton: {
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  actionIconBg: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionLabel: {
-    fontSize: typography.caption,
-    fontWeight: '600',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  statCard: {
-    flex: 1,
-    padding: spacing.lg,
-    alignItems: 'center',
-    borderRadius: borderRadius.xl,
-  },
-  statValue: {
-    fontSize: typography.h5,
-    fontWeight: '700',
-    marginTop: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  statLabel: {
-    fontSize: typography.tiny,
-    textAlign: 'center',
-  },
-  transactionsSection: {
-    paddingHorizontal: spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
+  section: {
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: typography.h5,
-    fontWeight: '700',
-  },
-  seeAllText: {
-    fontSize: typography.bodySmall,
+    fontSize: 16,
     fontWeight: '600',
+    color: '#000',
+    marginBottom: 12,
   },
-  transactionItem: {
+  toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.lg,
-    borderRadius: borderRadius.xl,
-    marginBottom: spacing.md,
-    ...shadows.sm,
+    justifyContent: 'space-between',
+    paddingVertical: 12,
   },
-  transactionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  toggleInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  toggleIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.md,
   },
-  transactionInfo: {
+  toggleLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#000',
+  },
+  methodsCard: {
+    borderRadius: 16,
+    backgroundColor: '#F9FAFB',
+    overflow: 'hidden',
+  },
+  paymentMethod: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  paymentIcon: {
+    width: 48,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  paymentInfo: {
     flex: 1,
   },
-  transactionTitle: {
-    fontSize: typography.body,
+  paymentLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#000',
+  },
+  paymentSublabel: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginLeft: 76,
+  },
+  addPaymentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 16,
+  },
+  addPaymentText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: PRIMARY_COLOR,
+  },
+  voucherButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#E5E7EB',
+  },
+  voucherText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: PRIMARY_COLOR,
+  },
+  historyButton: {
+    backgroundColor: PRIMARY_COLOR,
+    borderRadius: 27,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  historyButtonText: {
+    fontSize: 16,
     fontWeight: '600',
-    marginBottom: 4,
-  },
-  transactionDate: {
-    fontSize: typography.caption,
-  },
-  transactionAmount: {
-    alignItems: 'flex-end',
-  },
-  amountText: {
-    fontSize: typography.body,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  statusText: {
-    fontSize: typography.tiny,
-    fontWeight: '600',
-    textTransform: 'capitalize',
+    color: '#000',
   },
 });
 

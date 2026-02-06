@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, TextInput, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
-import { borderRadius, spacing, shadows } from '../../theme/colors';
+import { borderRadius, spacing } from '../../theme/colors';
 
 const Input = ({
   label,
@@ -28,7 +28,6 @@ const Input = ({
   onBlur,
   returnKeyType,
   onSubmitEditing,
-  variant = 'outlined', // outlined, filled, underlined
 }) => {
   const { colors } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
@@ -45,39 +44,6 @@ const Input = ({
     onBlur?.(e);
   };
 
-  const getContainerStyle = () => {
-    const borderColor = error
-      ? colors.error
-      : isFocused ? colors.primary : colors.border;
-
-    return {
-      borderColor,
-      borderWidth: variant === 'underlined' ? 0 : (isFocused ? 2 : 1.5),
-      borderBottomWidth: variant === 'underlined' ? (isFocused ? 2 : 1.5) : undefined,
-    };
-  };
-
-  const getVariantStyles = () => {
-    switch (variant) {
-      case 'filled':
-        return {
-          backgroundColor: colors.surface,
-          borderRadius: borderRadius.lg,
-        };
-      case 'underlined':
-        return {
-          backgroundColor: 'transparent',
-          borderRadius: 0,
-          paddingHorizontal: 0,
-        };
-      default:
-        return {
-          backgroundColor: colors.background,
-          borderRadius: borderRadius.lg,
-        };
-    }
-  };
-
   return (
     <View style={[styles.container, style]}>
       {label && (
@@ -89,9 +55,11 @@ const Input = ({
       <View
         style={[
           styles.inputContainer,
-          getVariantStyles(),
-          getContainerStyle(),
-          isFocused && variant !== 'underlined' && shadows.sm,
+          {
+            backgroundColor: colors.inputBackground || '#F5F5F5',
+            borderColor: error ? colors.error : isFocused ? colors.primary : 'transparent',
+            borderWidth: isFocused || error ? 2 : 0,
+          },
           !editable && styles.disabled,
         ]}
       >
@@ -188,6 +156,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
     minHeight: 52,
+    borderRadius: borderRadius.md,
   },
   input: {
     flex: 1,

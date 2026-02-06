@@ -54,6 +54,8 @@ coverage/
 *.tmp
 *.temp
 
+# Archives
+*.zip
+
 # Claude
 .claude/
-rest-api/

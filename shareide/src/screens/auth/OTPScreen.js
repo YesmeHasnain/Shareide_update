@@ -8,48 +8,33 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
-  TouchableWithoutFeedback,
-  Keyboard,
   Animated,
+  StatusBar,
+  ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
-import { Button } from '../../components/common';
-import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 import { authAPI } from '../../api/auth';
 
+const PRIMARY_COLOR = '#FCC014';
 const OTP_LENGTH = 6;
-const DEV_MODE = false; // Disable dev mode - use real API
-const FAKE_OTP = '123456';
 
 const OTPScreen = ({ route, navigation }) => {
-  const { colors } = useTheme();
-  const { login } = useAuth();
+  const auth = useAuth();
+  const login = auth?.login;
   const insets = useSafeAreaInsets();
-  const { phone, isExistingUser } = route.params;
+  const phone = route?.params?.phone || '';
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-  const [countdown, setCountdown] = useState(30);
+  const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
 
   const inputRefs = useRef([]);
   const shakeAnim = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
-  }, []);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -73,7 +58,6 @@ const OTPScreen = ({ route, navigation }) => {
     const newOtp = [...otp];
     newOtp[index] = value.replace(/[^0-9]/g, '');
     setOtp(newOtp);
-    Haptics.selectionAsync();
 
     if (value && index < OTP_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
@@ -90,86 +74,46 @@ const OTPScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleVerify = async (otpCode = otp.join('')) => {
-    if (otpCode.length !== OTP_LENGTH) {
+  const handleVerify = async (otpCode) => {
+    if (!otpCode || otpCode.length !== OTP_LENGTH) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       triggerShake();
       return;
     }
 
-    // DEV MODE: Accept fake OTP
-    if (DEV_MODE && otpCode === FAKE_OTP) {
+    try {
       setLoading(true);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const response = await authAPI.verifyCode(phone, otpCode);
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (response.success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      // Navigate to Gender selection for new user flow
-      navigation.navigate('Gender', {
-        phone,
-        verificationToken: 'dev_token_123',
-        isNewUser: true,
-      });
-      setLoading(false);
-      return;
-    }
-
-    // Real API verification (disabled in dev mode)
-    if (!DEV_MODE) {
-      try {
-        setLoading(true);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        const response = await authAPI.verifyCode(phone, otpCode);
-
-        if (response.success) {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-          if (!response.is_new_user && !response.needs_profile_setup) {
-            await login(response.user, response.token);
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'MainTabs' }],
-            });
-            return;
-          }
-
-          if (!response.is_new_user && response.needs_profile_setup) {
-            navigation.navigate('Gender', {
-              phone,
-              token: response.token,
-              user: response.user,
-              isNewUser: false,
-            });
-            return;
-          }
-
-          if (response.is_new_user) {
-            navigation.navigate('Gender', {
-              phone,
-              verificationToken: response.verification_token,
-              isNewUser: true,
-            });
-            return;
-          }
+        if (!response.is_new_user && !response.needs_profile_setup && login) {
+          await login(response.user, response.token);
+          navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+          return;
         }
-      } catch (error) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        triggerShake();
-        setOtp(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
-        const message = error.response?.data?.message || 'Invalid OTP. Please try again.';
-        Alert.alert('Error', message);
-      } finally {
-        setLoading(false);
+
+        if (!response.is_new_user && response.needs_profile_setup) {
+          navigation.navigate('Gender', { phone, token: response.token, user: response.user, isNewUser: false });
+          return;
+        }
+
+        if (response.is_new_user) {
+          navigation.navigate('Gender', { phone, verificationToken: response.verification_token, isNewUser: true });
+          return;
+        }
       }
-    } else {
-      // Wrong OTP in dev mode
+    } catch (error) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       triggerShake();
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
-      Alert.alert('Dev Mode', 'Use OTP: 123456');
+      const message = error.response?.data?.message || 'Invalid OTP';
+      Alert.alert('Error', message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -178,111 +122,71 @@ const OTPScreen = ({ route, navigation }) => {
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    if (DEV_MODE) {
-      Alert.alert('Dev Mode', 'OTP is: 123456');
-      setCountdown(30);
-      setCanResend(false);
-      return;
-    }
-
     try {
       setResending(true);
       await authAPI.sendCode(phone);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Success', 'New OTP sent via WhatsApp!');
-      setCountdown(30);
+      Alert.alert('Sent!', 'New code sent via WhatsApp');
+      setCountdown(60);
       setCanResend(false);
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
     } catch (error) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      const message = error.response?.data?.message || 'Failed to resend OTP.';
-      Alert.alert('Error', message);
+      Alert.alert('Error', 'Failed to resend code');
     } finally {
       setResending(false);
     }
   };
 
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}s`;
+  };
+
   const isComplete = otp.every(digit => digit !== '');
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingTop: insets.top + spacing.xl },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Back Button */}
-          <Animated.View style={{ opacity: fadeAnim }}>
-            <TouchableOpacity
-              style={[styles.backButton, { backgroundColor: colors.surface }]}
-              onPress={() => navigation.goBack()}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-          </Animated.View>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-          {/* Header Section */}
-          <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-            <LinearGradient
-              colors={colors.gradients?.premium || ['#FFD700', '#FFA500']}
-              style={[styles.iconContainer, shadows.goldLg]}
-            >
-              <Ionicons name="chatbubble-ellipses" size={48} color="#000" />
-            </LinearGradient>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={20} color="#000" />
+          </TouchableOpacity>
+        </View>
 
-            <Text style={[styles.title, { color: colors.text }]}>
-              Verify Your Number
-            </Text>
+        {/* Content */}
+        <View style={styles.content}>
+          {/* Title */}
+          <Text style={styles.title}>We sent you an WhatsApp</Text>
+          <Text style={styles.subtitle}>
+            Please enter the code we just{'\n'}sent to +92 {phone}
+          </Text>
 
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Enter the 6-digit code sent via WhatsApp to
-            </Text>
-
-            <View style={[styles.phoneContainer, { backgroundColor: colors.surface }]}>
-              <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
-              <Text style={[styles.phoneText, { color: colors.primary }]}>
-                +92 {phone}
-              </Text>
-            </View>
-
-            {DEV_MODE && (
-              <View style={[styles.devBadge, { backgroundColor: colors.warning + '20' }]}>
-                <Text style={[styles.devText, { color: colors.warning }]}>
-                  Dev Mode: Use OTP 123456
-                </Text>
-              </View>
-            )}
-          </Animated.View>
-
-          {/* OTP Input Section */}
+          {/* OTP Inputs */}
           <Animated.View style={[styles.otpSection, { transform: [{ translateX: shakeAnim }] }]}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>
-              VERIFICATION CODE
-            </Text>
-
             <View style={styles.otpContainer}>
               {otp.map((digit, index) => (
                 <View
                   key={index}
                   style={[
-                    styles.otpInputWrapper,
-                    { backgroundColor: colors.surface },
-                    digit && { borderColor: colors.primary, borderWidth: 2 },
-                    shadows.sm,
+                    styles.otpBox,
+                    digit && styles.otpBoxFilled,
                   ]}
                 >
                   <TextInput
                     ref={(ref) => (inputRefs.current[index] = ref)}
-                    style={[styles.otpInput, { color: colors.text }]}
+                    style={styles.otpInput}
                     value={digit}
                     onChangeText={(value) => handleOtpChange(value, index)}
                     onKeyPress={(e) => handleKeyPress(e, index)}
@@ -297,220 +201,139 @@ const OTPScreen = ({ route, navigation }) => {
             </View>
           </Animated.View>
 
-          {/* Timer & Resend Section */}
-          <Animated.View style={[styles.resendSection, { opacity: fadeAnim }]}>
+          {/* Timer / Resend */}
+          <View style={styles.resendSection}>
             {!canResend ? (
-              <View style={styles.timerContainer}>
-                <Ionicons name="time-outline" size={20} color={colors.textSecondary} />
-                <Text style={[styles.timerText, { color: colors.textSecondary }]}>
-                  Resend code in {countdown}s
-                </Text>
-              </View>
+              <Text style={styles.timerText}>
+                Resend code in {formatTime(countdown)}
+              </Text>
             ) : (
-              <TouchableOpacity
-                style={[styles.resendButton, { backgroundColor: colors.primary + '15' }]}
-                onPress={handleResendOTP}
-                disabled={resending}
-              >
-                {resending ? (
-                  <Text style={[styles.resendText, { color: colors.primary }]}>
-                    Sending...
-                  </Text>
-                ) : (
-                  <>
-                    <Ionicons name="refresh" size={20} color={colors.primary} />
-                    <Text style={[styles.resendText, { color: colors.primary }]}>
-                      Resend via WhatsApp
-                    </Text>
-                  </>
-                )}
+              <TouchableOpacity onPress={handleResendOTP} disabled={resending}>
+                <Text style={styles.resendText}>
+                  {resending ? 'Sending...' : 'Resend code'}
+                </Text>
               </TouchableOpacity>
             )}
-          </Animated.View>
+          </View>
+        </View>
 
-          {/* Button Section */}
-          <Animated.View style={[styles.buttonSection, { opacity: fadeAnim }]}>
-            <Button
-              title="Verify"
-              onPress={() => handleVerify()}
-              variant="primary"
-              size="large"
-              loading={loading}
-              disabled={!isComplete}
-              icon="checkmark-circle"
-              fullWidth
-            />
-
-            <View style={[styles.helpBox, { backgroundColor: colors.surface }]}>
-              <Ionicons name="help-circle-outline" size={24} color={colors.textSecondary} />
-              <Text style={[styles.helpText, { color: colors.textSecondary }]}>
-                Didn't receive the code? Check your WhatsApp messages or request a new code.
+        {/* Bottom Button */}
+        <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 24 }]}>
+          <TouchableOpacity
+            style={[
+              styles.verifyButton,
+              { backgroundColor: isComplete ? PRIMARY_COLOR : '#F3F4F6' },
+            ]}
+            onPress={() => handleVerify(otp.join(''))}
+            disabled={!isComplete || loading}
+            activeOpacity={0.8}
+          >
+            {loading ? (
+              <ActivityIndicator color="#000" />
+            ) : (
+              <Text style={[
+                styles.verifyText,
+                { color: isComplete ? '#000' : '#9CA3AF' }
+              ]}>
+                Verify code
               </Text>
-            </View>
-          </Animated.View>
-
-          {/* Security Note */}
-          <Animated.View style={[styles.securitySection, { opacity: fadeAnim }]}>
-            <View style={[styles.securityBox, { backgroundColor: colors.success + '15' }]}>
-              <Ionicons name="shield-checkmark" size={20} color={colors.success} />
-              <Text style={[styles.securityText, { color: colors.text }]}>
-                Your verification is encrypted and secure
-              </Text>
-            </View>
-          </Animated.View>
-        </ScrollView>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xxxl,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
+  keyboardView: {
+    flex: 1,
   },
   header: {
-    alignItems: 'center',
-    marginBottom: spacing.xxl,
+    paddingHorizontal: 20,
+    marginBottom: 24,
   },
-  iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.xl,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
   },
   title: {
-    fontSize: typography.h2,
+    fontSize: 24,
     fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-    letterSpacing: -0.5,
+    color: '#000',
+    marginBottom: 12,
   },
   subtitle: {
-    fontSize: typography.body,
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: spacing.md,
-  },
-  phoneContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-  },
-  phoneText: {
-    fontSize: typography.body,
-    fontWeight: '600',
-  },
-  devBadge: {
-    marginTop: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-  },
-  devText: {
-    fontSize: typography.bodySmall,
-    fontWeight: '600',
+    fontSize: 15,
+    color: '#6B7280',
+    lineHeight: 22,
+    marginBottom: 40,
   },
   otpSection: {
-    marginBottom: spacing.xl,
-  },
-  label: {
-    fontSize: typography.caption,
-    fontWeight: '700',
-    marginBottom: spacing.md,
-    textAlign: 'center',
-    letterSpacing: 1,
+    marginBottom: 24,
   },
   otpContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.sm,
+    justifyContent: 'space-between',
   },
-  otpInputWrapper: {
+  otpBox: {
     width: 50,
-    height: 60,
-    borderRadius: borderRadius.lg,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
+  otpBoxFilled: {
+    backgroundColor: '#FFF',
+    borderWidth: 2,
+    borderColor: PRIMARY_COLOR,
+  },
   otpInput: {
-    fontSize: typography.h3,
+    fontSize: 24,
     fontWeight: '700',
+    color: '#000',
     textAlign: 'center',
     width: '100%',
     height: '100%',
   },
   resendSection: {
     alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  timerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
   },
   timerText: {
-    fontSize: typography.body,
-  },
-  resendButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.full,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#10B981',
   },
   resendText: {
-    fontSize: typography.body,
+    fontSize: 15,
     fontWeight: '600',
+    color: PRIMARY_COLOR,
   },
-  buttonSection: {
-    gap: spacing.lg,
-    marginBottom: spacing.xl,
+  bottomSection: {
+    paddingHorizontal: 24,
   },
-  helpBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    gap: spacing.md,
-  },
-  helpText: {
-    flex: 1,
-    fontSize: typography.bodySmall,
-    lineHeight: 20,
-  },
-  securitySection: {
-    marginTop: 'auto',
-  },
-  securityBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  verifyButton: {
+    height: 54,
+    borderRadius: 27,
     justifyContent: 'center',
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
+    alignItems: 'center',
   },
-  securityText: {
-    fontSize: typography.bodySmall,
-    fontWeight: '500',
+  verifyText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

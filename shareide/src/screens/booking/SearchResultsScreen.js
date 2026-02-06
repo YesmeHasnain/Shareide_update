@@ -7,141 +7,121 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { ridesAPI } from '../../api/rides';
-import { Header, Card, Avatar, Rating, Badge, Button, EmptyState, SkeletonDriver, BiddingCard } from '../../components/common';
+import { Card, Avatar, Rating, Badge, EmptyState, SkeletonDriver, BiddingCard } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
-const RouteCard = ({ pickup, dropoff, colors }) => (
-  <View>
-    <Card style={styles.routeCard} shadow="md">
-      <View style={styles.routeRow}>
-        <View style={[styles.routeDotGreen, { backgroundColor: colors.success }]} />
-        <View style={styles.routeTextContainer}>
-          <Text style={[styles.routeLabel, { color: colors.textSecondary }]}>PICKUP</Text>
-          <Text style={[styles.routeAddress, { color: colors.text }]} numberOfLines={1}>
-            {pickup?.address || 'Pickup location'}
-          </Text>
-        </View>
-      </View>
-      <View style={[styles.routeConnector, { borderColor: colors.border }]}>
-        <View style={[styles.routeDash, { backgroundColor: colors.border }]} />
-        <View style={[styles.routeDash, { backgroundColor: colors.border }]} />
-        <View style={[styles.routeDash, { backgroundColor: colors.border }]} />
-      </View>
-      <View style={styles.routeRow}>
-        <View style={[styles.routeDotRed, { backgroundColor: colors.error }]} />
-        <View style={styles.routeTextContainer}>
-          <Text style={[styles.routeLabel, { color: colors.textSecondary }]}>DROPOFF</Text>
-          <Text style={[styles.routeAddress, { color: colors.text }]} numberOfLines={1}>
-            {dropoff?.address || 'Dropoff location'}
-          </Text>
-        </View>
-      </View>
-    </Card>
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  background: '#FFFFFF',
+  card: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  inputBackground: '#F5F5F5',
+  border: '#E5E7EB',
+  success: '#10B981',
+  error: '#EF4444',
+  price: '#F5A623',
+};
+
+const RouteHeader = ({ pickup, dropoff, date, time, seats, colors }) => (
+  <View style={[styles.routeHeader, { backgroundColor: colors.inputBackground || '#F5F5F5' }]}>
+    <Text style={[styles.routeHeaderText, { color: colors.text }]} numberOfLines={1}>
+      {pickup?.name || pickup?.address || 'Pickup'} → {dropoff?.name || dropoff?.address || 'Dropoff'}
+    </Text>
+    <View style={styles.routeMetaRow}>
+      <Text style={[styles.routeMetaText, { color: colors.textSecondary }]}>
+        {date || 'Today'} • {time || 'Now'} • {seats || 1} seat{(seats || 1) > 1 ? 's' : ''}
+      </Text>
+    </View>
   </View>
 );
 
-const DriverCard = ({ driver, pickup, dropoff, colors, onPress, index }) => {
+const FilterTabs = ({ activeFilter, onFilterChange, colors }) => {
+  const filters = [
+    { key: 'all', label: 'All' },
+    { key: 'male', label: 'Male only' },
+    { key: 'female', label: 'Female only' },
+  ];
+
+  return (
+    <View style={styles.filterTabs}>
+      {filters.map((filter) => (
+        <TouchableOpacity
+          key={filter.key}
+          style={[
+            styles.filterTab,
+            activeFilter === filter.key && { backgroundColor: colors.primary },
+          ]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onFilterChange(filter.key);
+          }}
+        >
+          <Text
+            style={[
+              styles.filterTabText,
+              { color: activeFilter === filter.key ? '#000' : colors.textSecondary },
+            ]}
+          >
+            {filter.label}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+};
+
+const DriverCard = ({ driver, colors, onPress }) => {
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress?.();
   };
 
+  const formatTime = (time) => {
+    if (!time) return '5:00 PM';
+    return time;
+  };
+
   return (
-    <View>
-      <TouchableOpacity
-        onPress={handlePress}
-        activeOpacity={0.7}
-        style={[styles.driverCard, { backgroundColor: colors.card }, shadows.md]}
-      >
-        {/* Header Row */}
-        <View style={styles.driverHeader}>
+    <TouchableOpacity
+      onPress={handlePress}
+      activeOpacity={0.7}
+      style={[styles.driverCard, { backgroundColor: colors.card }]}
+    >
+      {/* Driver Info Row */}
+      <View style={styles.driverHeader}>
+        <View style={styles.avatarContainer}>
           <Avatar
             source={driver.avatar}
             name={driver.name}
             size="medium"
-            gradient
-            showBadge
-            badgeType="verified"
           />
-          <View style={styles.driverInfo}>
-            <View style={styles.driverNameRow}>
-              <Text style={[styles.driverName, { color: colors.text }]}>{driver.name}</Text>
-              {driver.is_premium && (
-                <Badge label="PRO" gradient size="small" />
-              )}
-            </View>
-            <View style={styles.ratingRow}>
-              <Rating value={driver.rating} size={14} showValue />
-              <Text style={[styles.ridesCount, { color: colors.textSecondary }]}>
-                {driver.total_rides} rides
-              </Text>
-            </View>
-          </View>
-          <View style={styles.fareContainer}>
-            <Text style={[styles.fareAmount, { color: colors.primary }]}>
-              Rs. {driver.fare}
-            </Text>
-            <View style={[styles.etaBadge, { backgroundColor: colors.successLight }]}>
-              <Ionicons name="time-outline" size={12} color={colors.success} />
-              <Text style={[styles.etaText, { color: colors.success }]}>
-                {driver.eta} min
-              </Text>
-            </View>
+          <View style={[styles.ratingBadge, { backgroundColor: colors.primary }]}>
+            <Ionicons name="star" size={10} color="#000" />
+            <Text style={styles.ratingBadgeText}>{driver.rating?.toFixed(1) || '4.9'}</Text>
           </View>
         </View>
-
-        {/* Vehicle Info */}
-        <View style={[styles.vehicleRow, { backgroundColor: colors.surface }]}>
-          <View style={styles.vehicleInfo}>
-            <Ionicons name="car-sport" size={20} color={colors.primary} />
-            <Text style={[styles.vehicleText, { color: colors.text }]}>
-              {driver.vehicle?.color} {driver.vehicle?.model}
-            </Text>
-          </View>
-          <View style={[styles.plateContainer, { backgroundColor: colors.primary + '20' }]}>
-            <Text style={[styles.plateText, { color: colors.primary }]}>
-              {driver.vehicle?.plate}
+        <View style={styles.driverInfo}>
+          <Text style={[styles.driverName, { color: colors.text }]}>{driver.name}</Text>
+          <View style={styles.driverMeta}>
+            <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+            <Text style={[styles.driverMetaText, { color: colors.textSecondary }]}>
+              {formatTime(driver.departure_time)} • {driver.distance || '2.5'} km away
             </Text>
           </View>
         </View>
-
-        {/* Features */}
-        <View style={styles.featuresRow}>
-          {driver.has_ac && (
-            <View style={[styles.featureBadge, { backgroundColor: colors.infoLight }]}>
-              <Ionicons name="snow-outline" size={12} color={colors.info} />
-              <Text style={[styles.featureText, { color: colors.info }]}>AC</Text>
-            </View>
-          )}
-          {driver.accepts_cash && (
-            <View style={[styles.featureBadge, { backgroundColor: colors.successLight }]}>
-              <Ionicons name="cash-outline" size={12} color={colors.success} />
-              <Text style={[styles.featureText, { color: colors.success }]}>Cash</Text>
-            </View>
-          )}
-          <View style={styles.flexSpacer} />
-          <TouchableOpacity
-            style={styles.selectButton}
-            onPress={handlePress}
-          >
-            <LinearGradient
-              colors={colors.gradients?.primary || ['#FFD700', '#FFA500']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.selectButtonGradient}
-            >
-              <Text style={styles.selectButtonText}>Select</Text>
-              <Ionicons name="arrow-forward" size={16} color="#000" />
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    </View>
+        <Text style={[styles.fareAmount, { color: colors.price || '#F5A623' }]}>
+          Rs. {driver.fare || 350}
+        </Text>
+      </View>
+    </TouchableOpacity>
   );
 };
 
@@ -169,8 +149,11 @@ const LoadingState = ({ colors }) => {
 };
 
 const SearchResultsScreen = ({ route, navigation }) => {
-  const { colors } = useTheme();
-  const { pickup, dropoff } = route.params;
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
+  const insets = useSafeAreaInsets();
+  const params = route?.params || {};
+  const { pickup, dropoff } = params;
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -178,6 +161,7 @@ const SearchResultsScreen = ({ route, navigation }) => {
   const [selectedBid, setSelectedBid] = useState(0);
   const [searchRadius, setSearchRadius] = useState(5);
   const [baseFare, setBaseFare] = useState(0);
+  const [activeFilter, setActiveFilter] = useState('all');
 
   useEffect(() => {
     fetchDrivers();
@@ -239,39 +223,51 @@ const SearchResultsScreen = ({ route, navigation }) => {
     });
   };
 
-  const renderDriver = ({ item, index }) => (
+  const renderDriver = ({ item }) => (
     <DriverCard
       driver={item}
-      pickup={pickup}
-      dropoff={dropoff}
       colors={colors}
       onPress={() => selectDriver(item)}
-      index={index}
     />
   );
 
+  // Filter drivers based on selected filter
+  const filteredDrivers = drivers.filter((driver) => {
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'male') return driver.gender === 'male';
+    if (activeFilter === 'female') return driver.gender === 'female';
+    return true;
+  });
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Header
-        title="Available Drivers"
-        subtitle={`${drivers.length} found`}
-        onLeftPress={() => navigation.goBack()}
-      />
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + spacing.lg }]}>
+        <TouchableOpacity
+          style={[styles.backButton, { backgroundColor: colors.inputBackground || '#F5F5F5' }]}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerTitleContainer}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Available Rides</Text>
+        </View>
+        <View style={styles.placeholder} />
+      </View>
 
       {loading ? (
         <LoadingState colors={colors} />
       ) : drivers.length === 0 ? (
         <EmptyState
           icon="car-outline"
-          title="No Drivers Available"
-          message="There are no drivers available in your area right now. Please try again later."
+          title="No Rides Available"
+          message="There are no rides available for this route right now. Please try again later."
           actionLabel="Retry"
           onAction={fetchDrivers}
-          variant="error"
         />
       ) : (
         <FlatList
-          data={drivers}
+          data={filteredDrivers}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderDriver}
           contentContainerStyle={styles.listContainer}
@@ -285,17 +281,15 @@ const SearchResultsScreen = ({ route, navigation }) => {
           }
           ListHeaderComponent={
             <>
-              <RouteCard pickup={pickup} dropoff={dropoff} colors={colors} />
-              {baseFare > 0 && (
-                <BiddingCard
-                  baseFare={baseFare}
-                  selectedBid={selectedBid}
-                  onBidChange={handleBidChange}
-                  driversCount={drivers.length}
-                  searchRadius={searchRadius}
-                  style={{ marginHorizontal: 0, marginBottom: spacing.lg }}
-                />
-              )}
+              <RouteHeader pickup={pickup} dropoff={dropoff} colors={colors} />
+              <FilterTabs
+                activeFilter={activeFilter}
+                onFilterChange={setActiveFilter}
+                colors={colors}
+              />
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                AVAILABLE RIDES
+              </Text>
             </>
           }
           ListFooterComponent={<View style={{ height: 100 }} />}
@@ -308,6 +302,30 @@ const SearchResultsScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: typography.h5,
+    fontWeight: '600',
+  },
+  placeholder: {
+    width: 40,
   },
   loadingContainer: {
     flex: 1,
@@ -335,167 +353,97 @@ const styles = StyleSheet.create({
   },
   skeletonsContainer: {
     marginTop: spacing.lg,
+    
   },
   listContainer: {
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
-  routeCard: {
-    marginBottom: spacing.lg,
+  routeHeader: {
+    borderRadius: borderRadius.md,
     padding: spacing.lg,
+    marginBottom: spacing.md,
   },
-  routeRow: {
+  routeHeaderText: {
+    fontSize: typography.body,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
+  },
+  routeMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  routeDotGreen: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    marginRight: spacing.md,
+  routeMetaText: {
+    fontSize: typography.caption,
   },
-  routeDotRed: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    marginRight: spacing.md,
+  filterTabs: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
-  routeTextContainer: {
-    flex: 1,
+  filterTab: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
   },
-  routeLabel: {
-    fontSize: typography.tiny,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  routeAddress: {
+  filterTabText: {
     fontSize: typography.bodySmall,
     fontWeight: '600',
   },
-  routeConnector: {
-    marginLeft: 6,
-    paddingVertical: spacing.xs,
-    gap: 4,
-  },
-  routeDash: {
-    width: 2,
-    height: 6,
-    marginLeft: 0,
+  sectionTitle: {
+    fontSize: typography.caption,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    marginBottom: spacing.md,
   },
   driverCard: {
-    borderRadius: borderRadius.xl,
+    borderRadius: borderRadius.lg,
     padding: spacing.lg,
     marginBottom: spacing.md,
+    ...shadows.sm,
   },
   driverHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
+  },
+  avatarContainer: {
+    position: 'relative',
+  },
+  ratingBadge: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: borderRadius.full,
+    gap: 2,
+  },
+  ratingBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#000',
   },
   driverInfo: {
     flex: 1,
     marginLeft: spacing.md,
   },
-  driverNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
-  },
   driverName: {
     fontSize: typography.body,
-    fontWeight: '700',
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  ridesCount: {
-    fontSize: typography.caption,
-  },
-  fareContainer: {
-    alignItems: 'flex-end',
-  },
-  fareAmount: {
-    fontSize: typography.h4,
-    fontWeight: '800',
-    marginBottom: spacing.xs,
-  },
-  etaBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    gap: 4,
-  },
-  etaText: {
-    fontSize: typography.caption,
     fontWeight: '600',
+    marginBottom: 2,
   },
-  vehicleRow: {
+  driverMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.md,
-  },
-  vehicleInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  vehicleText: {
-    fontSize: typography.bodySmall,
-    fontWeight: '600',
-  },
-  plateContainer: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-  },
-  plateText: {
-    fontSize: typography.caption,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  featuresRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  featureBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    gap: 4,
-  },
-  featureText: {
-    fontSize: typography.tiny,
-    fontWeight: '600',
-  },
-  flexSpacer: {
-    flex: 1,
-  },
-  selectButton: {
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-  },
-  selectButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
     gap: spacing.xs,
   },
-  selectButtonText: {
-    fontSize: typography.bodySmall,
+  driverMetaText: {
+    fontSize: typography.caption,
+  },
+  fareAmount: {
+    fontSize: typography.h5,
     fontWeight: '700',
-    color: '#000',
   },
 });
 

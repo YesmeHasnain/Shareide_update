@@ -18,11 +18,23 @@ class OnboardingController extends Controller
      */
     public function personalInfo(Request $request)
     {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Please login first.'
+            ], 401);
+        }
+
+        // Check if driver already exists for this user (for unique CNIC validation)
+        $existingDriver = Driver::where('user_id', $user->id)->first();
+
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'nullable|email',
-            'cnic' => 'required|string|size:15|unique:drivers,cnic',
+            'cnic' => 'required|string|size:15|unique:drivers,cnic,' . ($existingDriver ? $existingDriver->id : 'NULL'),
             'address' => 'required|string',
             'city' => 'required|string',
         ]);
@@ -30,13 +42,12 @@ class OnboardingController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
+                'message' => 'Validation failed',
                 'errors' => $validator->errors()
             ], 422);
         }
 
         try {
-            $user = $request->user();
-
             // Update user name
             $user->name = $request->first_name . ' ' . $request->last_name;
             if ($request->email) {
@@ -45,14 +56,24 @@ class OnboardingController extends Controller
             $user->save();
 
             // Create or update driver profile
+            // Provide defaults for required fields that will be filled in later steps
+            $driverData = [
+                'cnic' => $request->cnic,
+                'cnic_name' => $request->first_name . ' ' . $request->last_name,
+                'address' => $request->address,
+                'city' => $request->city,
+                'status' => $existingDriver ? $existingDriver->status : 'pending',
+            ];
+
+            // Only set defaults for new drivers (existing drivers already have these)
+            if (!$existingDriver) {
+                $driverData['vehicle_type'] = 'car'; // Default, will be updated in step 2
+                $driverData['seats'] = 4; // Default, will be updated in step 2
+            }
+
             $driver = Driver::updateOrCreate(
                 ['user_id' => $user->id],
-                [
-                    'cnic' => $request->cnic,
-                    'address' => $request->address,
-                    'city' => $request->city,
-                    'status' => 'pending',
-                ]
+                $driverData
             );
 
             return response()->json([
@@ -64,22 +85,43 @@ class OnboardingController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('Onboarding personal info error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to save personal information',
-                'error' => $e->getMessage()
+                'error' => config('app.debug') ? $e->getMessage() : 'Server error'
             ], 500);
         }
     }
 
     /**
      * Step 2: Vehicle Information
+     * Vehicle info is stored directly in drivers table
      */
     public function vehicleInfo(Request $request)
     {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Please login first.'
+            ], 401);
+        }
+
+        $driver = $user->driver;
+
+        if (!$driver) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Driver profile not found. Complete personal info first.'
+            ], 404);
+        }
+
+        // Check for unique plate number (excluding current driver)
         $validator = Validator::make($request->all(), [
             'type' => 'required|in:bike,car,rickshaw',
-            'registration_number' => 'required|string|unique:vehicles,registration_number',
+            'registration_number' => 'required|string|unique:drivers,plate_number,' . $driver->id,
             'make' => 'required|string',
             'model' => 'required|string',
             'year' => 'required|integer|min:1990|max:' . (date('Y') + 1),
@@ -89,46 +131,34 @@ class OnboardingController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
+                'message' => 'Validation failed',
                 'errors' => $validator->errors()
             ], 422);
         }
 
         try {
-            $driver = $request->user()->driver;
-
-            if (!$driver) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Driver profile not found. Complete personal info first.'
-                ], 404);
-            }
-
-            $vehicle = Vehicle::updateOrCreate(
-                ['driver_id' => $driver->id],
-                [
-                    'type' => $request->type,
-                    'registration_number' => $request->registration_number,
-                    'make' => $request->make,
-                    'model' => $request->model,
-                    'year' => $request->year,
-                    'color' => $request->color,
-                    'status' => 'active',
-                ]
-            );
+            // Update driver with vehicle info (stored in same table)
+            $driver->update([
+                'vehicle_type' => $request->type,
+                'plate_number' => $request->registration_number,
+                'vehicle_model' => $request->make . ' ' . $request->model . ' (' . $request->year . ') - ' . $request->color,
+                'seats' => $request->type === 'car' ? 4 : ($request->type === 'rickshaw' ? 3 : 2),
+            ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Vehicle information saved successfully',
                 'data' => [
-                    'vehicle' => $vehicle
+                    'driver' => $driver->fresh()
                 ]
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('Onboarding vehicle info error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to save vehicle information',
-                'error' => $e->getMessage()
+                'error' => config('app.debug') ? $e->getMessage() : 'Server error'
             ], 500);
         }
     }
@@ -138,6 +168,15 @@ class OnboardingController extends Controller
      */
     public function uploadDocuments(Request $request)
     {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
         $validator = Validator::make($request->all(), [
             'nic_front' => 'required|image|mimes:jpeg,png,jpg|max:5120',
             'nic_back' => 'required|image|mimes:jpeg,png,jpg|max:5120',
@@ -149,12 +188,13 @@ class OnboardingController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
+                'message' => 'Validation failed',
                 'errors' => $validator->errors()
             ], 422);
         }
 
         try {
-            $driver = $request->user()->driver;
+            $driver = $user->driver;
 
             if (!$driver) {
                 return response()->json([
@@ -190,10 +230,11 @@ class OnboardingController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('Onboarding uploadDocuments error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to upload documents',
-                'error' => $e->getMessage()
+                'error' => config('app.debug') ? $e->getMessage() : 'Server error'
             ], 500);
         }
     }
@@ -203,6 +244,15 @@ class OnboardingController extends Controller
      */
     public function uploadSelfies(Request $request)
     {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
         $validator = Validator::make($request->all(), [
             'selfie_with_nic' => 'required|image|mimes:jpeg,png,jpg|max:5120',
             'live_selfie' => 'required|image|mimes:jpeg,png,jpg|max:5120',
@@ -211,12 +261,13 @@ class OnboardingController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
+                'message' => 'Validation failed',
                 'errors' => $validator->errors()
             ], 422);
         }
 
         try {
-            $driver = $request->user()->driver;
+            $driver = $user->driver;
 
             if (!$driver) {
                 return response()->json([
@@ -252,10 +303,11 @@ class OnboardingController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('Onboarding uploadSelfies error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to upload selfies',
-                'error' => $e->getMessage()
+                'error' => config('app.debug') ? $e->getMessage() : 'Server error'
             ], 500);
         }
     }
@@ -265,8 +317,17 @@ class OnboardingController extends Controller
      */
     public function getStatus(Request $request)
     {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
         try {
-            $driver = $request->user()->driver;
+            $driver = $user->driver;
 
             if (!$driver) {
                 return response()->json([
@@ -275,30 +336,47 @@ class OnboardingController extends Controller
                 ], 404);
             }
 
-            $vehicle = $driver->vehicle;
             $documents = $driver->documents;
+
+            // Vehicle info is now stored in driver table
+            $hasVehicleInfo = !empty($driver->vehicle_type) && !empty($driver->plate_number);
+
+            // Format documents with full URLs
+            $formattedDocuments = null;
+            if ($documents) {
+                $formattedDocuments = [
+                    'id' => $documents->id,
+                    'nic_front' => $documents->nic_front ? url('storage/' . $documents->nic_front) : null,
+                    'nic_back' => $documents->nic_back ? url('storage/' . $documents->nic_back) : null,
+                    'license_front' => $documents->license_front ? url('storage/' . $documents->license_front) : null,
+                    'license_back' => $documents->license_back ? url('storage/' . $documents->license_back) : null,
+                    'vehicle_registration' => $documents->vehicle_registration ? url('storage/' . $documents->vehicle_registration) : null,
+                    'selfie_with_nic' => $documents->selfie_with_nic ? url('storage/' . $documents->selfie_with_nic) : null,
+                ];
+            }
 
             return response()->json([
                 'success' => true,
                 'data' => [
                     'status' => $driver->status,
                     'driver' => $driver,
-                    'vehicle' => $vehicle,
-                    'documents' => $documents,
+                    'documents' => $formattedDocuments,
                     'steps_completed' => [
                         'personal_info' => !empty($driver->cnic),
-                        'vehicle_info' => $vehicle !== null,
+                        'vehicle_info' => $hasVehicleInfo,
                         'documents' => $documents && $documents->nic_front !== null,
                         'selfies' => $documents && $documents->selfie_with_nic !== null,
+                        'submitted' => in_array($driver->status, ['pending', 'approved', 'rejected']),
                     ]
                 ]
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('Onboarding getStatus error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch status',
-                'error' => $e->getMessage()
+                'error' => config('app.debug') ? $e->getMessage() : 'Server error'
             ], 500);
         }
     }
@@ -308,8 +386,17 @@ class OnboardingController extends Controller
      */
     public function submitForApproval(Request $request)
     {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
         try {
-            $driver = $request->user()->driver;
+            $driver = $user->driver;
 
             if (!$driver) {
                 return response()->json([
@@ -319,11 +406,11 @@ class OnboardingController extends Controller
             }
 
             // Validate all steps are complete
-            $vehicle = $driver->vehicle;
+            $hasVehicleInfo = !empty($driver->vehicle_type) && !empty($driver->plate_number);
             $documents = $driver->documents;
 
-            if (!$vehicle || !$documents || 
-                !$documents->nic_front || 
+            if (!$hasVehicleInfo || !$documents ||
+                !$documents->nic_front ||
                 !$documents->selfie_with_nic) {
                 return response()->json([
                     'success' => false,
@@ -354,6 +441,7 @@ class OnboardingController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('Onboarding submitForApproval error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to submit application',
