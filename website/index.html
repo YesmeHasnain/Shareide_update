@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="SHAREIDE - Pakistan's #1 Ride Sharing App. Book rides, share trips, save money.">
+    <meta name="description" content="SHAREIDE - Pakistan's #1 Ride Sharing App. Book rides, share trips, save money. Safe, affordable, and smart.">
     <title>SHAREIDE - Ride Sharing Pakistan</title>
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -11,11 +11,22 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <!-- Preloader -->
+    <div class="preloader" id="preloader">
+        <div class="preloader__inner">
+            <img src="images/logo-black.png" alt="SHAREIDE" class="preloader__logo">
+            <div class="preloader__bar"><div class="preloader__progress"></div></div>
+        </div>
+    </div>
+
+    <!-- Cursor Glow (desktop only) -->
+    <div class="cursor-glow" id="cursorGlow"></div>
+
     <!-- Navbar -->
     <header class="header" id="header">
         <nav class="nav container">
             <a href="#" class="nav__logo">
-                <span class="logo-text">SHARE<span class="accent">IDE</span></span>
+                <img src="images/logo-white.png" alt="SHAREIDE" class="nav__logo-img" id="navLogo">
             </a>
 
             <div class="nav__menu" id="nav-menu">
@@ -32,7 +43,10 @@
             </div>
 
             <div class="nav__buttons">
-                <a href="#download" class="btn btn--primary">Get App</a>
+                <a href="#download" class="btn btn--primary btn--glow">
+                    <i class="fas fa-download"></i>
+                    Get App
+                </a>
                 <div class="nav__toggle" id="nav-toggle">
                     <i class="fas fa-bars"></i>
                 </div>
@@ -42,31 +56,36 @@
 
     <!-- Hero -->
     <section class="hero" id="home">
-        <div class="hero__shapes">
-            <div class="shape shape--1"></div>
-            <div class="shape shape--2"></div>
-            <div class="shape shape--3"></div>
+        <canvas class="hero__particles" id="heroParticles"></canvas>
+        <div class="hero__gradient-orbs">
+            <div class="orb orb--1"></div>
+            <div class="orb orb--2"></div>
+            <div class="orb orb--3"></div>
         </div>
 
         <div class="container hero__container">
-            <div class="hero__content">
-                <span class="hero__tag">
-                    <i class="fas fa-bolt"></i> #1 Ride Sharing in Pakistan
-                </span>
+            <div class="hero__content" data-animate="fade-right">
+                <div class="hero__tag-wrapper">
+                    <span class="hero__tag">
+                        <span class="hero__tag-dot"></span>
+                        #1 Ride Sharing in Pakistan
+                    </span>
+                </div>
                 <h1 class="hero__title">
                     Your Ride,<br>
-                    <span class="gradient-text">Your Way</span>
+                    <span class="gradient-text" id="typingText">Your Way</span>
+                    <span class="typing-cursor">|</span>
                 </h1>
                 <p class="hero__description">
                     Book affordable rides, share trips with others, and travel smarter across Pakistan. Save up to 60% on every journey.
                 </p>
 
                 <div class="hero__buttons">
-                    <a href="https://play.google.com/store/apps/details?id=com.shareide_official.shareide" class="btn btn--primary btn--lg">
+                    <a href="https://play.google.com/store/apps/details?id=com.shareide_official.shareide" class="btn btn--primary btn--lg btn--glow">
                         <i class="fab fa-google-play"></i>
                         Download Now
                     </a>
-                    <a href="#how" class="btn btn--outline btn--lg">
+                    <a href="#how" class="btn btn--glass btn--lg">
                         <i class="fas fa-play-circle"></i>
                         See How It Works
                     </a>
@@ -74,47 +93,119 @@
 
                 <div class="hero__stats">
                     <div class="hero__stat">
-                        <span class="hero__stat-number">500K+</span>
+                        <span class="hero__stat-number" data-target="500" data-suffix="K+">0</span>
                         <span class="hero__stat-label">Active Users</span>
                     </div>
                     <div class="hero__stat">
-                        <span class="hero__stat-number">50K+</span>
+                        <span class="hero__stat-number" data-target="50" data-suffix="K+">0</span>
                         <span class="hero__stat-label">Drivers</span>
                     </div>
                     <div class="hero__stat">
-                        <span class="hero__stat-number">15+</span>
+                        <span class="hero__stat-number" data-target="15" data-suffix="+">0</span>
                         <span class="hero__stat-label">Cities</span>
                     </div>
                 </div>
             </div>
 
-            <div class="hero__image">
-                <div class="phone-mockup">
-                    <img src="https://images.unsplash.com/photo-1551650975-87deedd944c3?w=400&h=800&fit=crop&q=80" alt="SHAREIDE App">
+            <div class="hero__image" data-animate="fade-left">
+                <div class="hero__phone-wrapper">
+                    <div class="phone-mockup">
+                        <div class="phone-mockup__notch"></div>
+                        <div class="phone-mockup__screen">
+                            <div class="phone-screen-content">
+                                <div class="phone-screen__header">
+                                    <img src="images/logo-white.png" alt="SHAREIDE" class="phone-screen__logo">
+                                    <span class="phone-screen__greeting">Good Morning!</span>
+                                </div>
+                                <div class="phone-screen__search">
+                                    <i class="fas fa-search"></i>
+                                    <span>Where to?</span>
+                                </div>
+                                <div class="phone-screen__rides">
+                                    <div class="phone-screen__ride-option active">
+                                        <i class="fas fa-car"></i>
+                                        <span>Solo</span>
+                                    </div>
+                                    <div class="phone-screen__ride-option">
+                                        <i class="fas fa-users"></i>
+                                        <span>Carpool</span>
+                                    </div>
+                                    <div class="phone-screen__ride-option">
+                                        <i class="fas fa-star"></i>
+                                        <span>Premium</span>
+                                    </div>
+                                </div>
+                                <div class="phone-screen__map">
+                                    <div class="phone-screen__route">
+                                        <div class="route-dot route-dot--start"></div>
+                                        <div class="route-line"></div>
+                                        <div class="route-dot route-dot--end"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="phone-glow"></div>
                 </div>
+
                 <div class="floating-card floating-card--1">
-                    <i class="fas fa-shield-alt"></i>
-                    <span>Verified Drivers</span>
+                    <div class="floating-card__icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div>
+                        <strong>Verified Drivers</strong>
+                        <span>CNIC Verified</span>
+                    </div>
                 </div>
                 <div class="floating-card floating-card--2">
-                    <i class="fas fa-wallet"></i>
-                    <span>Save 60%</span>
+                    <div class="floating-card__icon floating-card__icon--green">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div>
+                        <strong>Save 60%</strong>
+                        <span>With Carpool</span>
+                    </div>
+                </div>
+                <div class="floating-card floating-card--3">
+                    <div class="floating-card__icon floating-card__icon--blue">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div>
+                        <strong>Live Tracking</strong>
+                        <span>Real-time GPS</span>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <div class="hero__scroll-indicator">
+            <div class="scroll-mouse">
+                <div class="scroll-mouse__wheel"></div>
+            </div>
+            <span>Scroll Down</span>
+        </div>
     </section>
 
-    <!-- Brands/Trust -->
-    <section class="brands">
-        <div class="container">
-            <p class="brands__text">Trusted by thousands across Pakistan</p>
-            <div class="brands__logos">
-                <span>Karachi</span>
-                <span>Lahore</span>
-                <span>Islamabad</span>
-                <span>Rawalpindi</span>
-                <span>Faisalabad</span>
-                <span>Multan</span>
+    <!-- Cities Marquee -->
+    <section class="cities-marquee">
+        <div class="marquee-track">
+            <div class="marquee-content">
+                <span class="city-item"><i class="fas fa-map-pin"></i> Karachi</span>
+                <span class="city-item"><i class="fas fa-map-pin"></i> Lahore</span>
+                <span class="city-item"><i class="fas fa-map-pin"></i> Islamabad</span>
+                <span class="city-item"><i class="fas fa-map-pin"></i> Rawalpindi</span>
+                <span class="city-item"><i class="fas fa-map-pin"></i> Faisalabad</span>
+                <span class="city-item"><i class="fas fa-map-pin"></i> Multan</span>
+                <span class="city-item"><i class="fas fa-map-pin"></i> Peshawar</span>
+                <span class="city-item"><i class="fas fa-map-pin"></i> Quetta</span>
+                <span class="city-item"><i class="fas fa-map-pin"></i> Karachi</span>
+                <span class="city-item"><i class="fas fa-map-pin"></i> Lahore</span>
+                <span class="city-item"><i class="fas fa-map-pin"></i> Islamabad</span>
+                <span class="city-item"><i class="fas fa-map-pin"></i> Rawalpindi</span>
+                <span class="city-item"><i class="fas fa-map-pin"></i> Faisalabad</span>
+                <span class="city-item"><i class="fas fa-map-pin"></i> Multan</span>
+                <span class="city-item"><i class="fas fa-map-pin"></i> Peshawar</span>
+                <span class="city-item"><i class="fas fa-map-pin"></i> Quetta</span>
             </div>
         </div>
     </section>
@@ -122,55 +213,62 @@
     <!-- Features -->
     <section class="features" id="features">
         <div class="container">
-            <div class="section__header">
+            <div class="section__header" data-animate="fade-up">
                 <span class="section__tag">Features</span>
-                <h2 class="section__title">Why Choose SHAREIDE?</h2>
-                <p class="section__desc">Everything you need for a better ride experience</p>
+                <h2 class="section__title">Why Choose <span class="gradient-text">SHAREIDE</span>?</h2>
+                <p class="section__desc">Everything you need for a smarter, safer ride experience</p>
             </div>
 
             <div class="features__grid">
-                <div class="feature-card">
+                <div class="feature-card" data-animate="fade-up" data-delay="0">
+                    <div class="feature-card__glow"></div>
                     <div class="feature-card__icon">
                         <i class="fas fa-users"></i>
                     </div>
                     <h3 class="feature-card__title">Carpool & Save</h3>
                     <p class="feature-card__desc">Share rides with others heading your way. Split costs and save up to 60% on every trip.</p>
+                    <div class="feature-card__tag">Most Popular</div>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-card__icon">
+                <div class="feature-card" data-animate="fade-up" data-delay="100">
+                    <div class="feature-card__glow"></div>
+                    <div class="feature-card__icon feature-card__icon--orange">
                         <i class="fas fa-hand-holding-usd"></i>
                     </div>
                     <h3 class="feature-card__title">Bid Your Price</h3>
                     <p class="feature-card__desc">Set your own fare. Negotiate with drivers and get the best deal every time.</p>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-card__icon">
+                <div class="feature-card" data-animate="fade-up" data-delay="200">
+                    <div class="feature-card__glow"></div>
+                    <div class="feature-card__icon feature-card__icon--green">
                         <i class="fas fa-shield-alt"></i>
                     </div>
                     <h3 class="feature-card__title">100% Safe</h3>
                     <p class="feature-card__desc">All drivers are CNIC verified through NADRA. Live tracking and SOS button for safety.</p>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-card__icon">
+                <div class="feature-card" data-animate="fade-up" data-delay="300">
+                    <div class="feature-card__glow"></div>
+                    <div class="feature-card__icon feature-card__icon--purple">
                         <i class="fas fa-gift"></i>
                     </div>
                     <h3 class="feature-card__title">Earn Rewards</h3>
                     <p class="feature-card__desc">Get cashback on every ride. Unlock tiers and enjoy exclusive discounts.</p>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-card__icon">
+                <div class="feature-card" data-animate="fade-up" data-delay="400">
+                    <div class="feature-card__glow"></div>
+                    <div class="feature-card__icon feature-card__icon--blue">
                         <i class="fas fa-clock"></i>
                     </div>
                     <h3 class="feature-card__title">Schedule Rides</h3>
                     <p class="feature-card__desc">Book in advance for airport trips, meetings, or daily commute. Never miss a ride.</p>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-card__icon">
+                <div class="feature-card" data-animate="fade-up" data-delay="500">
+                    <div class="feature-card__glow"></div>
+                    <div class="feature-card__icon feature-card__icon--pink">
                         <i class="fas fa-credit-card"></i>
                     </div>
                     <h3 class="feature-card__title">Easy Payment</h3>
@@ -183,42 +281,62 @@
     <!-- How It Works -->
     <section class="how" id="how">
         <div class="container">
-            <div class="section__header">
+            <div class="section__header" data-animate="fade-up">
                 <span class="section__tag">Simple Process</span>
-                <h2 class="section__title">Book a Ride in Seconds</h2>
+                <h2 class="section__title">Book a Ride in <span class="gradient-text">Seconds</span></h2>
                 <p class="section__desc">4 easy steps to get moving</p>
             </div>
 
-            <div class="how__steps">
-                <div class="how__step">
-                    <div class="how__step-number">1</div>
-                    <div class="how__step-content">
+            <div class="how__timeline">
+                <div class="how__timeline-line">
+                    <div class="how__timeline-progress" id="timelineProgress"></div>
+                </div>
+
+                <div class="how__step" data-animate="fade-up" data-delay="0">
+                    <div class="how__step-marker">
+                        <div class="how__step-number">1</div>
+                        <div class="how__step-pulse"></div>
+                    </div>
+                    <div class="how__step-card">
+                        <div class="how__step-icon"><i class="fas fa-map-marker-alt"></i></div>
                         <h3>Set Your Location</h3>
-                        <p>Enter pickup and drop-off points</p>
+                        <p>Enter pickup and drop-off points on the map</p>
                     </div>
                 </div>
 
-                <div class="how__step">
-                    <div class="how__step-number">2</div>
-                    <div class="how__step-content">
+                <div class="how__step" data-animate="fade-up" data-delay="150">
+                    <div class="how__step-marker">
+                        <div class="how__step-number">2</div>
+                        <div class="how__step-pulse"></div>
+                    </div>
+                    <div class="how__step-card">
+                        <div class="how__step-icon"><i class="fas fa-car-side"></i></div>
                         <h3>Choose Ride Type</h3>
-                        <p>Select solo, carpool, or premium</p>
+                        <p>Select solo, carpool, or premium ride</p>
                     </div>
                 </div>
 
-                <div class="how__step">
-                    <div class="how__step-number">3</div>
-                    <div class="how__step-content">
+                <div class="how__step" data-animate="fade-up" data-delay="300">
+                    <div class="how__step-marker">
+                        <div class="how__step-number">3</div>
+                        <div class="how__step-pulse"></div>
+                    </div>
+                    <div class="how__step-card">
+                        <div class="how__step-icon"><i class="fas fa-handshake"></i></div>
                         <h3>Get Matched</h3>
-                        <p>We find the best driver for you</p>
+                        <p>We find the best driver near you instantly</p>
                     </div>
                 </div>
 
-                <div class="how__step">
-                    <div class="how__step-number">4</div>
-                    <div class="how__step-content">
+                <div class="how__step" data-animate="fade-up" data-delay="450">
+                    <div class="how__step-marker">
+                        <div class="how__step-number">4</div>
+                        <div class="how__step-pulse"></div>
+                    </div>
+                    <div class="how__step-card">
+                        <div class="how__step-icon"><i class="fas fa-smile-beam"></i></div>
                         <h3>Enjoy Your Ride</h3>
-                        <p>Track, ride, and rate your driver</p>
+                        <p>Track, ride, and rate your experience</p>
                     </div>
                 </div>
             </div>
@@ -229,41 +347,88 @@
     <section class="safety" id="safety">
         <div class="container">
             <div class="safety__grid">
-                <div class="safety__content">
+                <div class="safety__content" data-animate="fade-right">
                     <span class="section__tag">Safety First</span>
-                    <h2 class="section__title">Your Safety is Our Priority</h2>
+                    <h2 class="section__title">Your Safety is Our <span class="gradient-text">Priority</span></h2>
                     <p class="safety__desc">We've built multiple layers of protection to ensure every ride is safe and secure.</p>
 
-                    <ul class="safety__list">
-                        <li>
-                            <i class="fas fa-check-circle"></i>
-                            <span>CNIC Verified Drivers (NADRA)</span>
-                        </li>
-                        <li>
-                            <i class="fas fa-check-circle"></i>
-                            <span>Live GPS Tracking</span>
-                        </li>
-                        <li>
-                            <i class="fas fa-check-circle"></i>
-                            <span>Emergency SOS Button</span>
-                        </li>
-                        <li>
-                            <i class="fas fa-check-circle"></i>
-                            <span>Share Trip with Family</span>
-                        </li>
-                        <li>
-                            <i class="fas fa-check-circle"></i>
-                            <span>24/7 Support Team</span>
-                        </li>
-                        <li>
-                            <i class="fas fa-check-circle"></i>
-                            <span>Ride Insurance</span>
-                        </li>
-                    </ul>
+                    <div class="safety__features">
+                        <div class="safety__feature">
+                            <div class="safety__feature-icon">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <div class="safety__feature-content">
+                                <strong>CNIC Verified Drivers</strong>
+                                <span>Verified through NADRA database</span>
+                            </div>
+                        </div>
+                        <div class="safety__feature">
+                            <div class="safety__feature-icon safety__feature-icon--blue">
+                                <i class="fas fa-satellite"></i>
+                            </div>
+                            <div class="safety__feature-content">
+                                <strong>Live GPS Tracking</strong>
+                                <span>Real-time location sharing</span>
+                            </div>
+                        </div>
+                        <div class="safety__feature">
+                            <div class="safety__feature-icon safety__feature-icon--red">
+                                <i class="fas fa-phone-volume"></i>
+                            </div>
+                            <div class="safety__feature-content">
+                                <strong>Emergency SOS Button</strong>
+                                <span>One-tap emergency alert</span>
+                            </div>
+                        </div>
+                        <div class="safety__feature">
+                            <div class="safety__feature-icon safety__feature-icon--purple">
+                                <i class="fas fa-share-alt"></i>
+                            </div>
+                            <div class="safety__feature-content">
+                                <strong>Share Trip with Family</strong>
+                                <span>Live trip sharing with loved ones</span>
+                            </div>
+                        </div>
+                        <div class="safety__feature">
+                            <div class="safety__feature-icon safety__feature-icon--teal">
+                                <i class="fas fa-headset"></i>
+                            </div>
+                            <div class="safety__feature-content">
+                                <strong>24/7 Support Team</strong>
+                                <span>Always here when you need us</span>
+                            </div>
+                        </div>
+                        <div class="safety__feature">
+                            <div class="safety__feature-icon safety__feature-icon--orange">
+                                <i class="fas fa-file-shield"></i>
+                            </div>
+                            <div class="safety__feature-content">
+                                <strong>Ride Insurance</strong>
+                                <span>Every ride is fully insured</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="safety__image">
-                    <img src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=600&h=500&fit=crop&q=80" alt="Safety Features">
+                <div class="safety__visual" data-animate="fade-left">
+                    <div class="safety__shield">
+                        <div class="safety__shield-ring safety__shield-ring--1"></div>
+                        <div class="safety__shield-ring safety__shield-ring--2"></div>
+                        <div class="safety__shield-ring safety__shield-ring--3"></div>
+                        <div class="safety__shield-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                    </div>
+                    <div class="safety__stat-cards">
+                        <div class="safety__stat-card">
+                            <span class="safety__stat-value">99.9%</span>
+                            <span class="safety__stat-text">Safe Rides</span>
+                        </div>
+                        <div class="safety__stat-card">
+                            <span class="safety__stat-value">24/7</span>
+                            <span class="safety__stat-text">Monitoring</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -272,13 +437,17 @@
     <!-- Testimonials -->
     <section class="testimonials">
         <div class="container">
-            <div class="section__header">
+            <div class="section__header" data-animate="fade-up">
                 <span class="section__tag">Reviews</span>
-                <h2 class="section__title">What Our Users Say</h2>
+                <h2 class="section__title">What Our <span class="gradient-text">Users Say</span></h2>
+                <p class="section__desc">Trusted by thousands of riders across Pakistan</p>
             </div>
 
             <div class="testimonials__grid">
-                <div class="testimonial-card">
+                <div class="testimonial-card" data-animate="fade-up" data-delay="0">
+                    <div class="testimonial-card__quote">
+                        <i class="fas fa-quote-left"></i>
+                    </div>
                     <div class="testimonial-card__stars">
                         <i class="fas fa-star"></i>
                         <i class="fas fa-star"></i>
@@ -288,15 +457,20 @@
                     </div>
                     <p class="testimonial-card__text">"SHAREIDE saves me Rs. 5000 every month! The carpool feature is amazing. Best ride app in Pakistan."</p>
                     <div class="testimonial-card__author">
-                        <img class="testimonial-card__avatar" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&q=80" alt="Sarah">
+                        <div class="testimonial-card__avatar-wrapper">
+                            <img class="testimonial-card__avatar" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&q=80" alt="Sarah">
+                        </div>
                         <div>
                             <strong>Sarah Ahmed</strong>
-                            <span>Karachi</span>
+                            <span><i class="fas fa-map-pin"></i> Karachi</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="testimonial-card">
+                <div class="testimonial-card testimonial-card--featured" data-animate="fade-up" data-delay="150">
+                    <div class="testimonial-card__quote">
+                        <i class="fas fa-quote-left"></i>
+                    </div>
                     <div class="testimonial-card__stars">
                         <i class="fas fa-star"></i>
                         <i class="fas fa-star"></i>
@@ -304,17 +478,22 @@
                         <i class="fas fa-star"></i>
                         <i class="fas fa-star"></i>
                     </div>
-                    <p class="testimonial-card__text">"As a woman, safety matters most. SHAREIDE's verified drivers and SOS feature give me peace of mind."</p>
+                    <p class="testimonial-card__text">"As a woman, safety matters most. SHAREIDE's verified drivers and SOS feature give me complete peace of mind."</p>
                     <div class="testimonial-card__author">
-                        <img class="testimonial-card__avatar" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&q=80" alt="Ayesha">
+                        <div class="testimonial-card__avatar-wrapper">
+                            <img class="testimonial-card__avatar" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&q=80" alt="Ayesha">
+                        </div>
                         <div>
                             <strong>Ayesha Malik</strong>
-                            <span>Lahore</span>
+                            <span><i class="fas fa-map-pin"></i> Lahore</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="testimonial-card">
+                <div class="testimonial-card" data-animate="fade-up" data-delay="300">
+                    <div class="testimonial-card__quote">
+                        <i class="fas fa-quote-left"></i>
+                    </div>
                     <div class="testimonial-card__stars">
                         <i class="fas fa-star"></i>
                         <i class="fas fa-star"></i>
@@ -322,12 +501,14 @@
                         <i class="fas fa-star"></i>
                         <i class="fas fa-star"></i>
                     </div>
-                    <p class="testimonial-card__text">"Love the bidding feature! I negotiate my own fare. No more surge pricing surprises."</p>
+                    <p class="testimonial-card__text">"Love the bidding feature! I negotiate my own fare. No more surge pricing surprises. Highly recommended!"</p>
                     <div class="testimonial-card__author">
-                        <img class="testimonial-card__avatar" src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&q=80" alt="Fatima">
+                        <div class="testimonial-card__avatar-wrapper">
+                            <img class="testimonial-card__avatar" src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&q=80" alt="Fatima">
+                        </div>
                         <div>
                             <strong>Fatima Khan</strong>
-                            <span>Islamabad</span>
+                            <span><i class="fas fa-map-pin"></i> Islamabad</span>
                         </div>
                     </div>
                 </div>
@@ -337,10 +518,15 @@
 
     <!-- Download CTA -->
     <section class="download" id="download">
+        <div class="download__bg-shapes">
+            <div class="download__circle download__circle--1"></div>
+            <div class="download__circle download__circle--2"></div>
+        </div>
         <div class="container">
-            <div class="download__content">
-                <h2 class="download__title">Ready to Ride?</h2>
-                <p class="download__desc">Download SHAREIDE now and get 50% off your first ride!</p>
+            <div class="download__content" data-animate="fade-up">
+                <img src="images/logo-white.png" alt="SHAREIDE" class="download__logo">
+                <h2 class="download__title">Ready to <span class="gradient-text">Ride</span>?</h2>
+                <p class="download__desc">Download SHAREIDE now and get <strong>50% off</strong> your first ride!</p>
 
                 <div class="download__buttons">
                     <a href="https://play.google.com/store/apps/details?id=com.shareide_official.shareide" class="store-button">
@@ -353,10 +539,25 @@
                     <a href="#" class="store-button">
                         <i class="fab fa-apple"></i>
                         <div>
-                            <span>Download on</span>
+                            <span>Coming soon on</span>
                             <strong>App Store</strong>
                         </div>
                     </a>
+                </div>
+
+                <div class="download__trust">
+                    <div class="download__trust-item">
+                        <i class="fas fa-star"></i>
+                        <span>4.8 Rating</span>
+                    </div>
+                    <div class="download__trust-item">
+                        <i class="fas fa-download"></i>
+                        <span>500K+ Downloads</span>
+                    </div>
+                    <div class="download__trust-item">
+                        <i class="fas fa-heart"></i>
+                        <span>Loved by Users</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -365,14 +566,40 @@
     <!-- Drive CTA -->
     <section class="drive-cta">
         <div class="container">
-            <div class="drive-cta__card">
+            <div class="drive-cta__card" data-animate="fade-up">
                 <div class="drive-cta__content">
-                    <h2>Want to Earn Money?</h2>
-                    <p>Join 50,000+ drivers earning on their own schedule. Low commission, daily payouts.</p>
-                    <a href="#" class="btn btn--dark btn--lg">Become a Driver</a>
+                    <span class="drive-cta__badge">
+                        <i class="fas fa-car"></i> For Drivers
+                    </span>
+                    <h2>Want to <span class="gradient-text-dark">Earn Money</span>?</h2>
+                    <p>Join 50,000+ drivers earning on their own schedule. Low commission, daily payouts, and full support.</p>
+                    <div class="drive-cta__stats">
+                        <div class="drive-cta__stat">
+                            <strong>50K+</strong>
+                            <span>Active Drivers</span>
+                        </div>
+                        <div class="drive-cta__stat">
+                            <strong>Low</strong>
+                            <span>Commission</span>
+                        </div>
+                        <div class="drive-cta__stat">
+                            <strong>Daily</strong>
+                            <span>Payouts</span>
+                        </div>
+                    </div>
+                    <a href="#" class="btn btn--dark btn--lg">
+                        <i class="fas fa-steering-wheel"></i>
+                        Become a Driver
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
                 </div>
-                <div class="drive-cta__image">
-                    <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=300&fit=crop&q=80" alt="Driver">
+                <div class="drive-cta__visual">
+                    <div class="drive-cta__icon-grid">
+                        <div class="drive-cta__icon-item"><i class="fas fa-car"></i></div>
+                        <div class="drive-cta__icon-item"><i class="fas fa-money-bill-wave"></i></div>
+                        <div class="drive-cta__icon-item"><i class="fas fa-clock"></i></div>
+                        <div class="drive-cta__icon-item"><i class="fas fa-map-marked-alt"></i></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -383,13 +610,14 @@
         <div class="container">
             <div class="footer__grid">
                 <div class="footer__brand">
-                    <span class="logo-text">SHARE<span class="accent">IDE</span></span>
+                    <img src="images/logo-white.png" alt="SHAREIDE" class="footer__logo">
                     <p>Pakistan's most trusted ride-sharing platform. Ride together, save together.</p>
                     <div class="footer__social">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
                     </div>
                 </div>
 
@@ -419,6 +647,11 @@
 
             <div class="footer__bottom">
                 <p>&copy; 2026 SHAREIDE. All rights reserved.</p>
+                <div class="footer__bottom-links">
+                    <a href="#">Privacy</a>
+                    <a href="#">Terms</a>
+                    <a href="#">Cookies</a>
+                </div>
             </div>
         </div>
     </footer>
@@ -428,10 +661,12 @@
         <div class="chat-popup" id="chatPopup">
             <div class="chat-popup__header">
                 <div class="chat-popup__title">
-                    <i class="fas fa-headset"></i>
+                    <div class="chat-popup__avatar">
+                        <img src="images/favicon.png" alt="Support">
+                    </div>
                     <div>
                         <strong>SHAREIDE Support</strong>
-                        <span class="online-status">Online</span>
+                        <span class="online-status"><span class="online-dot"></span> Online</span>
                     </div>
                 </div>
                 <button class="chat-popup__close" id="chatClose">
@@ -440,10 +675,10 @@
             </div>
             <div class="chat-popup__messages" id="chatMessages">
                 <div class="chat-message chat-message--bot">
-                    <p>Hi! 👋 How can we help you today?</p>
+                    <p>Hi! How can we help you today?</p>
                 </div>
             </div>
-            <div class="chat-popup__quick">
+            <div class="chat-popup__quick" id="quickButtons">
                 <button class="quick-btn" data-msg="I need help with a booking">Booking Issue</button>
                 <button class="quick-btn" data-msg="Payment problem">Payment Help</button>
                 <button class="quick-btn" data-msg="Driver complaint">Driver Issue</button>
@@ -458,6 +693,11 @@
             <span class="chat-badge">1</span>
         </button>
     </div>
+
+    <!-- Back to Top -->
+    <button class="back-to-top" id="backToTop">
+        <i class="fas fa-chevron-up"></i>
+    </button>
 
     <script src="js/main.js"></script>
 </body>

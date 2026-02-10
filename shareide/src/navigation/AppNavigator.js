@@ -1,8 +1,8 @@
 import React from 'react';
-import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, StyleSheet, Platform, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Platform, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../context/AuthContext';
@@ -14,12 +14,13 @@ import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import PhoneScreen from '../screens/auth/PhoneScreen';
 import OTPScreen from '../screens/auth/OTPScreen';
 import GenderScreen from '../screens/auth/GenderScreen';
-import ProfileSetupScreen from '../screens/auth/ProfileSetupScreen';
+import ProfilePictureScreen from '../screens/auth/ProfilePictureScreen';
+import RoleSelectionScreen from '../screens/auth/RoleSelectionScreen';
+import NameEntryScreen from '../screens/auth/NameEntryScreen';
 
 // Main screens
 import HomeScreen from '../screens/main/HomeScreen';
 import BookingsScreen from '../screens/main/BookingsScreen';
-import WalletScreen from '../screens/main/WalletScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 
 // Booking screens
@@ -33,6 +34,7 @@ import RateRideScreen from '../screens/booking/RateRideScreen';
 import BookingDetailsScreen from '../screens/booking/BookingDetailsScreen';
 
 // Wallet screens
+import WalletScreen from '../screens/main/WalletScreen';
 import TopUpScreen from '../screens/wallet/TopUpScreen';
 import PaymentMethodsScreen from '../screens/wallet/PaymentMethodsScreen';
 import TransactionHistoryScreen from '../screens/wallet/TransactionHistoryScreen';
@@ -73,10 +75,14 @@ import AvailableRidesScreen from '../screens/rides/AvailableRidesScreen';
 import PostRideRequestScreen from '../screens/rides/PostRideRequestScreen';
 import RideChatScreen from '../screens/chat/RideChatScreen';
 
+// Calendar & Other Passengers
+import CalendarScreen from '../screens/booking/CalendarScreen';
+import OtherPassengersScreen from '../screens/profile/OtherPassengersScreen';
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Custom Tab Bar Icon
+// Custom Tab Bar Icon - Figma 3-tab design
 const TabIcon = ({ focused, icon, iconFocused, color, label }) => {
   return (
     <View style={styles.tabIconContainer}>
@@ -90,25 +96,7 @@ const TabIcon = ({ focused, icon, iconFocused, color, label }) => {
   );
 };
 
-// Center Location Button Component
-const CenterLocationButton = ({ onPress }) => {
-  return (
-    <TouchableOpacity
-      style={styles.centerButton}
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
-      <View style={styles.centerButtonInner}>
-        <Ionicons name="location" size={28} color="#000" />
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-// Dummy screen for center button (won't actually show)
-const DummyScreen = () => null;
-
-// Modern 5-tab navigator with center location button
+// Figma-matching 3-tab navigator: Home, Trips, Account
 const MainTabs = () => {
   const theme = useTheme();
   const colors = theme?.colors || {
@@ -178,43 +166,6 @@ const MainTabs = () => {
         listeners={tabBarListeners}
       />
       <Tab.Screen
-        name="LocationTab"
-        component={DummyScreen}
-        options={({ navigation }) => ({
-          tabBarIcon: () => (
-            <CenterLocationButton
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                navigation.navigate('LocationSearch', { type: 'dropoff' });
-              }}
-            />
-          ),
-        })}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            navigation.navigate('LocationSearch', { type: 'dropoff' });
-          },
-        })}
-      />
-      <Tab.Screen
-        name="WalletTab"
-        component={WalletScreen}
-        options={{
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon
-              focused={focused}
-              icon="wallet-outline"
-              iconFocused="wallet"
-              color={color}
-              label="Wallet"
-            />
-          ),
-        }}
-        listeners={tabBarListeners}
-      />
-      <Tab.Screen
         name="AccountTab"
         component={ProfileScreen}
         options={{
@@ -245,25 +196,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 4,
   },
-  centerButton: {
-    position: 'absolute',
-    top: -25,
-    alignSelf: 'center',
-    zIndex: 10,
-  },
-  centerButtonInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#FCC014',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#FCC014',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
-  },
 });
 
 const AppNavigator = () => {
@@ -274,10 +206,8 @@ const AppNavigator = () => {
     background: '#FFFFFF',
   };
 
-  // TODO: TESTING MODE - Remove this bypass after testing
-  const BYPASS_AUTH = false; // Real login with Twilio OTP
+  const BYPASS_AUTH = false;
 
-  // Always show splash while loading, even in bypass mode
   if (loading) return <SplashScreen />;
 
   return (
@@ -303,7 +233,9 @@ const AppNavigator = () => {
             <Stack.Screen name="Phone" component={PhoneScreen} />
             <Stack.Screen name="OTP" component={OTPScreen} />
             <Stack.Screen name="Gender" component={GenderScreen} />
-            <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
+            <Stack.Screen name="ProfilePicture" component={ProfilePictureScreen} />
+            <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
+            <Stack.Screen name="NameEntry" component={NameEntryScreen} />
           </>
         ) : (
           <>
@@ -329,6 +261,7 @@ const AppNavigator = () => {
             />
             <Stack.Screen name="RateRide" component={RateRideScreen} />
             <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
+            <Stack.Screen name="Calendar" component={CalendarScreen} />
 
             {/* Wallet */}
             <Stack.Screen name="Wallet" component={WalletScreen} />
@@ -354,6 +287,7 @@ const AppNavigator = () => {
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="Support" component={SupportScreen} />
+            <Stack.Screen name="OtherPassengers" component={OtherPassengersScreen} />
 
             {/* Scheduled Rides */}
             <Stack.Screen name="ScheduledRides" component={ScheduledRidesScreen} />

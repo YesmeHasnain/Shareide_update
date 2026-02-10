@@ -1,142 +1,188 @@
-import React from 'react';
-import { View, TextInput, Text, StyleSheet } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, TextInput, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
-import { typography, borderRadius, spacing } from '../theme/colors';
+import { borderRadius, spacing } from '../theme/colors';
 
-const Input = React.forwardRef(
-  (
-    {
-      label,
-      value,
-      onChangeText,
-      placeholder,
-      keyboardType = 'default',
-      secureTextEntry = false,
-      error,
-      maxLength,
-      multiline = false,
-      leftIcon,
-      rightIcon,
-      onRightIconPress,
-      editable = true,
-      style,
-      inputStyle,
-      ...rest
-    },
-    ref
-  ) => {
-    const { colors } = useTheme();
+const Input = ({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType = 'default',
+  secureTextEntry = false,
+  autoCapitalize = 'sentences',
+  autoCorrect = true,
+  maxLength,
+  multiline = false,
+  numberOfLines = 1,
+  editable = true,
+  error,
+  helper,
+  icon,
+  leftIcon,
+  rightIcon,
+  onRightIconPress,
+  style,
+  inputStyle,
+  onFocus,
+  onBlur,
+  returnKeyType,
+  onSubmitEditing,
+  ...rest
+}) => {
+  const { colors } = useTheme();
+  const [isFocused, setIsFocused] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const inputRef = useRef(null);
 
-    return (
-      <View style={[styles.container, style]}>
-        {label && (
-          <Text style={[styles.label, { color: colors.textSecondary }]}>
-            {label}
-          </Text>
+  const handleFocus = (e) => {
+    setIsFocused(true);
+    onFocus?.(e);
+  };
+
+  const handleBlur = (e) => {
+    setIsFocused(false);
+    onBlur?.(e);
+  };
+
+  // Support both 'icon' and 'leftIcon' props
+  const leftIconName = icon || leftIcon;
+
+  return (
+    <View style={[styles.container, style]}>
+      {label && (
+        <Text style={[styles.label, { color: error ? colors.error : colors.text }]}>
+          {label}
+        </Text>
+      )}
+
+      <View
+        style={[
+          styles.inputContainer,
+          {
+            backgroundColor: colors.inputBackground || '#F5F5F5',
+            borderColor: error ? colors.error : isFocused ? colors.primary : 'transparent',
+            borderWidth: isFocused || error ? 2 : 0,
+          },
+          !editable && styles.disabled,
+        ]}
+      >
+        {leftIconName && (
+          <Ionicons
+            name={leftIconName}
+            size={20}
+            color={isFocused ? colors.primary : colors.textSecondary}
+            style={styles.leftIcon}
+          />
         )}
-        <View
+
+        <TextInput
+          ref={inputRef}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textTertiary}
+          keyboardType={keyboardType}
+          secureTextEntry={secureTextEntry && !isPasswordVisible}
+          autoCapitalize={autoCapitalize}
+          autoCorrect={autoCorrect}
+          maxLength={maxLength}
+          multiline={multiline}
+          numberOfLines={multiline ? numberOfLines : 1}
+          editable={editable}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          returnKeyType={returnKeyType}
+          onSubmitEditing={onSubmitEditing}
           style={[
-            styles.inputContainer,
+            styles.input,
             {
-              backgroundColor: colors.inputBackground,
-              borderColor: error ? colors.error : 'transparent',
-              borderWidth: error ? 1 : 0,
+              color: colors.text,
+              minHeight: multiline ? numberOfLines * 24 : undefined,
             },
-            multiline && styles.multilineContainer,
+            inputStyle,
           ]}
-        >
-          {leftIcon && (
+          {...rest}
+        />
+
+        {secureTextEntry && (
+          <TouchableOpacity
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+            style={styles.rightIcon}
+          >
             <Ionicons
-              name={leftIcon}
+              name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
               size={20}
               color={colors.textSecondary}
-              style={styles.leftIcon}
             />
-          )}
-          <TextInput
-            style={[
-              styles.input,
-              { color: colors.text },
-              multiline && styles.multilineInput,
-              inputStyle,
-            ]}
-            ref={ref}
-            value={value}
-            onChangeText={onChangeText}
-            placeholder={placeholder}
-            placeholderTextColor={colors.textTertiary}
-            keyboardType={keyboardType}
-            secureTextEntry={secureTextEntry}
-            maxLength={maxLength}
-            multiline={multiline}
-            numberOfLines={multiline ? 4 : 1}
-            editable={editable}
-            {...rest}
-          />
-          {rightIcon && (
+          </TouchableOpacity>
+        )}
+
+        {rightIcon && !secureTextEntry && (
+          <TouchableOpacity
+            onPress={onRightIconPress}
+            style={styles.rightIcon}
+            disabled={!onRightIconPress}
+          >
             <Ionicons
               name={rightIcon}
               size={20}
               color={colors.textSecondary}
-              style={styles.rightIcon}
-              onPress={onRightIconPress}
             />
-          )}
-        </View>
-        {error && (
-          <Text style={[styles.error, { color: colors.error }]}>{error}</Text>
+          </TouchableOpacity>
         )}
       </View>
-    );
-  }
-);
 
-Input.displayName = 'Input';
+      {(error || helper) && (
+        <Text
+          style={[
+            styles.helperText,
+            { color: error ? colors.error : colors.textSecondary },
+          ]}
+        >
+          {error || helper}
+        </Text>
+      )}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     marginBottom: spacing.lg,
   },
   label: {
-    fontSize: typography.caption,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
     marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 56,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.md,
-  },
-  multilineContainer: {
-    height: 120,
-    alignItems: 'flex-start',
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    minHeight: 52,
+    borderRadius: borderRadius.md,
   },
   input: {
     flex: 1,
-    fontSize: typography.body,
-    fontWeight: '500',
-  },
-  multilineInput: {
-    height: '100%',
-    textAlignVertical: 'top',
+    fontSize: 16,
+    paddingVertical: spacing.md,
   },
   leftIcon: {
     marginRight: spacing.md,
   },
   rightIcon: {
     marginLeft: spacing.md,
+    padding: spacing.xs,
   },
-  error: {
-    fontSize: typography.caption,
+  helperText: {
+    fontSize: 12,
     marginTop: spacing.xs,
     marginLeft: spacing.xs,
+  },
+  disabled: {
+    opacity: 0.6,
   },
 });
 

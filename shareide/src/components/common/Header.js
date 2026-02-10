@@ -6,9 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, typography } from '../../theme/colors';
 
-const HeaderButton = ({ icon, onPress, badge, style }) => {
-  const { colors } = useTheme();
-
+const HeaderButton = ({ icon, onPress, badge, style, colors }) => {
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress?.();
@@ -47,9 +45,12 @@ const Header = ({
   centerComponent,
   style,
   transparent = false,
+  variant = 'default', // default, centered-uppercase
 }) => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+
+  const isUppercase = variant === 'centered-uppercase';
 
   const headerContent = (
     <>
@@ -58,6 +59,7 @@ const Header = ({
           <HeaderButton
             icon={leftIcon}
             onPress={onLeftPress}
+            colors={colors}
           />
         ) : (
           <View style={styles.placeholder} />
@@ -68,10 +70,14 @@ const Header = ({
         {centerComponent || (
           <>
             <Text
-              style={[styles.title, { color: colors.text }]}
+              style={[
+                styles.title,
+                { color: colors.text },
+                isUppercase && styles.titleUppercase,
+              ]}
               numberOfLines={1}
             >
-              {title}
+              {isUppercase ? title?.toUpperCase() : title}
             </Text>
             {subtitle && (
               <Text
@@ -90,6 +96,7 @@ const Header = ({
           <HeaderButton
             icon={rightIcon2}
             onPress={onRight2Press}
+            colors={colors}
           />
         )}
         {rightIcon && onRightPress ? (
@@ -97,6 +104,7 @@ const Header = ({
             icon={rightIcon}
             onPress={onRightPress}
             badge={rightBadge}
+            colors={colors}
           />
         ) : (
           <View style={styles.placeholder} />
@@ -152,6 +160,11 @@ const styles = StyleSheet.create({
     fontSize: typography.h5,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  titleUppercase: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1.5,
   },
   subtitle: {
     fontSize: typography.caption,

@@ -350,7 +350,7 @@
 @push('scripts')
 <script>
     // Chart.js Configuration
-    Chart.defaults.font.family = 'Poppins, sans-serif';
+    Chart.defaults.font.family = 'Sora, sans-serif';
     Chart.defaults.color = document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280';
 
     // Rides Chart

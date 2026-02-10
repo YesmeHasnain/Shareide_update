@@ -61,13 +61,41 @@ export const lightColors = {
   // Map colors
   mapRoute: '#FCC014',
   mapPickup: '#FCC014',
-  mapDropoff: '#FCC014',
+  mapDropoff: '#6B7280',
 
   // Status badge colors
   statusActive: '#10B981',
   statusPending: '#F59E0B',
   statusCancelled: '#EF4444',
   statusCompleted: '#3B82F6',
+
+  // Figma design tokens
+  locationAccent: '#1A6B54',
+  filterChipActive: '#000000',
+  filterChipInactive: '#F3F4F6',
+  filterChipActiveText: '#FFFFFF',
+  filterChipInactiveText: '#6B7280',
+
+  // Route visualization
+  pickupDot: '#FCC014',
+  dropoffDot: '#6B7280',
+  routeConnector: '#E5E7EB',
+
+  // Pill backgrounds
+  pillPickup: '#FEF3C7',
+  pillDropoff: '#F3F4F6',
+  pillPickupText: '#92400E',
+  pillDropoffText: '#374151',
+
+  // Progress bar
+  progressFill: '#FCC014',
+  progressTrack: '#E5E7EB',
+
+  // Gender card colors
+  genderFemale: '#EC4899',
+  genderFemaleLight: '#FDF2F8',
+  genderMale: '#3B82F6',
+  genderMaleLight: '#EFF6FF',
 };
 
 export const darkColors = {
@@ -132,13 +160,41 @@ export const darkColors = {
   // Map colors
   mapRoute: '#FCC014',
   mapPickup: '#FCC014',
-  mapDropoff: '#FCC014',
+  mapDropoff: '#6B7280',
 
   // Status badge colors
   statusActive: '#34D399',
   statusPending: '#FBBF24',
   statusCancelled: '#F87171',
   statusCompleted: '#60A5FA',
+
+  // Figma design tokens
+  locationAccent: '#34D399',
+  filterChipActive: '#FFFFFF',
+  filterChipInactive: '#2D3748',
+  filterChipActiveText: '#000000',
+  filterChipInactiveText: '#A0AEC0',
+
+  // Route visualization
+  pickupDot: '#FCC014',
+  dropoffDot: '#718096',
+  routeConnector: '#4A5568',
+
+  // Pill backgrounds
+  pillPickup: '#78350F',
+  pillDropoff: '#2D3748',
+  pillPickupText: '#FDE68A',
+  pillDropoffText: '#E2E8F0',
+
+  // Progress bar
+  progressFill: '#FCC014',
+  progressTrack: '#4A5568',
+
+  // Gender card colors
+  genderFemale: '#EC4899',
+  genderFemaleLight: '#831843',
+  genderMale: '#3B82F6',
+  genderMaleLight: '#1E3A8A',
 };
 
 // Typography scale

@@ -8,11 +8,11 @@ const USE_MOCK_DATA = false;
 // API Configuration - Change this to your server IP
 // For development: Use ngrok URL for mobile testing
 // For production: Use your actual server URL
-const DEV_API_URL = 'https://freida-biconical-continually.ngrok-free.dev/api';
+const DEV_API_URL = 'https://calm-coins-lie.loca.lt/api';
 const PROD_API_URL = 'https://api.shareide.com/api';
 
-// Production mode - using live API
-const API_BASE_URL = PROD_API_URL;
+// Dev mode - using local network IP for testing
+const API_BASE_URL = DEV_API_URL;
 
 // Mock data for testing UI
 const MOCK_RESPONSES = {

@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import Loading from '../components/Loading';
@@ -97,112 +97,120 @@ import RideRequestsScreen from '../screens/rides/RideRequestsScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const TAB_ICON_SIZE = 26;
-
-const tabConfig = [
-  { name: 'Dashboard', label: 'Home', iconBase: 'home' },
-  { name: 'Schedule', label: 'Schedule', iconBase: 'calendar' },
-  { name: 'Wallet', label: 'Wallet', iconBase: 'wallet' },
-  { name: 'Profile', label: 'Profile', iconBase: 'person' },
-];
-
-const CustomTabBar = ({ state, descriptors, navigation }) => {
-  const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const bottomPadding = Platform.OS === 'ios' ? Math.max(insets.bottom - 8, 8) : 12;
-
+// Custom Tab Bar Icon - Matching ShareIDE design
+const TabIcon = ({ focused, icon, iconFocused, color, label }) => {
   return (
-    <View style={[
-      tabBarStyles.container,
-      {
-        bottom: Platform.OS === 'ios' ? insets.bottom > 0 ? 20 : 12 : 12,
-        backgroundColor: colors.card,
-        shadowColor: '#000',
-      },
-    ]}>
-      {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
-        const config = tabConfig[index];
-        const isFocused = state.index === index;
-
-        const onPress = () => {
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true,
-          });
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-        };
-
-        const iconName = isFocused ? config.iconBase : `${config.iconBase}-outline`;
-
-        return (
-          <TouchableOpacity
-            key={route.key}
-            onPress={onPress}
-            activeOpacity={0.7}
-            style={tabBarStyles.tabItem}
-          >
-            <View style={[
-              tabBarStyles.iconWrapper,
-              isFocused && { backgroundColor: colors.primary + '20' },
-            ]}>
-              <Ionicons
-                name={iconName}
-                size={TAB_ICON_SIZE}
-                color={isFocused ? colors.primary : colors.textTertiary}
-              />
-            </View>
-          </TouchableOpacity>
-        );
-      })}
+    <View style={styles.tabIconContainer}>
+      <Ionicons
+        name={focused ? iconFocused : icon}
+        size={24}
+        color={color}
+      />
+      <Text style={[styles.tabLabel, { color }]}>{label}</Text>
     </View>
   );
 };
 
-const tabBarStyles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    marginHorizontal: 16,
-    flexDirection: 'row',
-    borderRadius: 28,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconWrapper: {
-    width: 52,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
-
 const MainTabs = () => {
+  const theme = useTheme();
+  const colors = theme?.colors || {
+    primary: '#FCC014',
+    textSecondary: '#6B7280',
+    card: '#FFFFFF',
+    background: '#FFFFFF',
+  };
+
+  const tabBarListeners = () => ({
+    tabPress: () => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    },
+  });
+
   return (
     <Tab.Navigator
-      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: colors.card,
+          borderTopWidth: 0,
+          height: Platform.OS === 'ios' ? 88 : 70,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 12,
+          paddingTop: 12,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+          elevation: 15,
+        },
+        tabBarShowLabel: false,
       }}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Schedule" component={ScheduleScreen} />
-      <Tab.Screen name="Wallet" component={WalletScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen
+        name="Dashboard"
+        component={DashboardScreen}
+        options={{
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon
+              focused={focused}
+              icon="home-outline"
+              iconFocused="home"
+              color={color}
+              label="Home"
+            />
+          ),
+        }}
+        listeners={tabBarListeners}
+      />
+      <Tab.Screen
+        name="Schedule"
+        component={ScheduleScreen}
+        options={{
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon
+              focused={focused}
+              icon="calendar-outline"
+              iconFocused="calendar"
+              color={color}
+              label="Schedule"
+            />
+          ),
+        }}
+        listeners={tabBarListeners}
+      />
+      <Tab.Screen
+        name="Wallet"
+        component={WalletScreen}
+        options={{
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon
+              focused={focused}
+              icon="wallet-outline"
+              iconFocused="wallet"
+              color={color}
+              label="Wallet"
+            />
+          ),
+        }}
+        listeners={tabBarListeners}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon
+              focused={focused}
+              icon="person-outline"
+              iconFocused="person"
+              color={color}
+              label="Account"
+            />
+          ),
+        }}
+        listeners={tabBarListeners}
+      />
     </Tab.Navigator>
   );
 };
@@ -234,6 +242,9 @@ const AppNavigator = () => {
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
           animation: 'slide_from_right',
+          animationDuration: 250,
+          gestureEnabled: true,
+          gestureDirection: 'horizontal',
         }}
       >
         {/* Auth Screens */}
@@ -287,5 +298,18 @@ const AppNavigator = () => {
     </NavigationContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  tabIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 50,
+  },
+  tabLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+});
 
 export default AppNavigator;

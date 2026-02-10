@@ -1,181 +1,240 @@
-import React, { useRef } from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View, Animated } from 'react-native';
+import React, { useCallback } from 'react';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { useTheme } from '../context/ThemeContext';
-import { typography, spacing } from '../theme/colors';
+import { borderRadius } from '../theme/colors';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 const Button = ({
   title,
   onPress,
-  loading = false,
-  disabled = false,
-  variant = 'primary', // primary, secondary, outline, text
+  variant = 'primary', // primary, secondary, outline, ghost, danger, text, dark
   size = 'medium', // small, medium, large
   icon,
   iconPosition = 'left',
+  loading = false,
+  disabled = false,
+  fullWidth = true,
   style,
-  textStyle
+  textStyle,
+  haptic = true,
+  animated = true,
 }) => {
   const { colors } = useTheme();
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const scale = useSharedValue(1);
 
-  const getBackgroundColor = () => {
-    if (disabled) return colors.border;
+  const handlePressIn = useCallback(() => {
+    if (animated) {
+      scale.value = withSpring(0.96, { damping: 15, stiffness: 400 });
+    }
+  }, [animated]);
+
+  const handlePressOut = useCallback(() => {
+    if (animated) {
+      scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+    }
+  }, [animated]);
+
+  const handlePress = () => {
+    if (haptic) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    onPress?.();
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const getVariantStyles = () => {
     switch (variant) {
+      case 'primary':
+        return {
+          background: colors.primary,
+          textColor: '#000000',
+          borderColor: 'transparent',
+        };
       case 'secondary':
-        return colors.inputBackground;
+        return {
+          background: colors.inputBackground || '#F5F5F5',
+          textColor: colors.text,
+          borderColor: 'transparent',
+        };
       case 'outline':
+        return {
+          background: 'transparent',
+          textColor: colors.primary,
+          borderColor: colors.primary,
+        };
+      case 'ghost':
+        return {
+          background: 'transparent',
+          textColor: colors.primary,
+          borderColor: 'transparent',
+        };
+      case 'danger':
+        return {
+          background: colors.error,
+          textColor: '#FFFFFF',
+          borderColor: 'transparent',
+        };
       case 'text':
-        return 'transparent';
+        return {
+          background: 'transparent',
+          textColor: colors.primary,
+          borderColor: 'transparent',
+        };
+      case 'dark':
+        return {
+          background: '#1A1A2E',
+          textColor: '#FFFFFF',
+          borderColor: 'transparent',
+        };
       default:
-        return colors.primary;
+        return {
+          background: colors.primary,
+          textColor: '#000000',
+          borderColor: 'transparent',
+        };
     }
   };
 
-  const getTextColor = () => {
-    if (disabled) return colors.textSecondary;
-    switch (variant) {
-      case 'secondary':
-        return colors.text;
-      case 'outline':
-        return colors.primary;
-      case 'text':
-        return colors.primary;
-      default:
-        return '#000000';
-    }
-  };
-
-  const getHeight = () => {
+  const getSizeStyles = () => {
     switch (size) {
       case 'small':
-        return 40;
+        return {
+          height: 40,
+          paddingHorizontal: 16,
+          fontSize: 14,
+          iconSize: 16,
+        };
+      case 'medium':
+        return {
+          height: 52,
+          paddingHorizontal: 24,
+          fontSize: 16,
+          iconSize: 20,
+        };
       case 'large':
-        return 56;
+        return {
+          height: 56,
+          paddingHorizontal: 32,
+          fontSize: 16,
+          iconSize: 22,
+        };
       default:
-        return 50;
+        return {
+          height: 52,
+          paddingHorizontal: 24,
+          fontSize: 16,
+          iconSize: 20,
+        };
     }
   };
 
-  const getBorderRadius = () => {
-    switch (size) {
-      case 'small':
-        return 10;
-      case 'large':
-        return 28;
-      default:
-        return 14;
-    }
-  };
+  const variantStyles = getVariantStyles();
+  const sizeStyles = getSizeStyles();
 
-  const getFontSize = () => {
-    switch (size) {
-      case 'small':
-        return typography.bodySmall;
-      case 'large':
-        return typography.body;
-      default:
-        return typography.body;
-    }
-  };
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, { toValue: 0.97, useNativeDriver: true }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }).start();
-  };
-
-  const renderContent = () => {
-    if (loading) {
-      return <ActivityIndicator color={getTextColor()} />;
-    }
-
-    const textElement = (
-      <Text
-        style={[
-          styles.text,
-          { color: getTextColor(), fontSize: getFontSize() },
-          textStyle,
-        ]}
-      >
-        {title}
-      </Text>
-    );
-
-    if (icon) {
-      return (
-        <View style={styles.contentRow}>
-          {iconPosition === 'left' && (
-            <Ionicons name={icon} size={20} color={getTextColor()} style={styles.iconLeft} />
+  const buttonContent = (
+    <View style={styles.contentContainer}>
+      {loading ? (
+        <ActivityIndicator
+          color={variantStyles.textColor}
+          size="small"
+        />
+      ) : (
+        <>
+          {icon && iconPosition === 'left' && (
+            <Ionicons
+              name={icon}
+              size={sizeStyles.iconSize}
+              color={variantStyles.textColor}
+              style={styles.iconLeft}
+            />
           )}
-          {textElement}
-          {iconPosition === 'right' && (
-            <Ionicons name={icon} size={20} color={getTextColor()} style={styles.iconRight} />
+          <Text
+            style={[
+              styles.text,
+              {
+                color: variantStyles.textColor,
+                fontSize: sizeStyles.fontSize,
+              },
+              textStyle,
+            ]}
+          >
+            {title}
+          </Text>
+          {icon && iconPosition === 'right' && (
+            <Ionicons
+              name={icon}
+              size={sizeStyles.iconSize}
+              color={variantStyles.textColor}
+              style={styles.iconRight}
+            />
           )}
-        </View>
-      );
-    }
+        </>
+      )}
+    </View>
+  );
 
-    return textElement;
-  };
-
-  const isPrimary = variant === 'primary' && !disabled;
+  const buttonStyle = [
+    styles.button,
+    {
+      height: variant === 'text' ? 'auto' : sizeStyles.height,
+      paddingHorizontal: variant === 'text' ? 0 : sizeStyles.paddingHorizontal,
+      backgroundColor: variantStyles.background,
+      borderColor: variantStyles.borderColor,
+      borderWidth: variant === 'outline' ? 1.5 : 0,
+      width: fullWidth ? '100%' : 'auto',
+    },
+    disabled && styles.disabled,
+    style,
+  ];
 
   return (
     <AnimatedTouchable
-      style={[
-        styles.button,
-        {
-          backgroundColor: getBackgroundColor(),
-          height: getHeight(),
-          borderRadius: getBorderRadius(),
-          borderColor: variant === 'outline' ? colors.primary : 'transparent',
-          borderWidth: variant === 'outline' ? 2 : 0,
-          transform: [{ scale: scaleAnim }],
-          // Shadow for primary buttons
-          ...(isPrimary ? {
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.12,
-            shadowRadius: 8,
-            elevation: 4,
-          } : {}),
-        },
-        style,
-      ]}
-      onPress={onPress}
+      onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled || loading}
-      activeOpacity={1}
+      style={[buttonStyle, animated && animatedStyle]}
+      activeOpacity={0.8}
     >
-      {renderContent()}
+      {buttonContent}
     </AnimatedTouchable>
   );
 };
 
 const styles = StyleSheet.create({
   button: {
+    borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
+    flexDirection: 'row',
+  },
+  contentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   text: {
     fontWeight: '600',
   },
-  contentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   iconLeft: {
-    marginRight: spacing.sm,
+    marginRight: 8,
   },
   iconRight: {
-    marginLeft: spacing.sm,
+    marginLeft: 8,
+  },
+  disabled: {
+    opacity: 0.5,
   },
 });
 

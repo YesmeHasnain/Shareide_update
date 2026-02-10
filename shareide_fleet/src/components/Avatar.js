@@ -3,10 +3,10 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '../../context/ThemeContext';
-import { useAuth } from '../../context/AuthContext';
-import { shadows } from '../../theme/colors';
-import { defaultMaleAvatar, defaultFemaleAvatar } from '../../utils/avatars';
+import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { shadows } from '../theme/colors';
+import { defaultMaleAvatar, defaultFemaleAvatar } from '../utils/avatars';
 
 const Avatar = ({
   source,
@@ -21,7 +21,7 @@ const Avatar = ({
   style,
   gradient = false,
   useDefaultAvatar = true,
-  showYellowVerified = false, // Figma yellow verification badge
+  showYellowVerified = false,
 }) => {
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -195,7 +195,6 @@ const Avatar = ({
     </View>
   );
 
-  // Figma-style yellow verification badge (bottom right)
   const yellowVerified = showYellowVerified && (
     <View
       style={[

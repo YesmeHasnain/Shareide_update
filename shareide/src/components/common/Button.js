@@ -1,14 +1,21 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { useTheme } from '../../context/ThemeContext';
 import { borderRadius } from '../../theme/colors';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 const Button = ({
   title,
   onPress,
-  variant = 'primary', // primary, secondary, outline, ghost, danger, text
+  variant = 'primary', // primary, secondary, outline, ghost, danger, text, dark
   size = 'medium', // small, medium, large
   icon,
   iconPosition = 'left',
@@ -18,8 +25,22 @@ const Button = ({
   style,
   textStyle,
   haptic = true,
+  animated = true,
 }) => {
   const { colors } = useTheme();
+  const scale = useSharedValue(1);
+
+  const handlePressIn = useCallback(() => {
+    if (animated) {
+      scale.value = withSpring(0.96, { damping: 15, stiffness: 400 });
+    }
+  }, [animated]);
+
+  const handlePressOut = useCallback(() => {
+    if (animated) {
+      scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+    }
+  }, [animated]);
 
   const handlePress = () => {
     if (haptic) {
@@ -27,6 +48,10 @@ const Button = ({
     }
     onPress?.();
   };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const getVariantStyles = () => {
     switch (variant) {
@@ -64,6 +89,12 @@ const Button = ({
         return {
           background: 'transparent',
           textColor: colors.primary,
+          borderColor: 'transparent',
+        };
+      case 'dark':
+        return {
+          background: '#1A1A2E',
+          textColor: '#FFFFFF',
           borderColor: 'transparent',
         };
       default:
@@ -168,14 +199,16 @@ const Button = ({
   ];
 
   return (
-    <TouchableOpacity
+    <AnimatedTouchable
       onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={disabled || loading}
-      style={buttonStyle}
-      activeOpacity={0.7}
+      style={[buttonStyle, animated && animatedStyle]}
+      activeOpacity={0.8}
     >
       {buttonContent}
-    </TouchableOpacity>
+    </AnimatedTouchable>
   );
 };
 
