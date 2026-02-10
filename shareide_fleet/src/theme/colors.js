@@ -71,6 +71,28 @@ export const lightColors = {
   statusCompleted: '#3B82F6',
   statusOnline: '#10B981',
   statusOffline: '#EF4444',
+
+  // Figma design tokens
+  locationAccent: '#1A6B54',
+  filterChipActive: '#000000',
+  filterChipInactive: '#F3F4F6',
+  filterChipActiveText: '#FFFFFF',
+  filterChipInactiveText: '#6B7280',
+
+  // Route visualization
+  pickupDot: '#FCC014',
+  dropoffDot: '#6B7280',
+  routeConnector: '#E5E7EB',
+
+  // Pill backgrounds
+  pillPickup: '#FEF3C7',
+  pillDropoff: '#F3F4F6',
+  pillPickupText: '#92400E',
+  pillDropoffText: '#374151',
+
+  // Progress bar
+  progressFill: '#FCC014',
+  progressTrack: '#E5E7EB',
 };
 
 export const darkColors = {
@@ -145,6 +167,28 @@ export const darkColors = {
   statusCompleted: '#60A5FA',
   statusOnline: '#34D399',
   statusOffline: '#F87171',
+
+  // Figma design tokens
+  locationAccent: '#34D399',
+  filterChipActive: '#FFFFFF',
+  filterChipInactive: '#2D3748',
+  filterChipActiveText: '#000000',
+  filterChipInactiveText: '#A0AEC0',
+
+  // Route visualization
+  pickupDot: '#FCC014',
+  dropoffDot: '#718096',
+  routeConnector: '#4A5568',
+
+  // Pill backgrounds
+  pillPickup: '#78350F',
+  pillDropoff: '#2D3748',
+  pillPickupText: '#FDE68A',
+  pillDropoffText: '#E2E8F0',
+
+  // Progress bar
+  progressFill: '#FCC014',
+  progressTrack: '#4A5568',
 };
 
 // Typography scale

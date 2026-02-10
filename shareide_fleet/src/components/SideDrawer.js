@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { defaultMaleAvatar, defaultFemaleAvatar } from '../utils/avatars';
+import Avatar from './Avatar';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.78;
@@ -164,17 +165,15 @@ const SideDrawer = ({ visible, onClose, navigation }) => {
           activeOpacity={0.8}
         >
           <View style={styles.avatarRow}>
-            <View style={styles.avatar}>
-              {user?.profile_picture ? (
-                <Image source={{ uri: user.profile_picture }} style={styles.avatarImg} />
-              ) : (
-                <Image
-                  source={user?.gender === 'female' ? defaultFemaleAvatar : defaultMaleAvatar}
-                  style={styles.avatarImg}
-                />
-              )}
-              <View style={styles.onlineDot} />
-            </View>
+            <Avatar
+              source={user?.profile_picture}
+              gender={user?.gender}
+              name={getUserName()}
+              size="medium"
+              showBadge={true}
+              badgeType="online"
+              style={{ borderWidth: 2, borderColor: PRIMARY, borderRadius: 28 }}
+            />
             <View style={styles.profileInfo}>
               <Text style={styles.profileName} numberOfLines={1}>{getUserName()}</Text>
               <Text style={styles.profilePhone}>{user?.phone || ''}</Text>
