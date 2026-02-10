@@ -43,6 +43,12 @@ class PromoCode extends Model
         return $this->hasMany(PromoCodeUsage::class);
     }
 
+    // Alias for usages
+    public function usages()
+    {
+        return $this->hasMany(PromoCodeUsage::class);
+    }
+
     // Check if valid
     public function isValid()
     {

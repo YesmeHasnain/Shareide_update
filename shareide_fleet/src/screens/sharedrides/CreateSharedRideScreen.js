@@ -14,10 +14,21 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import { createSharedRide } from '../../api/sharedRides';
 
 const CreateSharedRideScreen = ({ navigation }) => {
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const driver = user?.driver;
+
+  // Auto-fill vehicle info from driver profile
+  const getDefaultSeats = () => {
+    if (driver?.vehicle_type === 'bike') return 1;
+    if (driver?.vehicle_type === 'rickshaw') return 2;
+    return driver?.seats || 3;
+  };
+
   const [formData, setFormData] = useState({
     from_address: '',
     from_lat: null,
@@ -26,15 +37,15 @@ const CreateSharedRideScreen = ({ navigation }) => {
     to_lat: null,
     to_lng: null,
     departure_time: new Date(Date.now() + 3600000),
-    total_seats: 3,
+    total_seats: getDefaultSeats(),
     price_per_seat: '',
-    vehicle_type: 'car',
-    vehicle_model: '',
+    vehicle_type: driver?.vehicle_type || 'car',
+    vehicle_model: driver?.vehicle_model || '',
     vehicle_color: '',
-    plate_number: '',
+    plate_number: driver?.plate_number || '',
     women_only: false,
-    ac_available: true,
-    luggage_allowed: true,
+    ac_available: driver?.vehicle_type !== 'bike',
+    luggage_allowed: driver?.vehicle_type !== 'bike',
     smoking_allowed: false,
     pets_allowed: false,
     notes: '',
@@ -134,12 +145,17 @@ const CreateSharedRideScreen = ({ navigation }) => {
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const vehicleTypes = [
-    { key: 'car', label: 'Car', icon: 'car' },
-    { key: 'suv', label: 'SUV', icon: 'car-sport' },
-    { key: 'van', label: 'Van', icon: 'bus' },
-    { key: 'bike', label: 'Bike', icon: 'bicycle' },
-  ];
+  const getVehicleIcon = () => {
+    if (driver?.vehicle_type === 'bike') return 'bicycle';
+    if (driver?.vehicle_type === 'rickshaw') return 'bus';
+    return 'car';
+  };
+
+  const getMaxSeats = () => {
+    if (driver?.vehicle_type === 'bike') return 1;
+    if (driver?.vehicle_type === 'rickshaw') return 3;
+    return driver?.seats || 4;
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -234,7 +250,7 @@ const CreateSharedRideScreen = ({ navigation }) => {
               <Text style={[styles.seatCount, { color: colors.text }]}>{formData.total_seats}</Text>
               <TouchableOpacity
                 style={styles.seatBtn}
-                onPress={() => setFormData({ ...formData, total_seats: Math.min(7, formData.total_seats + 1) })}
+                onPress={() => setFormData({ ...formData, total_seats: Math.min(getMaxSeats(), formData.total_seats + 1) })}
               >
                 <Ionicons name="add" size={20} color={colors.text} />
               </TouchableOpacity>
@@ -254,68 +270,23 @@ const CreateSharedRideScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Vehicle Section */}
+        {/* Vehicle Info (Auto-filled from profile) */}
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Vehicle</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Vehicle</Text>
 
-          <View style={styles.vehicleTypes}>
-            {vehicleTypes.map((type) => (
-              <TouchableOpacity
-                key={type.key}
-                style={[
-                  styles.vehicleTypeBtn,
-                  { backgroundColor: colors.background, borderColor: formData.vehicle_type === type.key ? colors.primary : 'transparent' },
-                  formData.vehicle_type === type.key && { backgroundColor: colors.primary + '15' },
-                ]}
-                onPress={() => setFormData({ ...formData, vehicle_type: type.key })}
-              >
-                <Ionicons
-                  name={type.icon}
-                  size={24}
-                  color={formData.vehicle_type === type.key ? colors.primary : colors.textSecondary}
-                />
-                <Text style={[
-                  styles.vehicleTypeText,
-                  { color: formData.vehicle_type === type.key ? colors.primary : colors.textSecondary },
-                ]}>
-                  {type.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Vehicle Model</Text>
-            <TextInput
-              style={[styles.textInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-              placeholder="e.g., Honda City"
-              placeholderTextColor={colors.textSecondary}
-              value={formData.vehicle_model}
-              onChangeText={(text) => setFormData({ ...formData, vehicle_model: text })}
-            />
-          </View>
-
-          <View style={styles.inputRow}>
-            <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Color</Text>
-              <TextInput
-                style={[styles.textInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                placeholder="e.g., White"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.vehicle_color}
-                onChangeText={(text) => setFormData({ ...formData, vehicle_color: text })}
-              />
+          <View style={[styles.vehicleCard, { backgroundColor: colors.background }]}>
+            <View style={[styles.vehicleIconBg, { backgroundColor: colors.primary + '15' }]}>
+              <Ionicons name={getVehicleIcon()} size={28} color={colors.primary} />
             </View>
-            <View style={[styles.inputGroup, { flex: 1 }]}>
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Plate Number</Text>
-              <TextInput
-                style={[styles.textInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                placeholder="e.g., ABC-123"
-                placeholderTextColor={colors.textSecondary}
-                value={formData.plate_number}
-                onChangeText={(text) => setFormData({ ...formData, plate_number: text })}
-              />
+            <View style={styles.vehicleInfo}>
+              <Text style={[styles.vehicleModel, { color: colors.text }]}>
+                {driver?.vehicle_model || 'No vehicle'}
+              </Text>
+              <Text style={[styles.vehiclePlate, { color: colors.textSecondary }]}>
+                {driver?.plate_number || 'No plate'} {'\u2022'} {(driver?.vehicle_type || 'car').charAt(0).toUpperCase() + (driver?.vehicle_type || 'car').slice(1)}
+              </Text>
             </View>
+            <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
           </View>
         </View>
 
@@ -485,22 +456,30 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
   },
-  vehicleTypes: {
+  vehicleCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  vehicleTypeBtn: {
-    flex: 1,
     alignItems: 'center',
-    padding: 12,
-    marginHorizontal: 3,
-    borderRadius: 10,
-    borderWidth: 1,
+    padding: 14,
+    borderRadius: 12,
   },
-  vehicleTypeText: {
-    fontSize: 12,
-    marginTop: 5,
+  vehicleIconBg: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  vehicleInfo: {
+    flex: 1,
+  },
+  vehicleModel: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  vehiclePlate: {
+    fontSize: 13,
   },
   preferenceItem: {
     flexDirection: 'row',

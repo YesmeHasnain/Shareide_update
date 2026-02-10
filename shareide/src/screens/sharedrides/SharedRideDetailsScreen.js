@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Modal,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,6 +42,8 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(false);
   const [seatsToBook, setSeatsToBook] = useState(1);
+  const [showSeatModal, setShowSeatModal] = useState(false);
+  const seatModalAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     fetchRideDetails();
@@ -75,6 +79,17 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
     }
   };
 
+  const openSeatModal = () => {
+    setShowSeatModal(true);
+    Animated.spring(seatModalAnim, { toValue: 1, useNativeDriver: true }).start();
+  };
+
+  const closeSeatModal = () => {
+    Animated.timing(seatModalAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
+      setShowSeatModal(false);
+    });
+  };
+
   const formatDateTime = (datetime) => {
     const date = new Date(datetime);
     return {
@@ -104,26 +119,56 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
       <Header title="Ride Details" onBack={() => navigation.goBack()} />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Driver Card */}
+        {/* Ride Type Badge */}
+        {ride.ride_type && ride.ride_type !== 'single' && (
+          <View style={[styles.rideTypeBadge, { backgroundColor: colors.primary + '20' }]}>
+            <Ionicons
+              name={ride.ride_type === 'daily' ? 'sunny' : ride.ride_type === 'weekly' ? 'calendar' : 'repeat'}
+              size={16}
+              color={colors.primary}
+            />
+            <Text style={[styles.rideTypeText, { color: colors.primary }]}>
+              {ride.ride_type.charAt(0).toUpperCase() + ride.ride_type.slice(1)} Ride
+            </Text>
+          </View>
+        )}
+
+        {/* Driver Card - Enhanced */}
         <Card style={styles.driverCard}>
           <TouchableOpacity
             style={styles.driverSection}
             onPress={() => navigation.navigate('DriverProfile', { driverId: ride.driver?.id })}
           >
-            <Avatar
-              source={ride.driver?.avatar ? { uri: ride.driver.avatar } : null}
-              name={ride.driver?.name}
-              size={70}
-            />
+            <View style={styles.driverAvatarWrap}>
+              <Avatar
+                source={ride.driver?.avatar ? { uri: ride.driver.avatar } : null}
+                name={ride.driver?.name}
+                size={70}
+              />
+              {ride.driver?.verified && (
+                <View style={styles.verifiedBadge}>
+                  <Ionicons name="shield-checkmark" size={14} color="#FFF" />
+                </View>
+              )}
+            </View>
             <View style={styles.driverInfo}>
-              <Text style={[styles.driverName, { color: colors.text }]}>{ride.driver?.name || 'Driver'}</Text>
+              <View style={styles.driverNameRow}>
+                <Text style={[styles.driverName, { color: colors.text }]}>{ride.driver?.name || 'Driver'}</Text>
+                {ride.driver?.verified && (
+                  <Ionicons name="checkmark-circle" size={16} color={colors.primary} style={{ marginLeft: 4 }} />
+                )}
+              </View>
               <View style={styles.ratingRow}>
                 <Ionicons name="star" size={16} color={colors.warning} />
-                <Text style={[styles.rating, { color: colors.warning }]}>{ride.driver?.rating || '4.8'}</Text>
-                <Text style={[styles.rides, { color: colors.textMuted }]}>({ride.driver?.total_rides || 0} rides)</Text>
+                <Text style={[styles.rating, { color: colors.warning }]}>
+                  {ride.driver?.rating?.toFixed(1) || '5.0'}
+                </Text>
+                <Text style={[styles.rides, { color: colors.textMuted }]}>
+                  ({ride.driver?.rides_count || ride.driver?.total_rides || 0} rides)
+                </Text>
               </View>
-              <Text style={[styles.memberSince, { color: colors.textMuted }]}>
-                Member since {new Date(ride.driver?.created_at).getFullYear()}
+              <Text style={[styles.departureInfo, { color: colors.primary }]}>
+                Departs at {time}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={24} color={colors.textMuted} />
@@ -133,9 +178,11 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
           <View style={styles.vehicleSection}>
             <Ionicons name="car-sport" size={24} color={colors.primary} />
             <View style={styles.vehicleInfo}>
-              <Text style={[styles.vehicleModel, { color: colors.text }]}>{ride.vehicle_model || ride.vehicle_type}</Text>
+              <Text style={[styles.vehicleModel, { color: colors.text }]}>
+                {ride.vehicle?.model || ride.vehicle_model || ride.vehicle_type}
+              </Text>
               <Text style={[styles.vehicleDetails, { color: colors.textMuted }]}>
-                {ride.vehicle_color} • {ride.plate_number}
+                {ride.vehicle?.color || ride.vehicle_color} • {ride.vehicle?.plate || ride.plate_number}
               </Text>
             </View>
           </View>
@@ -184,42 +231,88 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
           )}
         </Card>
 
-        {/* Passengers Card */}
+        {/* Seat Layout Card */}
         <Card style={styles.passengersCard}>
           <View style={styles.passengerHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Fellow Passengers</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Seats</Text>
             <Badge
-              text={`${ride.total_seats - ride.available_seats}/${ride.total_seats} booked`}
+              text={`${ride.available_seats} available`}
               variant={ride.available_seats > 0 ? 'success' : 'error'}
             />
           </View>
 
-          {ride.confirmed_bookings?.length > 0 ? (
-            ride.confirmed_bookings.map((booking) => (
-              <View key={booking.id} style={styles.passengerRow}>
-                <Avatar
-                  source={booking.passenger?.avatar ? { uri: booking.passenger.avatar } : null}
-                  name={booking.passenger?.name}
-                  size={45}
-                />
-                <View style={styles.passengerInfo}>
-                  <Text style={[styles.passengerName, { color: colors.text }]}>{booking.passenger?.name}</Text>
-                  <View style={styles.passengerDetails}>
-                    <Ionicons name="star" size={12} color={colors.warning} />
-                    <Text style={[styles.passengerRating, { color: colors.textMuted }]}>
-                      {booking.passenger?.rating || '4.5'}
-                    </Text>
-                    <Text style={[styles.passengerSeats, { color: colors.textMuted }]}>
-                      • {booking.seats_booked} seat{booking.seats_booked > 1 ? 's' : ''}
-                    </Text>
+          {/* Visual Seat Layout */}
+          <View style={styles.seatLayoutRow}>
+            {Array.from({ length: ride.total_seats }).map((_, index) => {
+              const passengers = ride.passengers || ride.confirmed_bookings || [];
+              const isOccupied = index < (ride.total_seats - ride.available_seats);
+              const passenger = passengers[index];
+              return (
+                <View key={index} style={styles.seatItem}>
+                  <View style={[
+                    styles.seatIcon,
+                    { backgroundColor: isOccupied ? colors.primary + '20' : '#F3F4F620' },
+                    isOccupied && { borderColor: colors.primary, borderWidth: 2 },
+                  ]}>
+                    {isOccupied && passenger ? (
+                      <Avatar
+                        source={passenger.user?.photo ? { uri: passenger.user.photo } : null}
+                        name={passenger.user?.name || passenger.passenger?.name}
+                        size={36}
+                      />
+                    ) : isOccupied ? (
+                      <Ionicons name="person" size={18} color={colors.primary} />
+                    ) : (
+                      <Ionicons name="person-outline" size={18} color={colors.textMuted} />
+                    )}
                   </View>
+                  <Text style={[styles.seatLabel, { color: isOccupied ? colors.text : colors.textMuted }]}>
+                    {isOccupied ? (passenger?.user?.name?.split(' ')[0] || passenger?.passenger?.name?.split(' ')[0] || 'Booked') : 'Open'}
+                  </Text>
                 </View>
-                {booking.passenger?.gender === 'female' && (
-                  <Ionicons name="female" size={18} color="#FF69B4" />
-                )}
-              </View>
-            ))
-          ) : (
+              );
+            })}
+          </View>
+
+          {/* Passenger List */}
+          {(ride.passengers || ride.confirmed_bookings)?.length > 0 && (
+            <View style={styles.passengerList}>
+              <Text style={[styles.subTitle, { color: colors.textMuted }]}>Other Passengers</Text>
+              {(ride.passengers || ride.confirmed_bookings).map((booking, idx) => (
+                <View key={booking.booking_id || booking.id || idx} style={styles.passengerRow}>
+                  <Avatar
+                    source={(booking.user?.photo || booking.passenger?.avatar) ? { uri: booking.user?.photo || booking.passenger?.avatar } : null}
+                    name={booking.user?.name || booking.passenger?.name}
+                    size={40}
+                  />
+                  <View style={styles.passengerInfo}>
+                    <View style={styles.passengerNameRow}>
+                      <Text style={[styles.passengerName, { color: colors.text }]}>
+                        {booking.user?.name || booking.passenger?.name}
+                      </Text>
+                      {(booking.user?.verified || booking.passenger?.verified) && (
+                        <Ionicons name="shield-checkmark" size={14} color={colors.primary} style={{ marginLeft: 4 }} />
+                      )}
+                    </View>
+                    <View style={styles.passengerDetails}>
+                      <Ionicons name="star" size={12} color={colors.warning} />
+                      <Text style={[styles.passengerRating, { color: colors.textMuted }]}>
+                        {booking.user?.rating?.toFixed(1) || booking.passenger?.rating || '5.0'}
+                      </Text>
+                      <Text style={[styles.passengerSeats, { color: colors.textMuted }]}>
+                        • {booking.seats || booking.seats_booked || 1} seat{(booking.seats || booking.seats_booked || 1) > 1 ? 's' : ''}
+                      </Text>
+                    </View>
+                  </View>
+                  {(booking.user?.gender === 'female' || booking.passenger?.gender === 'female') && (
+                    <Ionicons name="female" size={18} color="#FF69B4" />
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {!(ride.passengers || ride.confirmed_bookings)?.length && (
             <Text style={[styles.noPassengers, { color: colors.textMuted }]}>
               Be the first to book this ride!
             </Text>
@@ -287,26 +380,13 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
       {/* Bottom Booking Bar */}
       {ride.available_seats > 0 && (
         <View style={[styles.bottomBar, { backgroundColor: colors.surface }]}>
-          <View style={styles.seatSelector}>
-            <Text style={[styles.seatLabel, { color: colors.textMuted }]}>Seats:</Text>
-            <View style={styles.seatControls}>
-              <TouchableOpacity
-                style={styles.seatBtn}
-                onPress={() => setSeatsToBook(Math.max(1, seatsToBook - 1))}
-                disabled={seatsToBook <= 1}
-              >
-                <Ionicons name="remove" size={20} color={seatsToBook <= 1 ? colors.textMuted : colors.text} />
-              </TouchableOpacity>
+          <TouchableOpacity style={styles.seatSelector} onPress={openSeatModal}>
+            <Text style={[styles.seatLabelBottom, { color: colors.textMuted }]}>Seats</Text>
+            <View style={styles.seatDisplay}>
               <Text style={[styles.seatCount, { color: colors.text }]}>{seatsToBook}</Text>
-              <TouchableOpacity
-                style={styles.seatBtn}
-                onPress={() => setSeatsToBook(Math.min(ride.available_seats, seatsToBook + 1))}
-                disabled={seatsToBook >= ride.available_seats}
-              >
-                <Ionicons name="add" size={20} color={seatsToBook >= ride.available_seats ? colors.textMuted : colors.text} />
-              </TouchableOpacity>
+              <Ionicons name="chevron-down" size={14} color={colors.textMuted} />
             </View>
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.priceSection}>
             <Text style={[styles.totalLabel, { color: colors.textMuted }]}>Total</Text>
@@ -335,6 +415,61 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Seat Selection Modal */}
+      <Modal visible={showSeatModal} transparent animationType="none" onRequestClose={closeSeatModal}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={closeSeatModal}>
+          <Animated.View style={[
+            styles.modalSheet,
+            {
+              transform: [{
+                translateY: seatModalAnim.interpolate({ inputRange: [0, 1], outputRange: [300, 0] }),
+              }],
+            },
+          ]}>
+            <TouchableOpacity activeOpacity={1}>
+              <View style={styles.modalHandle} />
+              <Text style={[styles.modalTitle, { color: colors.text }]}>How many seats would you like?</Text>
+
+              <View style={styles.modalSeatRow}>
+                <TouchableOpacity
+                  style={[styles.modalSeatBtn, seatsToBook <= 1 && styles.modalSeatBtnDisabled]}
+                  onPress={() => setSeatsToBook(Math.max(1, seatsToBook - 1))}
+                  disabled={seatsToBook <= 1}
+                >
+                  <Ionicons name="remove" size={28} color={seatsToBook <= 1 ? '#D1D5DB' : colors.text} />
+                </TouchableOpacity>
+
+                <View style={styles.modalSeatDisplay}>
+                  <Text style={[styles.modalSeatNumber, { color: colors.text }]}>{seatsToBook}</Text>
+                  <Text style={[styles.modalSeatLabel, { color: colors.textMuted }]}>
+                    seat{seatsToBook > 1 ? 's' : ''}
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.modalSeatBtn, seatsToBook >= ride.available_seats && styles.modalSeatBtnDisabled]}
+                  onPress={() => setSeatsToBook(Math.min(ride.available_seats, seatsToBook + 1))}
+                  disabled={seatsToBook >= ride.available_seats}
+                >
+                  <Ionicons name="add" size={28} color={seatsToBook >= ride.available_seats ? '#D1D5DB' : colors.text} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={[styles.modalPriceText, { color: colors.textSecondary }]}>
+                Rs. {ride.price_per_seat} x {seatsToBook} = Rs. {totalPrice}
+              </Text>
+
+              <TouchableOpacity
+                style={[styles.modalConfirmBtn, { backgroundColor: colors.primary }]}
+                onPress={closeSeatModal}
+              >
+                <Text style={styles.modalConfirmText}>Confirm</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </Animated.View>
+        </TouchableOpacity>
+      </Modal>
     </LinearGradient>
   );
 };
@@ -352,9 +487,48 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+  rideTypeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+    marginBottom: 12,
+  },
+  rideTypeText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
   driverCard: {
     marginBottom: 15,
     padding: 15,
+  },
+  driverAvatarWrap: {
+    position: 'relative',
+  },
+  verifiedBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  driverNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  departureInfo: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 4,
   },
   driverSection: {
     flexDirection: 'row',
@@ -480,6 +654,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 15,
   },
+  seatLayoutRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 16,
+    flexWrap: 'wrap',
+  },
+  seatItem: {
+    alignItems: 'center',
+    width: 60,
+  },
+  seatIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.1)',
+    overflow: 'hidden',
+  },
+  seatLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  passengerList: {
+    marginTop: 8,
+  },
+  subTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  passengerNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   passengerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -570,24 +785,22 @@ const styles = StyleSheet.create({
   seatSelector: {
     alignItems: 'center',
   },
-  seatLabel: {
+  seatLabelBottom: {
     fontSize: 11,
-    marginBottom: 5,
+    marginBottom: 4,
   },
-  seatControls: {
+  seatDisplay: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 8,
-    paddingHorizontal: 5,
-  },
-  seatBtn: {
-    padding: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 4,
   },
   seatCount: {
     fontSize: 18,
     fontWeight: '600',
-    paddingHorizontal: 10,
   },
   priceSection: {
     flex: 1,
@@ -615,6 +828,80 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 15,
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D1D5DB',
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 28,
+  },
+  modalSeatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 32,
+    marginBottom: 16,
+  },
+  modalSeatBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalSeatBtnDisabled: {
+    borderColor: '#F3F4F6',
+    backgroundColor: '#F9FAFB',
+  },
+  modalSeatDisplay: {
+    alignItems: 'center',
+  },
+  modalSeatNumber: {
+    fontSize: 48,
+    fontWeight: '700',
+  },
+  modalSeatLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: -4,
+  },
+  modalPriceText: {
+    fontSize: 15,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  modalConfirmBtn: {
+    height: 54,
+    borderRadius: 27,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalConfirmText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
   },
 });
 

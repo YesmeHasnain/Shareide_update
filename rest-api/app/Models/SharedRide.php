@@ -34,6 +34,9 @@ class SharedRide extends Model
         'pets_allowed',
         'notes',
         'status',
+        'ride_type',
+        'recurring_days',
+        'end_date',
         'started_at',
         'completed_at',
     ];
@@ -42,6 +45,7 @@ class SharedRide extends Model
         'departure_time' => 'datetime',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'end_date' => 'date',
         'from_lat' => 'decimal:8',
         'from_lng' => 'decimal:8',
         'to_lat' => 'decimal:8',
@@ -53,6 +57,7 @@ class SharedRide extends Model
         'luggage_allowed' => 'boolean',
         'smoking_allowed' => 'boolean',
         'pets_allowed' => 'boolean',
+        'recurring_days' => 'array',
     ];
 
     // Relationships

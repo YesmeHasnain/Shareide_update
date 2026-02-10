@@ -5,11 +5,7 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
-  TextInput,
   FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  Linking,
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,11 +26,20 @@ const SharedRideChatScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const flatListRef = useRef(null);
 
-  const quickMessages = [
+  const presetMessages = [
     "I'm on my way",
-    "Running 5 mins late",
+    "I've arrived at pickup",
+    "Running 5 minutes late",
     "I'm at the pickup point",
+    "Ride starting now",
+    "Where are you exactly?",
+    "Please be ready, departing soon",
+    "I'll be there in 5 mins",
+    "I'll be there in 10 mins",
+    "Is the booking confirmed?",
     "See you soon!",
+    "Thank you!",
+    "Ride completed, thank you!",
   ];
 
   useEffect(() => {
@@ -80,19 +85,6 @@ const SharedRideChatScreen = ({ navigation, route }) => {
     }
   };
 
-  const shareLocationOnWhatsApp = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const phone = passengerPhone?.replace(/[^0-9]/g, '') || '';
-    const message = `I'm your driver for the shared ride!\n\nFrom: ${rideInfo?.pickup_address || 'Pickup'}\nTo: ${rideInfo?.dropoff_address || 'Dropoff'}\n\nSee you soon!`;
-    Linking.openURL(`whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`);
-  };
-
-  const callPassenger = () => {
-    if (passengerPhone) {
-      Linking.openURL(`tel:${passengerPhone}`);
-    }
-  };
-
   const renderMessage = ({ item }) => {
     const isMe = item.sender_id === user?.id;
     return (
@@ -126,12 +118,9 @@ const SharedRideChatScreen = ({ navigation, route }) => {
         </View>
 
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.headerBtn} onPress={callPassenger}>
-            <Ionicons name="call" size={20} color={PRIMARY_COLOR} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.headerBtn} onPress={shareLocationOnWhatsApp}>
-            <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
-          </TouchableOpacity>
+          <View style={[styles.headerBtn, { backgroundColor: '#10B98120' }]}>
+            <Ionicons name="shield-checkmark" size={18} color="#10B981" />
+          </View>
         </View>
       </View>
 
@@ -153,44 +142,28 @@ const SharedRideChatScreen = ({ navigation, route }) => {
         }
       />
 
-      {/* Quick Messages */}
-      <View style={[styles.quickMessages, { borderTopColor: colors.border }]}>
+      {/* Preset Messages Only */}
+      <View style={[styles.presetContainer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+        <Text style={[styles.presetLabel, { color: colors.textSecondary }]}>
+          Tap a message to send
+        </Text>
         <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={quickMessages}
+          data={presetMessages}
           keyExtractor={(item, index) => index.toString()}
+          numColumns={2}
+          contentContainerStyle={styles.presetGrid}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={[styles.quickBtn, { backgroundColor: isDark ? '#1A1A2E' : '#F3F4F6' }]}
+              style={[styles.presetBtn, { backgroundColor: isDark ? '#1A1A2E' : '#F3F4F6' }]}
               onPress={() => sendMessage(item)}
+              disabled={loading}
+              activeOpacity={0.7}
             >
-              <Text style={[styles.quickBtnText, { color: colors.text }]}>{item}</Text>
+              <Text style={[styles.presetBtnText, { color: colors.text }]} numberOfLines={2}>{item}</Text>
             </TouchableOpacity>
           )}
         />
       </View>
-
-      {/* Input */}
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={[styles.inputContainer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
-          <TextInput
-            style={[styles.input, { backgroundColor: isDark ? '#1A1A2E' : '#F3F4F6', color: colors.text }]}
-            placeholder="Type a message..."
-            placeholderTextColor={colors.textSecondary}
-            value={newMessage}
-            onChangeText={setNewMessage}
-            multiline
-          />
-          <TouchableOpacity
-            style={[styles.sendBtn, { backgroundColor: PRIMARY_COLOR, opacity: loading ? 0.5 : 1 }]}
-            onPress={() => sendMessage()}
-            disabled={loading || !newMessage.trim()}
-          >
-            <Ionicons name="send" size={20} color="#000" />
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -266,43 +239,38 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 12,
   },
-  quickMessages: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+  presetContainer: {
     borderTopWidth: 1,
+    paddingTop: 12,
+    paddingBottom: 16,
+    paddingHorizontal: 12,
+    maxHeight: 220,
   },
-  quickBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+  presetLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  presetGrid: {
+    paddingHorizontal: 4,
+  },
+  presetBtn: {
+    flex: 1,
+    margin: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderRadius: 20,
-    marginHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 40,
   },
-  quickBtnText: {
+  presetBtnText: {
     fontSize: 13,
     fontWeight: '500',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    padding: 12,
-    borderTopWidth: 1,
-    gap: 12,
-  },
-  input: {
-    flex: 1,
-    minHeight: 44,
-    maxHeight: 100,
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 15,
-  },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
+    textAlign: 'center',
   },
 });
 

@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
@@ -15,9 +16,34 @@ import { useAuth } from '../../context/AuthContext';
 
 const PRIMARY_COLOR = '#FCC014';
 
+// Animated button with scale-on-press
+const AnimatedButton = ({ onPress, style, children, activeOpacity = 0.8 }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const onPressIn = () => {
+    Animated.spring(scaleAnim, { toValue: 0.95, useNativeDriver: true }).start();
+  };
+  const onPressOut = () => {
+    Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }).start();
+  };
+  return (
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
+        onPress={onPress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        activeOpacity={activeOpacity}
+        style={style}
+      >
+        {children}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
 const HomeScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const panelAnim = useRef(new Animated.Value(0)).current;
 
   const [currentLocation, setCurrentLocation] = useState({
     latitude: 24.8607,
@@ -31,6 +57,12 @@ const HomeScreen = ({ navigation, route }) => {
 
   useEffect(() => {
     getCurrentLocation();
+    // Animate bottom panel sliding up
+    Animated.spring(panelAnim, {
+      toValue: 1,
+      delay: 300,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const getCurrentLocation = async () => {
@@ -149,8 +181,17 @@ const HomeScreen = ({ navigation, route }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Bottom Panel */}
-      <View style={[styles.bottomPanel, { paddingBottom: insets.bottom + 16 }]}>
+      {/* Bottom Panel - Animated */}
+      <Animated.View style={[
+        styles.bottomPanel,
+        { paddingBottom: insets.bottom + 16 },
+        {
+          transform: [{
+            translateY: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [200, 0] }),
+          }],
+          opacity: panelAnim,
+        },
+      ]}>
         {/* Route Info (when route exists) */}
         {hasRoute && (
           <View style={styles.routeInfo}>
@@ -214,23 +255,22 @@ const HomeScreen = ({ navigation, route }) => {
 
         {/* Continue Button (when route exists) */}
         {hasRoute && (
-          <TouchableOpacity
+          <AnimatedButton
             style={styles.continueBtn}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               navigation.navigate('RideOptions', { pickup, dropoff });
             }}
-            activeOpacity={0.8}
           >
             <Text style={styles.continueBtnText}>Continue</Text>
-          </TouchableOpacity>
+          </AnimatedButton>
         )}
 
         {/* Quick Action Buttons (when no route) */}
         {!hasRoute && (
           <>
             {/* Request a Ride */}
-            <TouchableOpacity
+            <AnimatedButton
               style={styles.primaryBtn}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -238,14 +278,13 @@ const HomeScreen = ({ navigation, route }) => {
                   pickup: pickup || { latitude: currentLocation.latitude, longitude: currentLocation.longitude }
                 });
               }}
-              activeOpacity={0.8}
             >
               <Ionicons name="paper-plane" size={20} color="#000" />
               <Text style={styles.primaryBtnText}>Request a Ride</Text>
-            </TouchableOpacity>
+            </AnimatedButton>
 
             {/* Shared Rides */}
-            <TouchableOpacity
+            <AnimatedButton
               style={styles.secondaryBtn}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -254,7 +293,6 @@ const HomeScreen = ({ navigation, route }) => {
                   longitude: currentLocation.longitude
                 });
               }}
-              activeOpacity={0.8}
             >
               <View style={styles.sharedRidesIcon}>
                 <Ionicons name="people" size={20} color="#000" />
@@ -264,10 +302,10 @@ const HomeScreen = ({ navigation, route }) => {
                 <Text style={styles.sharedRidesSubtitle}>Find rides near you</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#6B7280" />
-            </TouchableOpacity>
+            </AnimatedButton>
           </>
         )}
-      </View>
+      </Animated.View>
     </View>
   );
 };

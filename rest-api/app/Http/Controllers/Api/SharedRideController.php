@@ -8,6 +8,7 @@ use App\Models\SharedRideBooking;
 use App\Models\SharedRideBid;
 use App\Models\SharedRideChat;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +28,7 @@ class SharedRideController extends Controller
             'date' => 'nullable|date',
             'seats' => 'nullable|integer|min:1',
             'radius' => 'nullable|integer|min:1|max:50', // km
+            'ride_type' => 'nullable|in:single,daily,weekly,monthly',
         ]);
 
         if ($validator->fails()) {
@@ -41,7 +43,7 @@ class SharedRideController extends Controller
         $radius = $request->radius ?? 10;
         $seats = $request->seats ?? 1;
 
-        $query = SharedRide::with(['driver.riderProfile', 'confirmedBookings.passenger.riderProfile'])
+        $query = SharedRide::with(['driver.riderProfile', 'driver.driver', 'confirmedBookings.passenger.riderProfile'])
             ->open()
             ->upcoming()
             ->where('available_seats', '>=', $seats)
@@ -50,6 +52,11 @@ class SharedRideController extends Controller
         // Filter by date
         if ($request->date) {
             $query->whereDate('departure_time', $request->date);
+        }
+
+        // Filter by ride type
+        if ($request->ride_type) {
+            $query->where('ride_type', $request->ride_type);
         }
 
         // Filter by destination if provided
@@ -70,14 +77,36 @@ class SharedRideController extends Controller
         $rides = $query->orderBy('departure_time', 'asc')
             ->take(20)
             ->get()
-            ->map(function ($ride) {
-                return $this->formatRideData($ride);
+            ->map(function ($ride) use ($fromLat, $fromLng) {
+                $data = $this->formatRideData($ride, true);
+
+                // Add distance from search origin
+                $data['distance_from_you'] = round($this->calculateDistance(
+                    $fromLat, $fromLng, $ride->from_lat, $ride->from_lng
+                ), 1) . ' km';
+
+                // Add estimated route duration (rough: 2 min per km)
+                if ($ride->total_distance) {
+                    $data['estimated_duration_mins'] = round($ride->total_distance * 2);
+                }
+
+                // Add passenger preview (limited info)
+                $data['passenger_previews'] = $ride->confirmedBookings->take(4)->map(function ($booking) {
+                    return [
+                        'name' => $booking->passenger?->name,
+                        'photo' => $booking->passenger?->riderProfile?->profile_photo,
+                        'gender' => $booking->passenger?->gender,
+                    ];
+                })->values();
+
+                return $data;
             });
 
         return response()->json([
             'success' => true,
             'data' => [
                 'rides' => $rides,
+                'total' => $rides->count(),
             ],
         ]);
     }
@@ -133,6 +162,18 @@ class SharedRideController extends Controller
             'smoking_allowed' => 'nullable|boolean',
             'pets_allowed' => 'nullable|boolean',
             'notes' => 'nullable|string|max:500',
+            'ride_type' => 'nullable|in:single,daily,weekly,monthly',
+            'recurring_days' => 'nullable|array',
+            'recurring_days.*' => 'in:mon,tue,wed,thu,fri,sat,sun',
+            'end_date' => 'nullable|date|after:today',
+            // Legacy field names from PostRideScreen
+            'pickup_address' => 'nullable|string',
+            'pickup_lat' => 'nullable|numeric',
+            'pickup_lng' => 'nullable|numeric',
+            'dropoff_address' => 'nullable|string',
+            'dropoff_lat' => 'nullable|numeric',
+            'dropoff_lng' => 'nullable|numeric',
+            'available_seats' => 'nullable|integer|min:1|max:8',
         ]);
 
         if ($validator->fails()) {
@@ -153,25 +194,41 @@ class SharedRideController extends Controller
             ], 403);
         }
 
+        // Support both field naming conventions
+        $fromAddress = $request->from_address ?? $request->pickup_address;
+        $fromLat = $request->from_lat ?? $request->pickup_lat;
+        $fromLng = $request->from_lng ?? $request->pickup_lng;
+        $toAddress = $request->to_address ?? $request->dropoff_address;
+        $toLat = $request->to_lat ?? $request->dropoff_lat;
+        $toLng = $request->to_lng ?? $request->dropoff_lng;
+        $totalSeats = $request->total_seats ?? $request->available_seats;
+
         // Calculate distance
-        $distance = $this->calculateDistance(
-            $request->from_lat,
-            $request->from_lng,
-            $request->to_lat,
-            $request->to_lng
-        );
+        $distance = $this->calculateDistance($fromLat, $fromLng, $toLat, $toLng);
+
+        $rideType = $request->ride_type ?? 'single';
+        $endDate = $request->end_date;
+
+        // Set default end dates for recurring rides
+        if ($rideType === 'daily' && !$endDate) {
+            $endDate = now()->addDays(30)->format('Y-m-d');
+        } elseif ($rideType === 'weekly' && !$endDate) {
+            $endDate = now()->addWeeks(4)->format('Y-m-d');
+        } elseif ($rideType === 'monthly' && !$endDate) {
+            $endDate = now()->addMonth()->format('Y-m-d');
+        }
 
         $ride = SharedRide::create([
             'driver_id' => $user->id,
-            'from_address' => $request->from_address,
-            'from_lat' => $request->from_lat,
-            'from_lng' => $request->from_lng,
-            'to_address' => $request->to_address,
-            'to_lat' => $request->to_lat,
-            'to_lng' => $request->to_lng,
+            'from_address' => $fromAddress,
+            'from_lat' => $fromLat,
+            'from_lng' => $fromLng,
+            'to_address' => $toAddress,
+            'to_lat' => $toLat,
+            'to_lng' => $toLng,
             'departure_time' => $request->departure_time,
-            'total_seats' => $request->total_seats,
-            'available_seats' => $request->total_seats,
+            'total_seats' => $totalSeats,
+            'available_seats' => $totalSeats,
             'price_per_seat' => $request->price_per_seat,
             'total_distance' => $distance,
             'vehicle_type' => $request->vehicle_type ?? $driver->vehicle_type ?? 'car',
@@ -185,6 +242,9 @@ class SharedRideController extends Controller
             'pets_allowed' => $request->pets_allowed ?? false,
             'notes' => $request->notes,
             'status' => 'open',
+            'ride_type' => $rideType,
+            'recurring_days' => $request->recurring_days,
+            'end_date' => $endDate,
         ]);
 
         return response()->json([
@@ -283,7 +343,19 @@ class SharedRideController extends Controller
             'status' => 'pending',
         ]);
 
-        // TODO: Send notification to driver
+        // Send notification to driver
+        try {
+            $notificationService = app(NotificationService::class);
+            $notificationService->sendToUser(
+                $ride->driver_id,
+                'New Booking Request!',
+                ($user->name ?? 'A passenger') . ' wants to book ' . $seats . ' seat(s) on your ride.',
+                'shared_ride_booking',
+                ['ride_id' => $rideId, 'booking_id' => $booking->id]
+            );
+        } catch (\Exception $e) {
+            \Log::error('Notification error: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
@@ -336,7 +408,19 @@ class SharedRideController extends Controller
 
         $booking->accept();
 
-        // TODO: Send notification to passenger
+        // Send notification to passenger
+        try {
+            $notificationService = app(NotificationService::class);
+            $notificationService->sendToUser(
+                $booking->passenger_id,
+                'Booking Accepted!',
+                'Your booking request has been accepted by the driver. Please confirm and pay to secure your seat.',
+                'shared_ride_accepted',
+                ['ride_id' => $booking->shared_ride_id, 'booking_id' => $booking->id]
+            );
+        } catch (\Exception $e) {
+            \Log::error('Notification error: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
@@ -380,7 +464,19 @@ class SharedRideController extends Controller
 
         $booking->reject();
 
-        // TODO: Send notification to passenger
+        // Send notification to passenger
+        try {
+            $notificationService = app(NotificationService::class);
+            $notificationService->sendToUser(
+                $booking->passenger_id,
+                'Booking Update',
+                'Your booking request was not accepted. Try searching for other available rides.',
+                'shared_ride_rejected',
+                ['ride_id' => $booking->shared_ride_id, 'booking_id' => $booking->id]
+            );
+        } catch (\Exception $e) {
+            \Log::error('Notification error: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
@@ -579,6 +675,23 @@ class SharedRideController extends Controller
             'started_at' => now(),
         ]);
 
+        // Notify all confirmed passengers that ride has started
+        try {
+            $notificationService = app(NotificationService::class);
+            $confirmedBookings = $ride->bookings()->whereIn('status', ['confirmed', 'picked_up'])->get();
+            foreach ($confirmedBookings as $booking) {
+                $notificationService->sendToUser(
+                    $booking->passenger_id,
+                    'Ride Started!',
+                    'Your shared ride from ' . $ride->from_address . ' has started. Get ready!',
+                    'shared_ride_started',
+                    ['ride_id' => $ride->id]
+                );
+            }
+        } catch (\Exception $e) {
+            \Log::error('Notification error: ' . $e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Ride started',
@@ -611,6 +724,11 @@ class SharedRideController extends Controller
             ], 400);
         }
 
+        // Get passengers to notify before updating
+        $passengersToNotify = $ride->bookings()
+            ->whereIn('status', ['confirmed', 'picked_up'])
+            ->pluck('passenger_id');
+
         $ride->update([
             'status' => 'completed',
             'completed_at' => now(),
@@ -621,6 +739,22 @@ class SharedRideController extends Controller
             'status' => 'dropped_off',
             'dropped_off_at' => now(),
         ]);
+
+        // Notify all passengers that ride is completed
+        try {
+            $notificationService = app(NotificationService::class);
+            foreach ($passengersToNotify as $passengerId) {
+                $notificationService->sendToUser(
+                    $passengerId,
+                    'Ride Completed!',
+                    'Your shared ride has been completed. Don\'t forget to rate your driver!',
+                    'shared_ride_completed',
+                    ['ride_id' => $ride->id]
+                );
+            }
+        } catch (\Exception $e) {
+            \Log::error('Notification error: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
@@ -722,11 +856,30 @@ class SharedRideController extends Controller
             'cancelled_at' => now(),
         ]);
 
+        // Get affected passengers before cancelling
+        $affectedBookings = $ride->bookings()
+            ->whereIn('status', ['pending', 'accepted', 'confirmed'])
+            ->get();
+
         $ride->update([
             'status' => 'cancelled',
         ]);
 
-        // TODO: Notify all passengers and process refunds
+        // Notify all affected passengers
+        try {
+            $notificationService = app(NotificationService::class);
+            foreach ($affectedBookings as $affectedBooking) {
+                $notificationService->sendToUser(
+                    $affectedBooking->passenger_id,
+                    'Ride Cancelled',
+                    'The shared ride from ' . $ride->from_address . ' has been cancelled by the driver.',
+                    'shared_ride_cancelled',
+                    ['ride_id' => $ride->id, 'booking_id' => $affectedBooking->id]
+                );
+            }
+        } catch (\Exception $e) {
+            \Log::error('Notification error: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
@@ -835,7 +988,7 @@ class SharedRideController extends Controller
             $lng = $request->query('longitude');
             $radius = $request->query('radius', 5);
 
-            $query = SharedRide::with(['driver.driver'])
+            $query = SharedRide::with(['driver.driver', 'driver.riderProfile', 'confirmedBookings.passenger.riderProfile'])
                 ->whereIn('status', ['open', 'active'])
                 ->where('available_seats', '>', 0)
                 ->where('departure_time', '>', now());
@@ -851,15 +1004,18 @@ class SharedRideController extends Controller
 
             return response()->json([
                 'success' => true,
-                'rides' => $rides->map(function ($ride) {
-                    return [
+                'rides' => $rides->map(function ($ride) use ($lat, $lng) {
+                    $data = [
                         'id' => $ride->id,
                         'driver_id' => $ride->driver_id,
                         'driver' => [
                             'name' => $ride->driver->name ?? 'Driver',
                             'phone' => $ride->driver->phone,
+                            'photo' => $ride->driver->riderProfile?->profile_photo,
                             'rating' => $ride->driver->driver->rating_average ?? 5.0,
                             'vehicle_model' => $ride->driver->driver->vehicle_model ?? $ride->vehicle_model ?? 'Car',
+                            'completed_rides' => $ride->driver->driver->completed_rides_count ?? 0,
+                            'verified' => $ride->driver->phone_verified_at ? true : false,
                         ],
                         'pickup_address' => $ride->from_address,
                         'pickup_lat' => $ride->from_lat,
@@ -868,11 +1024,36 @@ class SharedRideController extends Controller
                         'dropoff_lat' => $ride->to_lat,
                         'dropoff_lng' => $ride->to_lng,
                         'available_seats' => $ride->available_seats,
+                        'total_seats' => $ride->total_seats,
+                        'booked_seats' => $ride->total_seats - $ride->available_seats,
                         'price_per_seat' => $ride->price_per_seat,
+                        'total_distance' => $ride->total_distance,
                         'departure_time' => $ride->departure_time,
+                        'ride_type' => $ride->ride_type ?? 'single',
+                        'recurring_days' => $ride->recurring_days,
                         'notes' => $ride->notes,
                         'status' => $ride->status,
+                        'preferences' => [
+                            'women_only' => $ride->women_only,
+                            'ac_available' => $ride->ac_available,
+                            'luggage_allowed' => $ride->luggage_allowed,
+                        ],
+                        'passenger_previews' => $ride->confirmedBookings->take(4)->map(function ($booking) {
+                            return [
+                                'name' => $booking->passenger?->name,
+                                'photo' => $booking->passenger?->riderProfile?->profile_photo,
+                            ];
+                        })->values(),
                     ];
+
+                    // Add distance from user
+                    if ($lat && $lng) {
+                        $data['distance_from_you'] = round($this->calculateDistance(
+                            $lat, $lng, $ride->from_lat, $ride->from_lng
+                        ), 1);
+                    }
+
+                    return $data;
                 }),
             ]);
         } catch (\Exception $e) {
@@ -1026,7 +1207,34 @@ class SharedRideController extends Controller
     }
 
     /**
-     * Send chat message
+     * Allowed preset messages for chat safety
+     */
+    private $allowedMessages = [
+        // Passenger presets
+        "I'm on my way",
+        "Where are you exactly?",
+        "Please wait, coming in 2 mins",
+        "Can you share your location?",
+        "I'm at the pickup point",
+        "Running 5 minutes late",
+        "Is the ride still available?",
+        "What time will you depart?",
+        "Thank you!",
+        "Cancel my booking please",
+        // Driver presets
+        "I've arrived at pickup",
+        "Ride starting now",
+        "Please be ready, departing soon",
+        "I'll be there in 5 mins",
+        "I'll be there in 10 mins",
+        "Is the booking confirmed?",
+        "See you soon!",
+        "Ride completed, thank you!",
+        "Running 5 mins late",
+    ];
+
+    /**
+     * Send chat message - restricted to preset messages only
      */
     public function sendChat(Request $request, $rideId)
     {
@@ -1036,6 +1244,24 @@ class SharedRideController extends Controller
 
         if ($validator->fails()) {
             return response()->json(['success' => false, 'message' => 'Message required'], 422);
+        }
+
+        $messageText = trim($request->message);
+
+        // Validate message is from approved preset list
+        if (!in_array($messageText, $this->allowedMessages)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only preset messages are allowed for safety.',
+            ], 400);
+        }
+
+        // Block any message containing phone patterns
+        if (preg_match('/(\d{10,}|\+\d{7,}|whatsapp|wa\.me)/i', $messageText)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sharing personal contact information is not allowed.',
+            ], 400);
         }
 
         $user = $request->user();
@@ -1053,7 +1279,7 @@ class SharedRideController extends Controller
             'ride_id' => $rideId,
             'sender_id' => $user->id,
             'receiver_id' => $receiverId,
-            'message' => $request->message,
+            'message' => $messageText,
         ]);
 
         return response()->json([
@@ -1100,6 +1326,9 @@ class SharedRideController extends Controller
             ],
             'notes' => $ride->notes,
             'status' => $ride->status,
+            'ride_type' => $ride->ride_type ?? 'single',
+            'recurring_days' => $ride->recurring_days,
+            'end_date' => $ride->end_date?->format('Y-m-d'),
             'driver' => $this->formatUserData($ride->driver),
             'created_at' => $ride->created_at->toIso8601String(),
         ];

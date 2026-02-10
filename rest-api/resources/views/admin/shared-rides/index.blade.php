@@ -3,295 +3,229 @@
 @section('title', 'Shared Rides - Carpooling')
 
 @section('content')
-<div class="page-header">
-    <h1>Shared Rides / Carpooling</h1>
-    <div class="page-actions">
-        <a href="{{ route('admin.shared-rides.active') }}" class="btn btn-primary">
-            <i class="fas fa-car"></i> Active Rides
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Shared Rides / Carpooling</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">Manage all carpooling rides</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{{ route('admin.shared-rides.active') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-semibold rounded-xl hover:shadow-lg transition-all">
+                <i class="fas fa-car"></i> Active Rides
+            </a>
+            <a href="{{ route('admin.shared-rides.bookings') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-dark-200 transition-all">
+                <i class="fas fa-ticket-alt"></i> View Bookings
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="bg-white dark:bg-dark-100 rounded-2xl p-4 border border-gray-100 dark:border-dark-200">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                    <i class="fas fa-car text-white text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['total'] }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Total Rides</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-dark-100 rounded-2xl p-4 border border-gray-100 dark:border-dark-200">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                    <i class="fas fa-door-open text-white text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['open'] }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Open</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-dark-100 rounded-2xl p-4 border border-gray-100 dark:border-dark-200">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                    <i class="fas fa-chair text-white text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['full'] }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Full</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-dark-100 rounded-2xl p-4 border border-gray-100 dark:border-dark-200">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                    <i class="fas fa-road text-white text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['in_progress'] }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-dark-100 rounded-2xl p-4 border border-gray-100 dark:border-dark-200">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center">
+                    <i class="fas fa-check-circle text-white text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['completed'] }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-dark-100 rounded-2xl p-4 border border-gray-100 dark:border-dark-200">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center">
+                    <i class="fas fa-times-circle text-white text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['cancelled'] }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Cancelled</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ route('admin.shared-rides.index') }}" class="px-4 py-2 rounded-full text-sm font-medium transition-all {{ !$status ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-black' : 'bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-200' }}">
+            All
         </a>
-        <a href="{{ route('admin.shared-rides.bookings') }}" class="btn btn-secondary">
-            <i class="fas fa-ticket-alt"></i> View Bookings
+        <a href="{{ route('admin.shared-rides.index', ['status' => 'open']) }}" class="px-4 py-2 rounded-full text-sm font-medium transition-all {{ $status == 'open' ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-black' : 'bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-200' }}">
+            Open
+        </a>
+        <a href="{{ route('admin.shared-rides.index', ['status' => 'full']) }}" class="px-4 py-2 rounded-full text-sm font-medium transition-all {{ $status == 'full' ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-black' : 'bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-200' }}">
+            Full
+        </a>
+        <a href="{{ route('admin.shared-rides.index', ['status' => 'in_progress']) }}" class="px-4 py-2 rounded-full text-sm font-medium transition-all {{ $status == 'in_progress' ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-black' : 'bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-200' }}">
+            In Progress
+        </a>
+        <a href="{{ route('admin.shared-rides.index', ['status' => 'completed']) }}" class="px-4 py-2 rounded-full text-sm font-medium transition-all {{ $status == 'completed' ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-black' : 'bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-200' }}">
+            Completed
+        </a>
+        <a href="{{ route('admin.shared-rides.index', ['status' => 'cancelled']) }}" class="px-4 py-2 rounded-full text-sm font-medium transition-all {{ $status == 'cancelled' ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-black' : 'bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-200' }}">
+            Cancelled
         </a>
     </div>
-</div>
 
-<!-- Stats Cards -->
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #6366F1, #8B5CF6);">
-            <i class="fas fa-car"></i>
-        </div>
-        <div class="stat-content">
-            <div class="stat-value">{{ $stats['total'] }}</div>
-            <div class="stat-label">Total Rides</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #10B981, #059669);">
-            <i class="fas fa-door-open"></i>
-        </div>
-        <div class="stat-content">
-            <div class="stat-value">{{ $stats['open'] }}</div>
-            <div class="stat-label">Open Rides</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #F59E0B, #D97706);">
-            <i class="fas fa-chair"></i>
-        </div>
-        <div class="stat-content">
-            <div class="stat-value">{{ $stats['full'] }}</div>
-            <div class="stat-label">Full</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #3B82F6, #2563EB);">
-            <i class="fas fa-road"></i>
-        </div>
-        <div class="stat-content">
-            <div class="stat-value">{{ $stats['in_progress'] }}</div>
-            <div class="stat-label">In Progress</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #6B7280, #4B5563);">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="stat-content">
-            <div class="stat-value">{{ $stats['completed'] }}</div>
-            <div class="stat-label">Completed</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #EF4444, #DC2626);">
-            <i class="fas fa-times-circle"></i>
-        </div>
-        <div class="stat-content">
-            <div class="stat-value">{{ $stats['cancelled'] }}</div>
-            <div class="stat-label">Cancelled</div>
-        </div>
-    </div>
-</div>
-
-<!-- Filters -->
-<div class="filters-row">
-    <div class="filter-chips">
-        <a href="{{ route('admin.shared-rides.index') }}" class="chip {{ !$status ? 'active' : '' }}">All</a>
-        <a href="{{ route('admin.shared-rides.index', ['status' => 'open']) }}" class="chip {{ $status == 'open' ? 'active' : '' }}">Open</a>
-        <a href="{{ route('admin.shared-rides.index', ['status' => 'full']) }}" class="chip {{ $status == 'full' ? 'active' : '' }}">Full</a>
-        <a href="{{ route('admin.shared-rides.index', ['status' => 'in_progress']) }}" class="chip {{ $status == 'in_progress' ? 'active' : '' }}">In Progress</a>
-        <a href="{{ route('admin.shared-rides.index', ['status' => 'completed']) }}" class="chip {{ $status == 'completed' ? 'active' : '' }}">Completed</a>
-        <a href="{{ route('admin.shared-rides.index', ['status' => 'cancelled']) }}" class="chip {{ $status == 'cancelled' ? 'active' : '' }}">Cancelled</a>
-    </div>
-</div>
-
-<!-- Rides Table -->
-<div class="card">
-    <div class="card-body">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Driver</th>
-                    <th>Route</th>
-                    <th>Departure</th>
-                    <th>Seats</th>
-                    <th>Price/Seat</th>
-                    <th>Bookings</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($rides as $ride)
-                <tr>
-                    <td>#{{ $ride->id }}</td>
-                    <td>
-                        <div class="user-info">
-                            <div class="user-avatar">{{ substr($ride->driver->name ?? 'D', 0, 1) }}</div>
-                            <div>
-                                <div class="user-name">{{ $ride->driver->name ?? 'N/A' }}</div>
-                                <div class="user-phone">{{ $ride->driver->phone ?? '' }}</div>
+    <!-- Rides Table -->
+    <div class="bg-white dark:bg-dark-100 rounded-2xl border border-gray-100 dark:border-dark-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 dark:bg-dark-200">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Driver</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Route</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Departure</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Seats</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Price/Seat</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bookings</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-dark-200">
+                    @forelse($rides as $ride)
+                    <tr class="hover:bg-gray-50 dark:hover:bg-dark-200 transition-colors">
+                        <td class="px-6 py-4">
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">#{{ $ride->id }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-black font-semibold">
+                                    {{ substr($ride->driver->name ?? 'D', 0, 1) }}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $ride->driver->name ?? 'N/A' }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $ride->driver->phone ?? '' }}</p>
+                                </div>
                             </div>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="route-info">
-                            <div class="route-from"><i class="fas fa-circle text-primary" style="font-size: 8px;"></i> {{ Str::limit($ride->from_address, 30) }}</div>
-                            <div class="route-to"><i class="fas fa-circle text-success" style="font-size: 8px;"></i> {{ Str::limit($ride->to_address, 30) }}</div>
-                        </div>
-                    </td>
-                    <td>
-                        <div>{{ $ride->departure_time->format('M d, Y') }}</div>
-                        <div class="text-muted">{{ $ride->departure_time->format('h:i A') }}</div>
-                    </td>
-                    <td>
-                        <span class="badge bg-info">{{ $ride->total_seats - $ride->available_seats }}/{{ $ride->total_seats }}</span>
-                    </td>
-                    <td>Rs. {{ number_format($ride->price_per_seat) }}</td>
-                    <td>
-                        <span class="badge bg-secondary">{{ $ride->total_bookings ?? 0 }}</span>
-                    </td>
-                    <td>
-                        @php
-                            $statusColors = [
-                                'open' => 'success',
-                                'full' => 'warning',
-                                'in_progress' => 'primary',
-                                'completed' => 'secondary',
-                                'cancelled' => 'danger',
-                            ];
-                        @endphp
-                        <span class="badge bg-{{ $statusColors[$ride->status] ?? 'secondary' }}">
-                            {{ ucfirst(str_replace('_', ' ', $ride->status)) }}
-                        </span>
-                    </td>
-                    <td>
-                        <div class="action-buttons">
-                            <a href="{{ route('admin.shared-rides.show', $ride->id) }}" class="btn btn-sm btn-info" title="View">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            @if(!in_array($ride->status, ['completed', 'cancelled']))
-                            <form action="{{ route('admin.shared-rides.cancel', $ride->id) }}" method="POST" style="display: inline;">
-                                @csrf
-                                <button type="submit" class="btn btn-sm btn-danger" title="Cancel" onclick="return confirm('Cancel this ride?')">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </form>
-                            @endif
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="9" class="text-center py-4">No shared rides found</td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">{{ Str::limit($ride->from_address, 25) }}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">{{ Str::limit($ride->to_address, 25) }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $ride->departure_time->format('M d, Y') }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $ride->departure_time->format('h:i A') }}</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                {{ $ride->total_seats - $ride->available_seats }}/{{ $ride->total_seats }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm font-semibold text-green-600 dark:text-green-400">Rs. {{ number_format($ride->price_per_seat) }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 dark:bg-dark-200 dark:text-gray-300">
+                                {{ $ride->bookings_count ?? 0 }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            @php
+                                $statusStyles = [
+                                    'open' => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                                    'full' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+                                    'in_progress' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                                    'completed' => 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+                                    'cancelled' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                                ];
+                            @endphp
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium {{ $statusStyles[$ride->status] ?? $statusStyles['open'] }}">
+                                {{ ucfirst(str_replace('_', ' ', $ride->status)) }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <a href="{{ route('admin.shared-rides.show', $ride->id) }}" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                @if(!in_array($ride->status, ['completed', 'cancelled']))
+                                <form action="{{ route('admin.shared-rides.cancel', $ride->id) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Cancel" onclick="return confirm('Cancel this ride?')">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="9" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-dark-200 flex items-center justify-center mb-4">
+                                    <i class="fas fa-car text-2xl text-gray-400"></i>
+                                </div>
+                                <p class="text-gray-500 dark:text-gray-400">No shared rides found</p>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
-        {{ $rides->links() }}
+        @if($rides->hasPages())
+        <div class="px-6 py-4 border-t border-gray-100 dark:border-dark-200">
+            {{ $rides->links() }}
+        </div>
+        @endif
     </div>
 </div>
-
-<style>
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 15px;
-    margin-bottom: 25px;
-}
-
-.stat-card {
-    background: var(--surface);
-    border-radius: 12px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.stat-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-size: 20px;
-}
-
-.stat-value {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--text);
-}
-
-.stat-label {
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
-.filters-row {
-    margin-bottom: 20px;
-}
-
-.filter-chips {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.chip {
-    padding: 8px 16px;
-    border-radius: 20px;
-    background: var(--surface);
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-size: 13px;
-    transition: all 0.2s;
-}
-
-.chip:hover, .chip.active {
-    background: var(--primary);
-    color: #000;
-}
-
-.route-info {
-    font-size: 13px;
-}
-
-.route-from, .route-to {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 4px;
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.user-avatar {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #000;
-    font-weight: 600;
-}
-
-.user-name {
-    font-weight: 600;
-    color: var(--text);
-}
-
-.user-phone {
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
-.action-buttons {
-    display: flex;
-    gap: 5px;
-}
-
-@media (max-width: 1200px) {
-    .stats-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-@media (max-width: 768px) {
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-</style>
 @endsection

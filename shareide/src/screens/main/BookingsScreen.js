@@ -8,6 +8,7 @@ import {
   RefreshControl,
   StatusBar,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -16,7 +17,7 @@ import { ridesAPI } from '../../api/rides';
 
 const PRIMARY_COLOR = '#FCC014';
 
-const TabButton = ({ label, isActive, onPress }) => {
+const TabButton = ({ label, isActive, onPress, count }) => {
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
@@ -26,22 +27,51 @@ const TabButton = ({ label, isActive, onPress }) => {
     <TouchableOpacity
       onPress={handlePress}
       activeOpacity={0.7}
-      style={[
-        styles.tab,
-        isActive && styles.tabActive,
-      ]}
+      style={[styles.tab, isActive && styles.tabActive]}
     >
       <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
         {label}
       </Text>
+      {count > 0 && (
+        <View style={[styles.tabBadge, isActive && styles.tabBadgeActive]}>
+          <Text style={[styles.tabBadgeText, isActive && styles.tabBadgeTextActive]}>{count}</Text>
+        </View>
+      )}
     </TouchableOpacity>
   );
 };
 
-const TripCard = ({ item, onPress }) => {
-  const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onPress();
+const SubTabButton = ({ label, isActive, onPress }) => (
+  <TouchableOpacity
+    onPress={() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onPress();
+    }}
+    activeOpacity={0.7}
+    style={[styles.subTab, isActive && styles.subTabActive]}
+  >
+    <Text style={[styles.subTabText, isActive && styles.subTabTextActive]}>{label}</Text>
+  </TouchableOpacity>
+);
+
+const AnimatedTripCard = ({ item, onPress, index }) => {
+  const animValue = React.useRef(new Animated.Value(0)).current;
+  const scaleValue = React.useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.timing(animValue, {
+      toValue: 1,
+      duration: 400,
+      delay: index * 80,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const onPressIn = () => {
+    Animated.spring(scaleValue, { toValue: 0.97, useNativeDriver: true }).start();
+  };
+  const onPressOut = () => {
+    Animated.spring(scaleValue, { toValue: 1, friction: 3, useNativeDriver: true }).start();
   };
 
   const formatDateTime = (dateStr) => {
@@ -55,50 +85,93 @@ const TripCard = ({ item, onPress }) => {
     return `${day} ${month}, ${hour12.toString().padStart(2, '0')}:${mins} ${ampm}`;
   };
 
-  const isActive = item.status === 'in_progress' || item.status === 'driver_arrived';
+  const getStatusConfig = (status) => {
+    switch (status) {
+      case 'in_progress':
+      case 'driver_arrived':
+        return { label: 'On Trip', bg: '#D1FAE5', color: '#10B981', icon: 'navigate' };
+      case 'pending':
+        return { label: 'Pending', bg: '#FEF3C7', color: '#F59E0B', icon: 'time' };
+      case 'driver_assigned':
+        return { label: 'Driver Assigned', bg: '#DBEAFE', color: '#3B82F6', icon: 'car' };
+      case 'confirmed':
+        return { label: 'Confirmed', bg: '#D1FAE5', color: '#10B981', icon: 'checkmark-circle' };
+      case 'completed':
+        return { label: 'Completed', bg: '#F3F4F6', color: '#6B7280', icon: 'checkmark-done' };
+      case 'cancelled':
+        return { label: 'Cancelled', bg: '#FEE2E2', color: '#EF4444', icon: 'close-circle' };
+      default:
+        return { label: status, bg: '#F3F4F6', color: '#6B7280', icon: 'ellipse' };
+    }
+  };
+
+  const statusConfig = getStatusConfig(item.status);
 
   return (
-    <TouchableOpacity onPress={handlePress} activeOpacity={0.7} style={styles.tripCard}>
-      {/* Locations */}
-      <View style={styles.locationsSection}>
-        {/* Pickup */}
-        <View style={styles.locationRow}>
-          <Text style={styles.locationLabel}>PICK UP</Text>
-          <View style={styles.locationValue}>
-            <Ionicons name="location-outline" size={16} color="#6B7280" />
-            <Text style={styles.locationText} numberOfLines={1}>
-              {item.pickup?.address || item.pickup || 'Pickup location'}
-            </Text>
-          </View>
+    <Animated.View style={{
+      opacity: animValue,
+      transform: [
+        { translateY: animValue.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) },
+        { scale: scaleValue },
+      ],
+    }}>
+      <TouchableOpacity
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress();
+        }}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        activeOpacity={0.9}
+        style={styles.tripCard}
+      >
+        {/* Status Badge */}
+        <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}>
+          <Ionicons name={statusConfig.icon} size={12} color={statusConfig.color} />
+          <Text style={[styles.statusText, { color: statusConfig.color }]}>{statusConfig.label}</Text>
         </View>
 
-        {/* Dropoff */}
-        <View style={styles.locationRow}>
-          <Text style={styles.locationLabel}>DROP OFF</Text>
-          <View style={styles.locationValue}>
-            <Ionicons name="location-outline" size={16} color="#6B7280" />
-            <Text style={styles.locationText} numberOfLines={1}>
+        {/* Route Visualization */}
+        <View style={styles.routeVis}>
+          <View style={styles.routeDots}>
+            <View style={styles.routeDotYellow} />
+            <View style={styles.routeConnector}>
+              <View style={styles.routeDash} />
+              <View style={styles.routeDash} />
+              <View style={styles.routeDash} />
+            </View>
+            <View style={styles.routeDotGreen} />
+          </View>
+          <View style={styles.routeAddresses}>
+            <Text style={styles.routeAddress} numberOfLines={1}>
+              {item.pickup?.address || item.pickup || 'Pickup location'}
+            </Text>
+            <Text style={styles.routeAddress} numberOfLines={1}>
               {item.dropoff?.address || item.dropoff || 'Dropoff location'}
             </Text>
           </View>
         </View>
-      </View>
 
-      {/* Footer */}
-      <View style={styles.tripFooter}>
-        <Text style={styles.tripDateTime}>
-          {formatDateTime(item.date || item.created_at)}
-        </Text>
-        <Text style={styles.tripPrice}>Rs. {item.fare || 0}</Text>
-      </View>
-
-      {/* Status Badge */}
-      {isActive && (
-        <View style={styles.statusBadge}>
-          <Text style={styles.statusText}>On trip</Text>
+        {/* Footer */}
+        <View style={styles.tripFooter}>
+          <View style={styles.tripDateRow}>
+            <Ionicons name="calendar-outline" size={14} color="#6B7280" />
+            <Text style={styles.tripDateTime}>
+              {formatDateTime(item.date || item.created_at)}
+            </Text>
+          </View>
+          <Text style={styles.tripPrice}>Rs. {item.fare || 0}</Text>
         </View>
-      )}
-    </TouchableOpacity>
+
+        {/* Driver Info */}
+        {item.driver?.name && item.driver.name !== 'Driver' && (
+          <View style={styles.driverRow}>
+            <Ionicons name="person-circle-outline" size={16} color="#6B7280" />
+            <Text style={styles.driverName}>{item.driver.name}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
@@ -120,6 +193,7 @@ const EmptyState = ({ icon, title, message, actionLabel, onAction }) => (
 const BookingsScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState('booked');
+  const [subTab, setSubTab] = useState('upcoming');
   const [bookings, setBookings] = useState({
     booked: [],
     published: [],
@@ -175,21 +249,30 @@ const BookingsScreen = ({ navigation }) => {
     fetchBookings(true);
   };
 
+  const getFilteredData = () => {
+    const data = bookings[activeTab] || [];
+    const now = new Date();
+    if (subTab === 'upcoming') {
+      return data.filter(item => new Date(item.date || item.created_at) >= now || ['pending', 'driver_assigned', 'confirmed', 'in_progress', 'driver_arrived'].includes(item.status));
+    }
+    return data.filter(item => new Date(item.date || item.created_at) < now && !['pending', 'driver_assigned', 'confirmed', 'in_progress', 'driver_arrived'].includes(item.status));
+  };
+
   const getEmptyConfig = () => {
     switch (activeTab) {
       case 'booked':
         return {
           icon: 'calendar-outline',
           title: 'No Booked Trips',
-          message: 'Your booked trips will appear here',
+          message: subTab === 'upcoming' ? 'Your upcoming trips will appear here' : 'Your past trips will appear here',
           actionLabel: 'Book a Ride',
           onAction: () => navigation.navigate('HomeTab'),
         };
       case 'published':
         return {
           icon: 'car-outline',
-          title: 'No Published Trips',
-          message: 'Trips you publish will appear here',
+          title: 'No Past Trips',
+          message: 'Your completed trips will appear here',
         };
       case 'active':
         return {
@@ -202,9 +285,12 @@ const BookingsScreen = ({ navigation }) => {
     }
   };
 
-  const renderTrip = ({ item }) => (
-    <TripCard
+  const filteredData = getFilteredData();
+
+  const renderTrip = ({ item, index }) => (
+    <AnimatedTripCard
       item={item}
+      index={index}
       onPress={() => navigation.navigate('BookingDetails', { booking: item })}
     />
   );
@@ -245,24 +331,39 @@ const BookingsScreen = ({ navigation }) => {
         <Text style={styles.headerTitle}>Trips</Text>
       </View>
 
-      {/* Tabs */}
+      {/* Primary Tabs */}
       <View style={styles.tabs}>
         {[
-          { key: 'booked', label: 'Booked' },
-          { key: 'published', label: 'Published' },
-          { key: 'active', label: 'Active' },
+          { key: 'booked', label: 'Booked', count: bookings.booked.length },
+          { key: 'published', label: 'Published', count: bookings.published.length },
+          { key: 'active', label: 'Active', count: bookings.active.length },
         ].map((tab) => (
           <TabButton
             key={tab.key}
             label={tab.label}
+            count={tab.count}
             isActive={activeTab === tab.key}
             onPress={() => setActiveTab(tab.key)}
           />
         ))}
       </View>
 
+      {/* Sub Tabs - Upcoming / Past */}
+      <View style={styles.subTabs}>
+        <SubTabButton
+          label="Upcoming"
+          isActive={subTab === 'upcoming'}
+          onPress={() => setSubTab('upcoming')}
+        />
+        <SubTabButton
+          label="Past"
+          isActive={subTab === 'past'}
+          onPress={() => setSubTab('past')}
+        />
+      </View>
+
       <FlatList
-        data={bookings[activeTab]}
+        data={filteredData}
         renderItem={renderTrip}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContent}
@@ -307,8 +408,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E5E7EB',
   },
   tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 12,
-    marginRight: 32,
+    marginRight: 28,
+    gap: 6,
   },
   tabActive: {
     borderBottomWidth: 2,
@@ -323,6 +427,48 @@ const styles = StyleSheet.create({
     color: PRIMARY_COLOR,
     fontWeight: '600',
   },
+  tabBadge: {
+    backgroundColor: '#E5E7EB',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    minWidth: 20,
+    alignItems: 'center',
+  },
+  tabBadgeActive: {
+    backgroundColor: PRIMARY_COLOR,
+  },
+  tabBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  tabBadgeTextActive: {
+    color: '#000',
+  },
+  subTabs: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  subTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+  },
+  subTabActive: {
+    backgroundColor: '#000',
+  },
+  subTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  subTabTextActive: {
+    color: '#FFFFFF',
+  },
   listContent: {
     padding: 24,
     flexGrow: 1,
@@ -334,31 +480,62 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  locationsSection: {
-    marginBottom: 16,
-  },
-  locationRow: {
-    marginBottom: 12,
-  },
-  locationLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#9CA3AF',
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  locationValue: {
+  statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    gap: 8,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+    marginBottom: 12,
   },
-  locationText: {
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  routeVis: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  routeDots: {
+    alignItems: 'center',
+    marginRight: 12,
+    paddingTop: 2,
+  },
+  routeDotYellow: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: PRIMARY_COLOR,
+  },
+  routeConnector: {
+    paddingVertical: 4,
+    gap: 3,
+  },
+  routeDash: {
+    width: 2,
+    height: 4,
+    backgroundColor: '#E5E7EB',
+    marginLeft: 4,
+  },
+  routeDotGreen: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#10B981',
+  },
+  routeAddresses: {
     flex: 1,
+    justifyContent: 'space-between',
+  },
+  routeAddress: {
     fontSize: 14,
     fontWeight: '500',
     color: '#000',
@@ -367,9 +544,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  tripDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   tripDateTime: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#6B7280',
   },
   tripPrice: {
@@ -377,19 +562,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#000',
   },
-  statusBadge: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    backgroundColor: '#D1FAE5',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+  driverRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
   },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#10B981',
+  driverName: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontWeight: '500',
   },
   emptyContainer: {
     flex: 1,

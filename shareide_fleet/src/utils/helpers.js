@@ -107,7 +107,7 @@ export const validateEmail = (email) => {
  * @returns {boolean} Is valid phone
  */
 export const validatePhone = (phone) => {
-  const phoneRegex = /^03[0-9]{9}$/;
+  const phoneRegex = /^0?3[0-9]{9}$/;
   return phoneRegex.test(phone);
 };
 

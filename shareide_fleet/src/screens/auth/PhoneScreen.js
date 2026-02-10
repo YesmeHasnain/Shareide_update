@@ -25,6 +25,21 @@ const PhoneScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
+  const normalizePhone = (input) => {
+    const cleaned = input.replace(/[^0-9]/g, '');
+    // Convert to +92 format (required by production API)
+    if (cleaned.startsWith('0') && cleaned.length === 11) {
+      return '+92' + cleaned.substring(1);
+    }
+    if (cleaned.startsWith('3') && cleaned.length === 10) {
+      return '+92' + cleaned;
+    }
+    if (cleaned.startsWith('92') && cleaned.length === 12) {
+      return '+' + cleaned;
+    }
+    return '+92' + cleaned;
+  };
+
   const handleContinue = async () => {
     if (phone.length < 10) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -32,13 +47,15 @@ const PhoneScreen = ({ navigation }) => {
       return;
     }
 
+    const normalizedPhone = normalizePhone(phone);
+
     try {
       setLoading(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const response = await authAPI.sendOTP(phone);
+      const response = await authAPI.sendOTP(normalizedPhone);
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.navigate('OTP', { phone });
+      navigation.navigate('OTP', { phone: normalizedPhone });
 
       if (response.debug_code) {
         Alert.alert('Dev Mode', `OTP: ${response.debug_code}`);
@@ -73,7 +90,7 @@ const PhoneScreen = ({ navigation }) => {
 
           <View style={styles.logoSection}>
             <Image
-              source={require('../../../assets/logowhitemode.png')}
+              source={require('../../../assets/logodarkmode.png')}
               style={styles.logo}
               resizeMode="contain"
             />

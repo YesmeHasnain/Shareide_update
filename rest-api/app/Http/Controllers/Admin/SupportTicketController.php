@@ -7,6 +7,8 @@ use App\Models\SupportTicket;
 use App\Models\TicketMessage;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TicketReplyMail;
 
 class SupportTicketController extends Controller
 {
@@ -31,6 +33,8 @@ class SupportTicketController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('ticket_number', 'like', "%{$search}%")
                   ->orWhere('subject', 'like', "%{$search}%")
+                  ->orWhere('guest_name', 'like', "%{$search}%")
+                  ->orWhere('guest_email', 'like', "%{$search}%")
                   ->orWhereHas('user', function ($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%")
                         ->orWhere('phone', 'like', "%{$search}%");
@@ -77,9 +81,12 @@ class SupportTicketController extends Controller
             'is_internal' => $request->boolean('is_internal'),
         ]);
 
-        // Update ticket status to in_progress if it was open
-        if ($ticket->status === 'open') {
-            $ticket->update(['status' => 'in_progress']);
+        // Update ticket status to waiting_response if it was open/in_progress
+        if (in_array($ticket->status, ['open', 'in_progress'])) {
+            $ticket->update([
+                'status' => 'waiting_response',
+                'last_reply_at' => now(),
+            ]);
         }
 
         // Assign to current admin if not assigned
@@ -87,9 +94,22 @@ class SupportTicketController extends Controller
             $ticket->update(['assigned_to' => auth()->id()]);
         }
 
+        // Send email to guest if not internal message
+        if (!$request->boolean('is_internal')) {
+            $recipientEmail = $ticket->guest_email ?? $ticket->user?->email;
+
+            if ($recipientEmail) {
+                try {
+                    Mail::to($recipientEmail)->send(new TicketReplyMail($ticket, $message));
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send ticket reply email: ' . $e->getMessage());
+                }
+            }
+        }
+
         AuditLog::log('ticket_reply', "Reply added to ticket #{$ticket->ticket_number}", $ticket);
 
-        return back()->with('success', 'Reply sent successfully.');
+        return back()->with('success', 'Reply sent successfully.' . (!$request->boolean('is_internal') && ($ticket->guest_email || $ticket->user?->email) ? ' Email notification sent.' : ''));
     }
 
     public function updateStatus(Request $request, $id)

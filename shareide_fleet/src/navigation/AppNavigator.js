@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, Platform, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Platform, StyleSheet, Text, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -9,6 +9,37 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import Loading from '../components/Loading';
 import { spacing } from '../theme/colors';
+
+// Navigation guard for unapproved drivers
+const withApprovalGuard = (ScreenComponent, screenName) => {
+  return (props) => {
+    const { user } = useAuth();
+    const { colors } = useTheme();
+    const isApproved = user?.driver?.status === 'approved';
+
+    if (!isApproved) {
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, padding: 24 }}>
+          <Ionicons name="lock-closed" size={64} color={colors.primary} />
+          <Text style={{ fontSize: 20, fontWeight: '700', color: colors.text, marginTop: 16, textAlign: 'center' }}>
+            Account Not Approved
+          </Text>
+          <Text style={{ fontSize: 14, color: colors.textSecondary, marginTop: 8, textAlign: 'center', lineHeight: 20 }}>
+            Your account must be approved before you can access {screenName}. Please wait for admin review.
+          </Text>
+          <TouchableOpacity
+            style={{ backgroundColor: colors.primary, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 27, marginTop: 24 }}
+            onPress={() => props.navigation.goBack()}
+          >
+            <Text style={{ fontSize: 16, fontWeight: '600', color: '#000' }}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return <ScreenComponent {...props} />;
+  };
+};
 
 // Auth Screens
 import PhoneScreen from '../screens/auth/PhoneScreen';
@@ -217,10 +248,10 @@ const AppNavigator = () => {
         <Stack.Screen name="Pending" component={PendingScreen} />
 
         {/* Main Screens */}
-        <Stack.Screen name="MainTabs" component={MainTabs} />
+        <Stack.Screen name="MainTabs" component={MainTabs} options={{ animation: 'fade' }} />
         <Stack.Screen name="RideRequest" component={RideRequestScreen} />
-        <Stack.Screen name="Chat" component={ChatScreen} />
-        <Stack.Screen name="SharedRideChat" component={SharedRideChatScreen} />
+        <Stack.Screen name="Chat" component={ChatScreen} options={{ animation: 'fade_from_bottom' }} />
+        <Stack.Screen name="SharedRideChat" component={SharedRideChatScreen} options={{ animation: 'fade_from_bottom' }} />
 
         {/* Profile Screens */}
         <Stack.Screen name="RideHistory" component={RideHistoryScreen} />
@@ -231,11 +262,11 @@ const AppNavigator = () => {
         <Stack.Screen name="NotificationsSettings" component={NotificationsSettingsScreen} />
         <Stack.Screen name="Support" component={SupportScreen} />
 
-        {/* Shared Rides / Carpooling */}
-        <Stack.Screen name="MySharedRides" component={MySharedRidesScreen} />
-        <Stack.Screen name="CreateSharedRide" component={CreateSharedRideScreen} />
-        <Stack.Screen name="SharedRideRequests" component={SharedRideRequestsScreen} />
-        <Stack.Screen name="ManageSharedRide" component={ManageSharedRideScreen} />
+        {/* Shared Rides / Carpooling - Guarded */}
+        <Stack.Screen name="MySharedRides" component={withApprovalGuard(MySharedRidesScreen, 'My Shared Rides')} />
+        <Stack.Screen name="CreateSharedRide" component={withApprovalGuard(CreateSharedRideScreen, 'Create Shared Ride')} />
+        <Stack.Screen name="SharedRideRequests" component={withApprovalGuard(SharedRideRequestsScreen, 'Ride Requests')} />
+        <Stack.Screen name="ManageSharedRide" component={withApprovalGuard(ManageSharedRideScreen, 'Manage Ride')} />
 
         {/* Loyalty & Rewards */}
         <Stack.Screen name="Loyalty" component={LoyaltyScreen} />
@@ -249,9 +280,9 @@ const AppNavigator = () => {
         {/* Live Map */}
         <Stack.Screen name="LiveMap" component={LiveMapScreen} />
 
-        {/* Rides */}
-        <Stack.Screen name="PostRide" component={PostRideScreen} />
-        <Stack.Screen name="RideRequests" component={RideRequestsScreen} />
+        {/* Rides - Guarded */}
+        <Stack.Screen name="PostRide" component={withApprovalGuard(PostRideScreen, 'Post Ride')} />
+        <Stack.Screen name="RideRequests" component={withApprovalGuard(RideRequestsScreen, 'Ride Requests')} />
       </Stack.Navigator>
     </NavigationContainer>
   );

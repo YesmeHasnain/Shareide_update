@@ -361,7 +361,11 @@ const AppNavigator = () => {
 
             {/* Shared Rides / Carpooling */}
             <Stack.Screen name="SharedRides" component={SharedRidesScreen} />
-            <Stack.Screen name="SharedRideDetails" component={SharedRideDetailsScreen} />
+            <Stack.Screen
+              name="SharedRideDetails"
+              component={SharedRideDetailsScreen}
+              options={{ animation: 'fade_from_bottom', animationDuration: 300 }}
+            />
             <Stack.Screen name="MySharedBookings" component={MySharedBookingsScreen} />
             <Stack.Screen name="CreateSharedRide" component={CreateSharedRideScreen} />
             <Stack.Screen name="MySharedRides" component={MySharedRidesScreen} />

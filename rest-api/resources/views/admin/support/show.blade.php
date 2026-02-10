@@ -68,12 +68,17 @@
             <!-- Original Ticket -->
             <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm border border-gray-100 dark:border-dark-100 p-6">
                 <div class="flex items-start gap-4">
-                    <div class="w-10 h-10 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 rounded-full flex items-center justify-center">
-                        <span class="text-gray-600 dark:text-gray-300 font-medium">{{ substr($ticket->user->name ?? 'U', 0, 1) }}</span>
+                    <div class="w-10 h-10 bg-gradient-to-br {{ $ticket->is_guest ? 'from-purple-400 to-purple-600' : 'from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700' }} rounded-full flex items-center justify-center">
+                        <span class="{{ $ticket->is_guest ? 'text-white' : 'text-gray-600 dark:text-gray-300' }} font-medium">{{ substr($ticket->display_name, 0, 1) }}</span>
                     </div>
                     <div class="flex-1">
                         <div class="flex items-center justify-between mb-2">
-                            <p class="font-medium text-gray-900 dark:text-white">{{ $ticket->user->name ?? 'Unknown User' }}</p>
+                            <div class="flex items-center gap-2">
+                                <p class="font-medium text-gray-900 dark:text-white">{{ $ticket->display_name }}</p>
+                                @if($ticket->is_guest)
+                                    <span class="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded-full">Guest</span>
+                                @endif
+                            </div>
                             <span class="text-sm text-gray-500 dark:text-gray-400">{{ $ticket->created_at->format('M d, Y H:i') }}</span>
                         </div>
                         <div class="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
@@ -149,33 +154,72 @@
             <!-- User Info -->
             <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm border border-gray-100 dark:border-dark-100 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    <i class="fas fa-user mr-2 text-yellow-500"></i>User Details
-                </h3>
-                <div class="space-y-3">
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Name</p>
-                        <p class="font-medium text-gray-900 dark:text-white">{{ $ticket->user->name ?? 'Unknown' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Phone</p>
-                        <p class="font-medium text-gray-900 dark:text-white">{{ $ticket->user->phone ?? 'N/A' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Email</p>
-                        <p class="font-medium text-gray-900 dark:text-white">{{ $ticket->user->email ?? 'N/A' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Role</p>
-                        <p class="font-medium text-gray-900 dark:text-white">{{ ucfirst($ticket->user_type ?? $ticket->user->role ?? 'Unknown') }}</p>
-                    </div>
-                    @if($ticket->user)
-                        <div class="pt-2">
-                            <a href="{{ route('admin.users.show', $ticket->user->id) }}" class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300 text-sm font-medium">
-                                <i class="fas fa-external-link-alt mr-1"></i>View Full Profile
-                            </a>
-                        </div>
+                    <i class="fas fa-user mr-2 text-yellow-500"></i>
+                    @if($ticket->is_guest)
+                        Website Contact
+                    @else
+                        User Details
                     @endif
-                </div>
+                </h3>
+                @if($ticket->is_guest)
+                    <!-- Guest User Info -->
+                    <div class="mb-3">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                            <i class="fas fa-globe mr-1"></i>Website Inquiry
+                        </span>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Name</p>
+                            <p class="font-medium text-gray-900 dark:text-white">{{ $ticket->guest_name ?? 'Unknown' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Email</p>
+                            <p class="font-medium text-gray-900 dark:text-white">
+                                <a href="mailto:{{ $ticket->guest_email }}" class="text-blue-600 hover:underline">{{ $ticket->guest_email ?? 'N/A' }}</a>
+                            </p>
+                        </div>
+                        @if($ticket->guest_phone)
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Phone</p>
+                            <p class="font-medium text-gray-900 dark:text-white">
+                                <a href="tel:{{ $ticket->guest_phone }}" class="text-blue-600 hover:underline">{{ $ticket->guest_phone }}</a>
+                            </p>
+                        </div>
+                        @endif
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Source</p>
+                            <p class="font-medium text-gray-900 dark:text-white">Website Contact Form</p>
+                        </div>
+                    </div>
+                @else
+                    <!-- Registered User Info -->
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Name</p>
+                            <p class="font-medium text-gray-900 dark:text-white">{{ $ticket->user->name ?? 'Unknown' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Phone</p>
+                            <p class="font-medium text-gray-900 dark:text-white">{{ $ticket->user->phone ?? 'N/A' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Email</p>
+                            <p class="font-medium text-gray-900 dark:text-white">{{ $ticket->user->email ?? 'N/A' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Role</p>
+                            <p class="font-medium text-gray-900 dark:text-white">{{ ucfirst($ticket->user_type ?? $ticket->user->role ?? 'Unknown') }}</p>
+                        </div>
+                        @if($ticket->user)
+                            <div class="pt-2">
+                                <a href="{{ route('admin.users.show', $ticket->user->id) }}" class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300 text-sm font-medium">
+                                    <i class="fas fa-external-link-alt mr-1"></i>View Full Profile
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                @endif
             </div>
 
             <!-- Ticket Info -->

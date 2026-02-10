@@ -7,17 +7,28 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/Button';
 import { onboardingAPI } from '../../api/onboarding';
+import client from '../../api/client';
 
-const SelfieScreen = ({ navigation }) => {
+const PRIMARY_COLOR = '#FCC014';
+
+const SelfieScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
-  
+  const { user } = useAuth();
+  const cnic = route?.params?.cnic || user?.driver?.cnic || '';
+
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [cnicVerified, setCnicVerified] = useState(false);
+  const [verificationResult, setVerificationResult] = useState(null);
   const [selfies, setSelfies] = useState({
     selfie_with_nic: null,
     live_selfie: null,
@@ -69,14 +80,61 @@ const SelfieScreen = ({ navigation }) => {
       });
 
       if (!result.canceled) {
-        setSelfies({
+        const newSelfies = {
           ...selfies,
           [key]: result.assets[0],
-        });
+        };
+        setSelfies(newSelfies);
+
+        // Auto-verify CNIC when selfie_with_nic is taken
+        if (key === 'selfie_with_nic' && cnic) {
+          verifyCnicFromImage(result.assets[0]);
+        }
       }
     } catch (error) {
       console.error('Camera error:', error);
       Alert.alert('Error', 'Failed to take photo');
+    }
+  };
+
+  const verifyCnicFromImage = async (image) => {
+    if (!cnic || !image) return;
+
+    setVerifying(true);
+    setVerificationResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('image', {
+        uri: image.uri,
+        type: 'image/jpeg',
+        name: 'selfie_with_nic.jpg',
+      });
+      formData.append('expected_cnic', cnic);
+
+      const response = await client.post('/onboarding/verify-cnic', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const result = response.data;
+      setVerificationResult(result);
+      setCnicVerified(result.match === true);
+
+      if (result.match) {
+        Alert.alert('CNIC Verified!', 'Your CNIC number matches your ID card.');
+      } else {
+        Alert.alert(
+          'CNIC Mismatch',
+          result.message || 'The CNIC number on your card does not match what you entered. Please retake the photo or update your CNIC.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.log('CNIC verification error:', error);
+      // Don't block the flow if verification fails
+      setVerificationResult({ match: null, message: 'Verification service unavailable. Proceeding without verification.' });
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -166,17 +224,45 @@ const SelfieScreen = ({ navigation }) => {
 
             {/* Preview or Upload */}
             {selfies[selfie.key] ? (
-              <View style={styles.previewContainer}>
-                <Image
-                  source={{ uri: selfies[selfie.key].uri }}
-                  style={styles.preview}
-                />
-                <TouchableOpacity
-                  style={[styles.retakeButton, { backgroundColor: colors.primary }]}
-                  onPress={() => takeSelfie(selfie.key)}
-                >
-                  <Text style={styles.retakeButtonText}>Retake</Text>
-                </TouchableOpacity>
+              <View>
+                <View style={styles.previewContainer}>
+                  <Image
+                    source={{ uri: selfies[selfie.key].uri }}
+                    style={styles.preview}
+                  />
+                  <TouchableOpacity
+                    style={[styles.retakeButton, { backgroundColor: colors.primary }]}
+                    onPress={() => takeSelfie(selfie.key)}
+                  >
+                    <Text style={styles.retakeButtonText}>Retake</Text>
+                  </TouchableOpacity>
+                </View>
+                {/* CNIC Verification Status */}
+                {selfie.key === 'selfie_with_nic' && (
+                  <View style={styles.verifyStatusRow}>
+                    {verifying ? (
+                      <View style={styles.verifyBadge}>
+                        <ActivityIndicator size="small" color={PRIMARY_COLOR} />
+                        <Text style={[styles.verifyText, { color: colors.textSecondary }]}>Verifying CNIC...</Text>
+                      </View>
+                    ) : cnicVerified ? (
+                      <View style={[styles.verifyBadge, { backgroundColor: '#10B98120' }]}>
+                        <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                        <Text style={[styles.verifyText, { color: '#10B981' }]}>CNIC Verified</Text>
+                      </View>
+                    ) : verificationResult && verificationResult.match === false ? (
+                      <View style={[styles.verifyBadge, { backgroundColor: '#EF444420' }]}>
+                        <Ionicons name="close-circle" size={18} color="#EF4444" />
+                        <Text style={[styles.verifyText, { color: '#EF4444' }]}>CNIC Mismatch - Please retake</Text>
+                      </View>
+                    ) : verificationResult && verificationResult.match === null ? (
+                      <View style={[styles.verifyBadge, { backgroundColor: '#F59E0B20' }]}>
+                        <Ionicons name="alert-circle" size={18} color="#F59E0B" />
+                        <Text style={[styles.verifyText, { color: '#F59E0B' }]}>Manual review required</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                )}
               </View>
             ) : (
               <>
@@ -361,6 +447,22 @@ const styles = StyleSheet.create({
   submitButton: {
     flex: 2,
     marginLeft: 8,
+  },
+  verifyStatusRow: {
+    marginTop: -8,
+    marginBottom: 12,
+  },
+  verifyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 6,
+  },
+  verifyText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
 

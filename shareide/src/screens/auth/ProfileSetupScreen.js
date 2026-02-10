@@ -12,6 +12,9 @@ import {
   Platform,
   StatusBar,
   ActivityIndicator,
+  Modal,
+  FlatList,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -20,8 +23,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { authAPI } from '../../api/auth';
 import apiClient from '../../api/client';
+import { maleAvatars, femaleAvatars } from '../../utils/avatars';
 
 const PRIMARY_COLOR = '#FCC014';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const AVATAR_SIZE = (SCREEN_WIDTH - 80) / 5;
 
 const ProfileSetupScreen = ({ route, navigation }) => {
   const auth = useAuth();
@@ -32,7 +38,24 @@ const ProfileSetupScreen = ({ route, navigation }) => {
 
   const [name, setName] = useState(user?.name || '');
   const [profileImage, setProfileImage] = useState(null);
+  const [selectedAvatarIndex, setSelectedAvatarIndex] = useState(null);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const avatars = gender === 'male' ? maleAvatars : gender === 'female' ? femaleAvatars : maleAvatars;
+
+  const selectAvatar = (index) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedAvatarIndex(index);
+    setProfileImage(null);
+    setShowAvatarModal(false);
+  };
+
+  const getProfileDisplay = () => {
+    if (profileImage) return { uri: profileImage.uri };
+    if (selectedAvatarIndex !== null && avatars[selectedAvatarIndex]) return avatars[selectedAvatarIndex];
+    return null;
+  };
 
   const pickImage = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -53,6 +76,7 @@ const ProfileSetupScreen = ({ route, navigation }) => {
     if (!result.canceled && result.assets[0]) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setProfileImage(result.assets[0]);
+      setSelectedAvatarIndex(null);
     }
   };
 
@@ -74,6 +98,7 @@ const ProfileSetupScreen = ({ route, navigation }) => {
     if (!result.canceled && result.assets[0]) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setProfileImage(result.assets[0]);
+      setSelectedAvatarIndex(null);
     }
   };
 
@@ -153,8 +178,8 @@ const ProfileSetupScreen = ({ route, navigation }) => {
           <View style={styles.avatarSection}>
             <TouchableOpacity onPress={pickImage} activeOpacity={0.9}>
               <View style={styles.avatarContainer}>
-                {profileImage ? (
-                  <Image source={{ uri: profileImage.uri }} style={styles.avatar} />
+                {getProfileDisplay() ? (
+                  <Image source={getProfileDisplay()} style={styles.avatar} />
                 ) : (
                   <Ionicons name="person" size={48} color="#9CA3AF" />
                 )}
@@ -199,6 +224,15 @@ const ProfileSetupScreen = ({ route, navigation }) => {
             <Text style={styles.secondaryButtonText}>Choose from library</Text>
           </TouchableOpacity>
 
+          {/* Choose Avatar Button */}
+          <TouchableOpacity
+            style={[styles.secondaryButton, { backgroundColor: '#E0E7FF', marginTop: 0 }]}
+            onPress={() => setShowAvatarModal(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.secondaryButtonText, { color: '#4F46E5' }]}>Choose Shareide Avatar</Text>
+          </TouchableOpacity>
+
           {/* Complete Button */}
           <TouchableOpacity
             style={[
@@ -219,6 +253,38 @@ const ProfileSetupScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Avatar Selection Modal */}
+      <Modal visible={showAvatarModal} transparent animationType="slide" onRequestClose={() => setShowAvatarModal(false)}>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowAvatarModal(false)} />
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Choose Your Avatar</Text>
+            <Text style={styles.modalSubtitle}>
+              {gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : ''} Avatars
+            </Text>
+            <FlatList
+              data={avatars}
+              numColumns={5}
+              keyExtractor={(_, i) => i.toString()}
+              contentContainerStyle={styles.avatarGrid}
+              renderItem={({ item, index }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.avatarGridItem,
+                    selectedAvatarIndex === index && { borderColor: PRIMARY_COLOR, borderWidth: 3 },
+                  ]}
+                  onPress={() => selectAvatar(index)}
+                  activeOpacity={0.7}
+                >
+                  <Image source={item} style={styles.avatarGridImage} />
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -320,6 +386,62 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#000',
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+    maxHeight: '70%',
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#D1D5DB',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+    color: '#000',
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    color: '#6B7280',
+    marginBottom: 16,
+  },
+  avatarGrid: {
+    paddingHorizontal: 8,
+  },
+  avatarGridItem: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    margin: 4,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  avatarGridImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: AVATAR_SIZE / 2,
   },
 });
 

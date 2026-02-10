@@ -104,31 +104,37 @@ const OTPScreen = ({ route, navigation }) => {
           return;
         }
 
-        if (response.needs_profile_setup || !response.user?.driver) {
-          const { user, token } = response;
-          await login(user, token);
-          navigation.reset({
-            index: 0,
-            routes: [{
-              name: 'PersonalInfo',
-              params: { phone, isNewUser: false }
-            }],
-          });
-          return;
-        }
-
         const { user, token } = response;
         await login(user, token);
+
+        // Determine where to navigate
+        let targetScreen = 'PersonalInfo';
+        let screenParams = { phone, isNewUser: false };
+
+        if (user?.driver && user.driver.status === 'approved') {
+          targetScreen = 'MainTabs';
+          screenParams = undefined;
+        } else if (user?.driver && (user.driver.status === 'pending' || user.driver.status === 'rejected')) {
+          targetScreen = 'Pending';
+          screenParams = undefined;
+        }
+
+        // Small delay to let AuthContext state settle before navigating
+        setTimeout(() => {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: targetScreen, params: screenParams }],
+          });
+        }, 200);
       }
     } catch (error) {
+      setLoading(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       triggerShake();
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
       const message = error.response?.data?.message || 'Invalid OTP';
       Alert.alert('Error', message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -185,7 +191,7 @@ const OTPScreen = ({ route, navigation }) => {
           {/* Title */}
           <Text style={styles.title}>We sent you a WhatsApp</Text>
           <Text style={styles.subtitle}>
-            Please enter the code we just{'\n'}sent to +92 {phone}
+            Please enter the code we just{'\n'}sent to {phone}
           </Text>
 
           {/* OTP Inputs - Larger */}

@@ -8,8 +8,10 @@ import {
   StatusBar,
   Animated,
   Image,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,32 +19,55 @@ import { useAuth } from '../../context/AuthContext';
 import { rideAPI } from '../../api/ride';
 import locationService from '../../utils/locationService';
 import rideRequestService from '../../utils/rideRequestService';
+import SideDrawer from '../../components/SideDrawer';
 
-const PRIMARY_COLOR = '#FCC014';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const PRIMARY = '#FCC014';
+const DARK = '#0F0F1E';
+const DARK2 = '#1A1A2E';
 
 const DashboardScreen = ({ navigation }) => {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
 
+  const isApproved = user?.driver?.status === 'approved';
+  const driverStatus = user?.driver?.status || 'pending';
+
   const [isOnline, setIsOnline] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [mapKey, setMapKey] = useState(0);
   const [stats, setStats] = useState({ today_earnings: 0, today_rides: 0, rating: 5.0 });
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const handleRestrictedAction = (actionName) => {
+    if (!isApproved) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert(
+        'Account Under Review',
+        'Your account must be approved before you can ' + actionName + '. We typically review within 24-48 hours.',
+        [{ text: 'OK' }]
+      );
+      return true;
+    }
+    return false;
+  };
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const goButtonScale = useRef(new Animated.Value(1)).current;
+  const bottomSlide = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     initializeLocation();
     fetchData();
+    Animated.spring(bottomSlide, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true }).start();
   }, []);
 
   useEffect(() => {
     if (isOnline) {
       const pulse = Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.4, duration: 1200, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1.6, duration: 1500, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
         ])
       );
       pulse.start();
@@ -113,9 +138,8 @@ const DashboardScreen = ({ navigation }) => {
   const toggleOnline = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-    // Press animation
     Animated.sequence([
-      Animated.timing(goButtonScale, { toValue: 0.9, duration: 100, useNativeDriver: true }),
+      Animated.timing(goButtonScale, { toValue: 0.85, duration: 100, useNativeDriver: true }),
       Animated.spring(goButtonScale, { toValue: 1, friction: 3, useNativeDriver: true }),
     ]).start();
 
@@ -142,7 +166,7 @@ const DashboardScreen = ({ navigation }) => {
   const getUserName = () => {
     if (user?.name) return user.name.split(' ')[0];
     if (user?.first_name) return user.first_name;
-    return 'Driver';
+    return 'Captain';
   };
 
   const getMapHtml = () => {
@@ -159,32 +183,44 @@ const DashboardScreen = ({ navigation }) => {
   <style>
     * { margin: 0; padding: 0; }
     html, body, #map { width: 100%; height: 100%; }
+    .marker-wrapper { position: relative; }
     .marker {
-      width: 48px; height: 48px;
-      background: ${PRIMARY_COLOR};
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, #FCC014 0%, #FF9500 100%);
       border-radius: 50%;
       border: 4px solid #fff;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 6px 20px rgba(252,192,20,0.5);
       display: flex; align-items: center; justify-content: center;
     }
     .marker::after {
-      content: ''; width: 22px; height: 22px;
+      content: ''; width: 24px; height: 24px;
       background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23000"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>') center/contain no-repeat;
     }
-    .pulse {
-      position: absolute; width: 70px; height: 70px; top: -11px; left: -11px;
-      background: rgba(252, 192, 20, 0.3); border-radius: 50%;
-      animation: pulse 2s ease-out infinite;
+    .pulse-ring {
+      position: absolute; width: 80px; height: 80px; top: -14px; left: -14px;
+      border-radius: 50%;
+      border: 3px solid rgba(252, 192, 20, 0.4);
+      animation: pulseRing 2s ease-out infinite;
     }
-    @keyframes pulse { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+    .pulse-fill {
+      position: absolute; width: 80px; height: 80px; top: -14px; left: -14px;
+      background: rgba(252, 192, 20, 0.15);
+      border-radius: 50%;
+      animation: pulseFill 2s ease-out infinite;
+    }
+    @keyframes pulseRing { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.8); opacity: 0; } }
+    @keyframes pulseFill { 0% { transform: scale(0.5); opacity: 0.4; } 100% { transform: scale(1.5); opacity: 0; } }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <script>
     const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([${lat}, ${lng}], 16);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
-    const icon = L.divIcon({ html: '<div class="pulse"></div><div class="marker"></div>', className: '', iconSize: [48, 48], iconAnchor: [24, 24] });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+    const icon = L.divIcon({
+      html: '<div class="marker-wrapper"><div class="pulse-fill"></div><div class="pulse-ring"></div><div class="marker"></div></div>',
+      className: '', iconSize: [52, 52], iconAnchor: [26, 26]
+    });
     L.marker([${lat}, ${lng}], { icon }).addTo(map);
   </script>
 </body>
@@ -206,173 +242,272 @@ const DashboardScreen = ({ navigation }) => {
           domStorageEnabled
         />
 
-        {/* Status Bar Accent */}
-        <View style={[
-          styles.statusAccent,
-          { top: insets.top, backgroundColor: isOnline ? '#10B981' : '#EF4444' },
-        ]} />
-
-        {/* Top Bar */}
-        <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
+        {/* Top Header */}
+        <View style={[styles.topHeader, { paddingTop: insets.top + 8 }]}>
+          {/* Left: Menu */}
           <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => navigation.navigate('Profile')}
+            style={styles.headerBtn}
+            onPress={() => setDrawerOpen(true)}
+            activeOpacity={0.7}
           >
-            <Ionicons name="menu" size={26} color="#1A1A2E" />
+            <Ionicons name="menu" size={22} color={DARK} />
           </TouchableOpacity>
 
-          <View style={styles.logoBox}>
+          {/* Center: Greeting + Status */}
+          <View style={styles.headerCenter}>
+            <Text style={styles.greetingText}>Hi, {getUserName()}</Text>
+            <View style={styles.headerStatusRow}>
+              <View style={[styles.headerStatusDot, { backgroundColor: isOnline ? '#10B981' : '#EF4444' }]} />
+              <Text style={[styles.headerStatusText, { color: isOnline ? '#10B981' : '#9CA3AF' }]}>
+                {isOnline ? 'Online' : 'Offline'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Right: Notifications */}
+          <TouchableOpacity
+            style={styles.headerBtn}
+            onPress={() => navigation.navigate('Notifications')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="notifications-outline" size={22} color={DARK} />
+            <View style={styles.notifDot} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Approval Banner */}
+        {!isApproved && (
+          <View style={[styles.approvalBanner, { top: insets.top + 70 }]}>
+            <LinearGradient
+              colors={driverStatus === 'rejected' ? ['#EF4444', '#DC2626'] : ['#F59E0B', '#D97706']}
+              style={styles.approvalGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Ionicons name={driverStatus === 'rejected' ? 'close-circle' : 'time'} size={20} color="#FFF" />
+              <Text style={styles.approvalText}>
+                {driverStatus === 'rejected'
+                  ? 'Your application was rejected. Please contact support.'
+                  : 'Account under review. Features will unlock once approved.'}
+              </Text>
+            </LinearGradient>
+          </View>
+        )}
+
+        {/* Center Location Button */}
+        <TouchableOpacity
+          style={[styles.centerBtn, { bottom: 310 + insets.bottom }]}
+          onPress={initializeLocation}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="locate" size={22} color={PRIMARY} />
+        </TouchableOpacity>
+
+        {/* Logo + Toggle */}
+        <View style={[styles.logoToggleContainer, { bottom: 250 + insets.bottom }]}>
+          {/* Logo */}
+          <View style={styles.logoBg}>
             <Image
-              source={require('../../../assets/icon.png')}
-              style={styles.logoIcon}
+              source={require('../../../assets/logodarkmode.png')}
+              style={styles.logoImage}
               resizeMode="contain"
             />
           </View>
 
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => navigation.navigate('Notifications')}
-          >
-            <Ionicons name="notifications-outline" size={26} color="#1A1A2E" />
-          </TouchableOpacity>
-        </View>
+          {/* Active Toggle */}
+          <Animated.View style={{ transform: [{ scale: goButtonScale }], opacity: isApproved ? 1 : 0.5 }}>
+            <TouchableOpacity
+              onPress={() => { if (!handleRestrictedAction('go online')) toggleOnline(); }}
+              activeOpacity={0.8}
+              style={styles.toggleOuter}
+            >
+              <LinearGradient
+                colors={isOnline ? ['#10B981', '#059669'] : ['#374151', '#1F2937']}
+                style={styles.toggleTrack}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <View style={[
+                  styles.toggleThumb,
+                  isOnline ? styles.toggleThumbOn : styles.toggleThumbOff,
+                ]}>
+                  {isOnline ? (
+                    <Ionicons name="checkmark" size={16} color="#10B981" />
+                  ) : (
+                    <Ionicons name="close" size={16} color="#9CA3AF" />
+                  )}
+                </View>
+                <Text style={[
+                  styles.toggleLabel,
+                  isOnline ? styles.toggleLabelOn : styles.toggleLabelOff,
+                ]}>
+                  {isOnline ? 'ACTIVE' : 'OFFLINE'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
 
-        {/* Center Location Button */}
-        <TouchableOpacity
-          style={[styles.centerBtn, { bottom: 290 + insets.bottom }]}
-          onPress={initializeLocation}
-        >
-          <Ionicons name="locate" size={24} color={PRIMARY_COLOR} />
-        </TouchableOpacity>
-
-        {/* GO Button - Centered above bottom panel */}
-        <View style={[styles.goButtonContainer, { bottom: 248 + insets.bottom }]}>
           {isOnline && (
             <Animated.View style={[
-              styles.goButtonPulse,
+              styles.activePulse,
               {
                 transform: [{ scale: pulseAnim }],
                 opacity: pulseAnim.interpolate({
-                  inputRange: [1, 1.4],
+                  inputRange: [1, 1.6],
                   outputRange: [0.4, 0],
                 }),
               },
             ]} />
           )}
-          <Animated.View style={{ transform: [{ scale: goButtonScale }] }}>
-            <TouchableOpacity
-              style={[
-                styles.goButton,
-                { backgroundColor: isOnline ? '#10B981' : '#1A1A2E' },
-              ]}
-              onPress={toggleOnline}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.goButtonText}>
-                {isOnline ? 'ON' : 'GO'}
-              </Text>
-            </TouchableOpacity>
-          </Animated.View>
         </View>
       </View>
 
       {/* Bottom Panel */}
-      <View style={[styles.bottomPanel, { paddingBottom: insets.bottom + 80 }]}>
-        {/* Earnings Header */}
+      <Animated.View style={[
+        styles.bottomPanel,
+        {
+          paddingBottom: insets.bottom + 80,
+          transform: [{
+            translateY: bottomSlide.interpolate({
+              inputRange: [0, 1],
+              outputRange: [200, 0],
+            }),
+          }],
+        },
+      ]}>
+        {/* Earnings Row */}
         <View style={styles.earningsRow}>
           <View>
             <Text style={styles.earningsLabel}>Today's Earnings</Text>
-            <Text style={styles.earningsAmount}>Rs. {stats.today_earnings}</Text>
+            <Text style={styles.earningsAmount}>Rs. {stats.today_earnings.toLocaleString()}</Text>
           </View>
-          <View style={[
-            styles.statusBadge,
-            { backgroundColor: isOnline ? '#10B98120' : '#EF444420' },
-          ]}>
-            <View style={[
-              styles.statusDot,
-              { backgroundColor: isOnline ? '#10B981' : '#EF4444' },
-            ]} />
-            <Text style={[
-              styles.statusText,
-              { color: isOnline ? '#10B981' : '#EF4444' },
-            ]}>
-              {isOnline ? 'Online' : 'Offline'}
-            </Text>
-          </View>
+          <TouchableOpacity
+            style={styles.earningsDetailBtn}
+            onPress={() => navigation.navigate('Earnings')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.earningsDetailText}>Details</Text>
+            <Ionicons name="chevron-forward" size={14} color={PRIMARY} />
+          </TouchableOpacity>
         </View>
 
-        {/* Ride Requests Button */}
-        <TouchableOpacity
-          style={styles.rideRequestsBtn}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            navigation.navigate('RideRequests');
-          }}
-          activeOpacity={0.8}
-        >
-          <View style={styles.rideRequestsIcon}>
-            <Ionicons name="people" size={22} color="#FFF" />
-          </View>
-          <View style={styles.rideRequestsContent}>
-            <Text style={styles.rideRequestsTitle}>Ride Requests</Text>
-            <Text style={styles.rideRequestsSub}>See passengers looking for rides</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.5)" />
-        </TouchableOpacity>
+        {/* Action Buttons Row */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={[styles.actionCard, !isApproved && { opacity: 0.5 }]}
+            onPress={() => {
+              if (handleRestrictedAction('view ride requests')) return;
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              navigation.navigate('RideRequests');
+            }}
+            activeOpacity={0.7}
+          >
+            <LinearGradient
+              colors={[DARK, DARK2]}
+              style={styles.actionCardGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.actionIconBg}>
+                <Ionicons name="people" size={20} color={PRIMARY} />
+              </View>
+              <Text style={styles.actionTitle}>Ride Requests</Text>
+              <Text style={styles.actionSub}>Find passengers</Text>
+            </LinearGradient>
+          </TouchableOpacity>
 
-        {/* Post Shared Ride Button */}
-        <TouchableOpacity
-          style={styles.postRideBtn}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            navigation.navigate('PostRide', {
-              latitude: currentLocation?.latitude,
-              longitude: currentLocation?.longitude
-            });
-          }}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="add-circle" size={24} color={PRIMARY_COLOR} />
-          <Text style={styles.postRideBtnText}>Post Shared Ride</Text>
-          <Ionicons name="chevron-forward" size={20} color="#6B7280" />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionCard, !isApproved && { opacity: 0.5 }]}
+            onPress={() => {
+              if (handleRestrictedAction('post rides')) return;
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('PostRide', {
+                latitude: currentLocation?.latitude,
+                longitude: currentLocation?.longitude,
+              });
+            }}
+            activeOpacity={0.7}
+          >
+            <LinearGradient
+              colors={[DARK, DARK2]}
+              style={styles.actionCardGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={[styles.actionIconBg, { backgroundColor: '#10B98120' }]}>
+                <Ionicons name="add-circle" size={20} color="#10B981" />
+              </View>
+              <Text style={styles.actionTitle}>Post Ride</Text>
+              <Text style={styles.actionSub}>Share a trip</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
 
-        {/* Quick Stats - Dark Cards */}
+        {/* Stats Row */}
         <View style={styles.statsRow}>
           <TouchableOpacity
             style={styles.statCard}
-            onPress={() => navigation.navigate('Earnings')}
+            onPress={() => navigation.navigate('Wallet')}
+            activeOpacity={0.7}
           >
-            <View style={[styles.statIconBg, { backgroundColor: '#FCC01420' }]}>
-              <Ionicons name="wallet" size={18} color={PRIMARY_COLOR} />
-            </View>
+            <LinearGradient
+              colors={['#FCC014', '#FF9500']}
+              style={styles.statIconCircle}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Ionicons name="wallet" size={16} color="#000" />
+            </LinearGradient>
             <Text style={styles.statValue}>Rs. {stats.today_earnings}</Text>
             <Text style={styles.statLabel}>Earned</Text>
           </TouchableOpacity>
 
+          <View style={styles.statDivider} />
+
           <TouchableOpacity
             style={styles.statCard}
             onPress={() => navigation.navigate('RideHistory')}
+            activeOpacity={0.7}
           >
-            <View style={[styles.statIconBg, { backgroundColor: '#3B82F620' }]}>
-              <Ionicons name="car" size={18} color="#3B82F6" />
-            </View>
+            <LinearGradient
+              colors={['#3B82F6', '#2563EB']}
+              style={styles.statIconCircle}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Ionicons name="car" size={16} color="#FFF" />
+            </LinearGradient>
             <Text style={styles.statValue}>{stats.today_rides}</Text>
             <Text style={styles.statLabel}>Rides</Text>
           </TouchableOpacity>
 
+          <View style={styles.statDivider} />
+
           <TouchableOpacity
             style={styles.statCard}
             onPress={() => navigation.navigate('Ratings')}
+            activeOpacity={0.7}
           >
-            <View style={[styles.statIconBg, { backgroundColor: '#10B98120' }]}>
-              <Ionicons name="star" size={18} color="#10B981" />
-            </View>
+            <LinearGradient
+              colors={['#10B981', '#059669']}
+              style={styles.statIconCircle}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Ionicons name="star" size={16} color="#FFF" />
+            </LinearGradient>
             <Text style={styles.statValue}>{stats.rating.toFixed(1)}</Text>
             <Text style={styles.statLabel}>Rating</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </Animated.View>
+
+      {/* Side Drawer */}
+      <SideDrawer
+        visible={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        navigation={navigation}
+      />
     </View>
   );
 };
@@ -380,7 +515,7 @@ const DashboardScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8F9FA',
   },
   mapContainer: {
     flex: 1,
@@ -389,204 +524,298 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
-  statusAccent: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 3,
-    zIndex: 10,
-  },
-  topBar: {
+
+  // Top Header
+  topHeader: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
+    paddingBottom: 12,
   },
-  iconBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  headerBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.08,
     shadowRadius: 12,
-    elevation: 6,
+    elevation: 5,
   },
-  logoBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    overflow: 'hidden',
-    justifyContent: 'center',
+  headerCenter: {
+    flex: 1,
     alignItems: 'center',
   },
-  logoIcon: {
-    width: 44,
-    height: 44,
+  greetingText: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: DARK,
   },
+  headerStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    gap: 5,
+  },
+  headerStatusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  headerStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  notifDot: {
+    position: 'absolute',
+    top: 10,
+    right: 12,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+
+  // Approval Banner
+  approvalBanner: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    zIndex: 20,
+  },
+  approvalGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  approvalText: {
+    flex: 1,
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+
+  // Center button
   centerBtn: {
     position: 'absolute',
     right: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 16,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
   },
-  goButtonContainer: {
+
+  // Logo + Toggle
+  logoToggleContainer: {
     position: 'absolute',
     alignSelf: 'center',
     alignItems: 'center',
-    justifyContent: 'center',
     zIndex: 10,
   },
-  goButtonPulse: {
-    position: 'absolute',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#10B981',
+  logoBg: {
+    backgroundColor: DARK,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+    marginBottom: 12,
   },
-  goButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  logoImage: {
+    width: 140,
+    height: 40,
+  },
+  toggleOuter: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  toggleTrack: {
+    width: 130,
+    height: 44,
+    borderRadius: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  toggleThumb: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 10,
-    borderWidth: 4,
-    borderColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  goButtonText: {
-    fontSize: 24,
+  toggleThumbOn: {
+    position: 'absolute',
+    right: 4,
+  },
+  toggleThumbOff: {
+    position: 'absolute',
+    left: 4,
+  },
+  toggleLabel: {
+    fontSize: 12,
     fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 2,
+    letterSpacing: 1.5,
   },
+  toggleLabelOn: {
+    color: '#FFFFFF',
+    position: 'absolute',
+    left: 16,
+  },
+  toggleLabelOff: {
+    color: 'rgba(255,255,255,0.7)',
+    position: 'absolute',
+    right: 14,
+  },
+  activePulse: {
+    position: 'absolute',
+    bottom: -8,
+    width: 150,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#10B981',
+  },
+
+  // Bottom Panel
   bottomPanel: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingTop: 20,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingTop: 24,
     paddingHorizontal: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 20,
+    elevation: 16,
   },
+
+  // Earnings
   earningsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 18,
   },
   earningsLabel: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginBottom: 2,
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontWeight: '500',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 4,
   },
   earningsAmount: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '800',
-    color: '#1A1A2E',
+    color: DARK,
+    letterSpacing: -0.5,
   },
-  statusBadge: {
+  earningsDetailBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: '#FCC01415',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 20,
-    gap: 6,
+    gap: 4,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statusText: {
+  earningsDetailText: {
     fontSize: 13,
     fontWeight: '600',
+    color: PRIMARY,
   },
-  rideRequestsBtn: {
+
+  // Action Cards
+  actionRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1A1A2E',
-    borderRadius: 16,
-    height: 64,
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    gap: 12,
+    marginBottom: 16,
   },
-  rideRequestsIcon: {
+  actionCard: {
+    flex: 1,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  actionCardGradient: {
+    padding: 16,
+    borderRadius: 20,
+  },
+  actionIconBg: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 14,
+    backgroundColor: '#FCC01420',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginBottom: 12,
   },
-  rideRequestsContent: {
-    flex: 1,
-  },
-  rideRequestsTitle: {
+  actionTitle: {
     fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
+    marginBottom: 2,
   },
-  rideRequestsSub: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
-    marginTop: 2,
+  actionSub: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.5)',
+    fontWeight: '500',
   },
-  postRideBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 16,
-    height: 54,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  postRideBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#000',
-    flex: 1,
-    marginLeft: 12,
-  },
+
+  // Stats Row
   statsRow: {
     flexDirection: 'row',
-    gap: 10,
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#1A1A2E',
-    borderRadius: 16,
-    padding: 14,
     alignItems: 'center',
   },
-  statIconBg: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  statIconCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
@@ -594,12 +823,18 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: DARK,
     marginBottom: 2,
   },
   statLabel: {
     fontSize: 11,
-    color: 'rgba(255,255,255,0.5)',
+    color: '#9CA3AF',
+    fontWeight: '500',
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#E5E7EB',
   },
 });
 

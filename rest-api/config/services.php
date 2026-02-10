@@ -87,4 +87,13 @@ return [
         'project_id' => env('FIREBASE_PROJECT_ID'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Google Cloud Vision (CNIC OCR Verification)
+    |--------------------------------------------------------------------------
+    */
+    'google_vision' => [
+        'key' => env('GOOGLE_CLOUD_VISION_KEY'),
+    ],
+
 ];

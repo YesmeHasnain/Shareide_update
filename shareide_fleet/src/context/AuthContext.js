@@ -51,20 +51,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    try {
-      // Unregister device from push notifications
-      await notificationService.unregisterToken();
+    // Clear local state FIRST so user is logged out immediately
+    await AsyncStorage.removeItem('userToken');
+    await AsyncStorage.removeItem('userData');
+    setToken(null);
+    setUser(null);
 
-      // Import authAPI only when needed to avoid circular dependency
+    // Then try API cleanup in background (don't block logout)
+    try {
+      notificationService.unregisterToken().catch(() => {});
       const { authAPI } = require('../api/auth');
-      await authAPI.logout();
+      authAPI.logout().catch(() => {});
     } catch (error) {
-      console.error('Logout API error:', error);
-    } finally {
-      await AsyncStorage.removeItem('userToken');
-      await AsyncStorage.removeItem('userData');
-      setToken(null);
-      setUser(null);
+      // Ignore - user is already logged out locally
     }
   };
 

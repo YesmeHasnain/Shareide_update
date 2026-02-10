@@ -4,21 +4,31 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   FlatList,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
-  Linking,
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 
 const PRIMARY_COLOR = '#FCC014';
+
+const PRESET_MESSAGES = [
+  "I'm on my way",
+  "Where are you exactly?",
+  "Please wait, coming in 2 mins",
+  "Can you share your location?",
+  "I'm at the pickup point",
+  "Running 5 minutes late",
+  "Is the ride still available?",
+  "What time will you depart?",
+  "Thank you!",
+  "Cancel my booking please",
+];
 
 const RideChatScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
@@ -31,13 +41,12 @@ const RideChatScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
   const [rideInfo, setRideInfo] = useState(null);
   const [otherUser, setOtherUser] = useState(null);
 
   useEffect(() => {
     fetchChatData();
-    const interval = setInterval(fetchMessages, 5000); // Poll every 5 seconds
+    const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -53,7 +62,7 @@ const RideChatScreen = ({ navigation, route }) => {
         setOtherUser(chatRes.data.other_user);
       }
       if (rideRes.data.success) {
-        setRideInfo(rideRes.data.ride);
+        setRideInfo(rideRes.data.ride || rideRes.data.data?.ride);
       }
     } catch (error) {
       console.log('Fetch chat error:', error.message);
@@ -71,46 +80,24 @@ const RideChatScreen = ({ navigation, route }) => {
     } catch (error) {}
   };
 
-  const sendMessage = async () => {
-    if (!newMessage.trim()) return;
-
-    const messageText = newMessage.trim();
-    setNewMessage('');
+  const sendPresetMessage = async (text) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSending(true);
 
     try {
       const response = await client.post(`/shared-rides/${rideId}/chat`, {
-        message: messageText,
+        message: text,
       });
 
       if (response.data.success) {
         setMessages((prev) => [...prev, response.data.message]);
         setTimeout(() => flatListRef.current?.scrollToEnd(), 100);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to send message');
-      setNewMessage(messageText);
     } finally {
       setSending(false);
-    }
-  };
-
-  const shareLocationOnWhatsApp = () => {
-    if (!rideInfo) return;
-
-    const phone = otherUser?.phone?.replace(/[^0-9]/g, '');
-    const message = `📍 Track my ride!\n\nFrom: ${rideInfo.pickup_address}\nTo: ${rideInfo.dropoff_address}\n\nDriver Location: https://maps.google.com/?q=${rideInfo.driver_lat || rideInfo.pickup_lat},${rideInfo.driver_lng || rideInfo.pickup_lng}`;
-
-    if (phone) {
-      Linking.openURL(`whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`);
-    } else {
-      Linking.openURL(`whatsapp://send?text=${encodeURIComponent(message)}`);
-    }
-  };
-
-  const callUser = () => {
-    if (otherUser?.phone) {
-      Linking.openURL(`tel:${otherUser.phone}`);
     }
   };
 
@@ -139,13 +126,6 @@ const RideChatScreen = ({ navigation, route }) => {
     );
   };
 
-  const quickMessages = [
-    "I'm on my way!",
-    "Where are you exactly?",
-    "Please wait, coming in 2 mins",
-    "Can you share location?",
-  ];
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
@@ -159,20 +139,14 @@ const RideChatScreen = ({ navigation, route }) => {
             <Ionicons name="person" size={18} color={PRIMARY_COLOR} />
           </View>
           <View>
-            <Text style={[styles.headerName, { color: colors.text }]}>{otherUser?.name || 'User'}</Text>
-            <Text style={[styles.headerStatus, { color: colors.textSecondary }]}>
-              {rideInfo?.status === 'active' ? 'Active ride' : 'Pending'}
-            </Text>
+            <Text style={[styles.headerName, { color: colors.text }]}>{otherUser?.name || 'Driver'}</Text>
+            <Text style={[styles.headerStatus, { color: colors.textSecondary }]}>Shared Ride Chat</Text>
           </View>
         </View>
 
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={[styles.headerBtn, { backgroundColor: colors.inputBackground }]} onPress={callUser}>
-            <Ionicons name="call" size={18} color={PRIMARY_COLOR} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.headerBtn, { backgroundColor: '#25D366' }]} onPress={shareLocationOnWhatsApp}>
-            <Ionicons name="logo-whatsapp" size={18} color="#fff" />
-          </TouchableOpacity>
+        <View style={[styles.safeBadge, { backgroundColor: '#10B98120' }]}>
+          <Ionicons name="shield-checkmark" size={16} color="#10B981" />
+          <Text style={styles.safeText}>Safe</Text>
         </View>
       </View>
 
@@ -181,7 +155,7 @@ const RideChatScreen = ({ navigation, route }) => {
         <View style={[styles.rideBanner, { backgroundColor: PRIMARY_COLOR + '15' }]}>
           <Ionicons name="car" size={18} color={PRIMARY_COLOR} />
           <Text style={[styles.rideBannerText, { color: colors.text }]} numberOfLines={1}>
-            {rideInfo.pickup_address} → {rideInfo.dropoff_address}
+            {rideInfo.from?.address || rideInfo.pickup_address} → {rideInfo.to?.address || rideInfo.dropoff_address}
           </Text>
         </View>
       )}
@@ -191,11 +165,7 @@ const RideChatScreen = ({ navigation, route }) => {
           <ActivityIndicator size="large" color={PRIMARY_COLOR} />
         </View>
       ) : (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ flex: 1 }}
-          keyboardVerticalOffset={0}
-        >
+        <>
           {/* Messages */}
           <FlatList
             ref={flatListRef}
@@ -208,57 +178,39 @@ const RideChatScreen = ({ navigation, route }) => {
               <View style={styles.emptyChat}>
                 <Ionicons name="chatbubbles-outline" size={48} color={colors.textTertiary} />
                 <Text style={[styles.emptyChatText, { color: colors.textSecondary }]}>
-                  Start the conversation!
+                  Send a preset message to start chatting
+                </Text>
+                <Text style={[styles.emptyChatSub, { color: colors.textTertiary }]}>
+                  For your safety, only preset messages are allowed
                 </Text>
               </View>
             }
           />
 
-          {/* Quick Messages */}
-          <View style={styles.quickMessagesRow}>
+          {/* Preset Messages Only - No Free Text */}
+          <View style={[styles.presetContainer, { backgroundColor: colors.card, paddingBottom: insets.bottom + 16 }]}>
+            <Text style={[styles.presetLabel, { color: colors.textSecondary }]}>
+              Tap a message to send
+            </Text>
             <FlatList
-              horizontal
-              data={quickMessages}
-              keyExtractor={(item) => item}
+              data={PRESET_MESSAGES}
+              keyExtractor={(item, index) => index.toString()}
+              numColumns={2}
+              scrollEnabled={false}
+              contentContainerStyle={styles.presetGrid}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.quickMsgBtn, { backgroundColor: colors.inputBackground }]}
-                  onPress={() => setNewMessage(item)}
+                  style={[styles.presetBtn, { backgroundColor: colors.inputBackground }]}
+                  onPress={() => sendPresetMessage(item)}
+                  disabled={sending}
+                  activeOpacity={0.7}
                 >
-                  <Text style={[styles.quickMsgText, { color: colors.text }]}>{item}</Text>
+                  <Text style={[styles.presetBtnText, { color: colors.text }]} numberOfLines={2}>{item}</Text>
                 </TouchableOpacity>
               )}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.quickMsgList}
             />
           </View>
-
-          {/* Input */}
-          <View style={[styles.inputContainer, { backgroundColor: colors.card, paddingBottom: insets.bottom + 10 }]}>
-            <View style={[styles.inputBox, { backgroundColor: colors.inputBackground }]}>
-              <TextInput
-                style={[styles.input, { color: colors.text }]}
-                value={newMessage}
-                onChangeText={setNewMessage}
-                placeholder="Type a message..."
-                placeholderTextColor={colors.textSecondary}
-                multiline
-                maxLength={500}
-              />
-            </View>
-            <TouchableOpacity
-              style={[styles.sendBtn, { opacity: sending || !newMessage.trim() ? 0.5 : 1 }]}
-              onPress={sendMessage}
-              disabled={sending || !newMessage.trim()}
-            >
-              {sending ? (
-                <ActivityIndicator size="small" color="#000" />
-              ) : (
-                <Ionicons name="send" size={20} color="#000" />
-              )}
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
+        </>
       )}
     </View>
   );
@@ -276,8 +228,19 @@ const styles = StyleSheet.create({
   avatar: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
   headerName: { fontSize: 16, fontWeight: '600' },
   headerStatus: { fontSize: 12 },
-  headerActions: { flexDirection: 'row', gap: 8 },
-  headerBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  safeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    gap: 4,
+  },
+  safeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#10B981',
+  },
   rideBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -296,28 +259,41 @@ const styles = StyleSheet.create({
   bubbleOther: { borderBottomLeftRadius: 4 },
   messageText: { fontSize: 15, lineHeight: 20 },
   messageTime: { fontSize: 10, marginTop: 4, alignSelf: 'flex-end' },
-  emptyChat: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
-  emptyChatText: { fontSize: 14, marginTop: 12 },
-  quickMessagesRow: { borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)', paddingVertical: 8 },
-  quickMsgList: { paddingHorizontal: 16 },
-  quickMsgBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginRight: 8 },
-  quickMsgText: { fontSize: 13 },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    gap: 10,
+  emptyChat: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
+  emptyChatText: { fontSize: 14, marginTop: 12, fontWeight: '500' },
+  emptyChatSub: { fontSize: 12, marginTop: 4 },
+  // Preset messages
+  presetContainer: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+    paddingTop: 12,
+    paddingHorizontal: 12,
   },
-  inputBox: { flex: 1, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, maxHeight: 100 },
-  input: { fontSize: 15, lineHeight: 20 },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: PRIMARY_COLOR,
-    justifyContent: 'center',
+  presetLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  presetGrid: {
+    paddingHorizontal: 4,
+  },
+  presetBtn: {
+    flex: 1,
+    margin: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 20,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 40,
+  },
+  presetBtnText: {
+    fontSize: 13,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });
 

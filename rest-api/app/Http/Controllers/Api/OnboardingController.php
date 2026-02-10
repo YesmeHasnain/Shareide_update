@@ -10,6 +10,7 @@ use App\Models\Driver;
 use App\Models\Vehicle;
 use App\Models\DriverDocument;
 use App\Models\Wallet;
+use App\Services\CnicVerificationService;
 
 class OnboardingController extends Controller
 {
@@ -126,6 +127,10 @@ class OnboardingController extends Controller
             'model' => 'required|string',
             'year' => 'required|integer|min:1990|max:' . (date('Y') + 1),
             'color' => 'required|string',
+            'vehicle_front' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+            'vehicle_back' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+            'vehicle_interior' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+            'vehicle_with_plate' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
         ]);
 
         if ($validator->fails()) {
@@ -144,6 +149,23 @@ class OnboardingController extends Controller
                 'vehicle_model' => $request->make . ' ' . $request->model . ' (' . $request->year . ') - ' . $request->color,
                 'seats' => $request->type === 'car' ? 4 : ($request->type === 'rickshaw' ? 3 : 2),
             ]);
+
+            // Upload vehicle images if provided
+            $vehicleImages = [];
+            foreach (['vehicle_front', 'vehicle_back', 'vehicle_interior', 'vehicle_with_plate'] as $imageField) {
+                if ($request->hasFile($imageField)) {
+                    $path = $request->file($imageField)->store('vehicles/' . $driver->id, 'public');
+                    $vehicleImages[$imageField] = $path;
+                }
+            }
+
+            // Save vehicle images to driver_documents if any were uploaded
+            if (!empty($vehicleImages)) {
+                DriverDocument::updateOrCreate(
+                    ['driver_id' => $driver->id],
+                    $vehicleImages
+                );
+            }
 
             return response()->json([
                 'success' => true,
@@ -376,6 +398,75 @@ class OnboardingController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch status',
+                'error' => config('app.debug') ? $e->getMessage() : 'Server error'
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify CNIC from selfie image using OCR
+     */
+    public function verifyCnicFromSelfie(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'image' => 'required|image|mimes:jpeg,png,jpg|max:10240',
+            'expected_cnic' => 'required|string|size:15',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $cnicService = new CnicVerificationService();
+
+            // Store image temporarily
+            $imagePath = $request->file('image')->store('temp/cnic-verify', 'public');
+            $fullPath = storage_path('app/public/' . $imagePath);
+
+            // Detect if ID card is present
+            $hasCard = $cnicService->detectIdCard($fullPath);
+            if (!$hasCard) {
+                // Clean up
+                Storage::disk('public')->delete($imagePath);
+                return response()->json([
+                    'success' => false,
+                    'match' => false,
+                    'message' => 'Please hold your CNIC card clearly next to your face.'
+                ], 400);
+            }
+
+            // Verify CNIC
+            $result = $cnicService->verifyCnic($fullPath, $request->expected_cnic);
+
+            // Clean up temp file
+            Storage::disk('public')->delete($imagePath);
+
+            return response()->json([
+                'success' => true,
+                'match' => $result['match'],
+                'extracted_cnic' => $result['extracted_cnic'],
+                'message' => $result['message'],
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('CNIC verification error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'CNIC verification failed. Please try again.',
                 'error' => config('app.debug') ? $e->getMessage() : 'Server error'
             ], 500);
         }

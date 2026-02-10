@@ -7,22 +7,39 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  TouchableOpacity,
+  Image,
+  Modal,
+  FlatList,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import { onboardingAPI } from '../../api/onboarding';
 import { authAPI } from '../../api/auth';
+import { maleAvatars, femaleAvatars } from '../../utils/avatars';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const AVATAR_SIZE = (SCREEN_WIDTH - 80) / 5;
+const PRIMARY_COLOR = '#FCC014';
 
 const PersonalInfoScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
-  const { updateUser, login } = useAuth();
+  const { updateUser, login, token: contextToken } = useAuth();
   const { verificationToken, isNewUser, phone } = route.params || {};
-  
+
   const [loading, setLoading] = useState(false);
+  const [gender, setGender] = useState(null);
+  const [profileImage, setProfileImage] = useState(null);
+  const [selectedAvatarIndex, setSelectedAvatarIndex] = useState(null);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -57,9 +74,66 @@ const PersonalInfoScreen = ({ navigation, route }) => {
     }
   };
 
+  const avatars = gender === 'male' ? maleAvatars : gender === 'female' ? femaleAvatars : [];
+
+  const takePhoto = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please grant camera permissions.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setProfileImage(result.assets[0]);
+      setSelectedAvatarIndex(null);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  };
+
+  const pickFromGallery = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please grant gallery permissions.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setProfileImage(result.assets[0]);
+      setSelectedAvatarIndex(null);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  };
+
+  const selectAvatar = (index) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedAvatarIndex(index);
+    setProfileImage(null);
+    setShowAvatarModal(false);
+  };
+
+  const getProfileDisplay = () => {
+    if (profileImage) return { uri: profileImage.uri };
+    if (selectedAvatarIndex !== null && avatars[selectedAvatarIndex]) return avatars[selectedAvatarIndex];
+    return null;
+  };
+
   const validate = () => {
     const newErrors = {};
 
+    if (!gender) {
+      newErrors.gender = 'Please select your gender';
+    }
     if (!formData.first_name.trim()) {
       newErrors.first_name = 'First name is required';
     }
@@ -100,8 +174,9 @@ const PersonalInfoScreen = ({ navigation, route }) => {
         const regResponse = await authAPI.completeRegistration({
           verification_token: verificationToken,
           name: fullName,
-          gender: 'male', // Default for drivers
+          gender: gender,
           email: formData.email || null,
+          avatar_index: selectedAvatarIndex,
         });
 
         console.log('completeRegistration response:', JSON.stringify(regResponse, null, 2));
@@ -119,8 +194,15 @@ const PersonalInfoScreen = ({ navigation, route }) => {
       }
 
       // Verify token exists before making authenticated request
-      const savedToken = await AsyncStorage.getItem('userToken');
-      console.log('Token in AsyncStorage:', savedToken ? 'exists (' + savedToken.substring(0, 20) + '...)' : 'MISSING!');
+      let savedToken = await AsyncStorage.getItem('userToken');
+      console.log('Token in AsyncStorage:', savedToken ? 'exists' : 'MISSING!');
+
+      // Fallback: if AsyncStorage was cleared by interceptor, restore from context
+      if (!savedToken && contextToken) {
+        console.log('Restoring token from AuthContext');
+        await AsyncStorage.setItem('userToken', contextToken);
+        savedToken = contextToken;
+      }
 
       if (!savedToken) {
         throw new Error('Authentication token not found. Please log in again.');
@@ -177,6 +259,66 @@ const PersonalInfoScreen = ({ navigation, route }) => {
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               Let's get to know you better
             </Text>
+          </View>
+
+          {/* Gender Selection */}
+          <Text style={[styles.sectionLabel, { color: colors.text }]}>Gender *</Text>
+          <View style={styles.genderRow}>
+            <TouchableOpacity
+              style={[
+                styles.genderCard,
+                { backgroundColor: colors.surface || '#F3F4F6' },
+                gender === 'male' && { backgroundColor: PRIMARY_COLOR + '20', borderColor: PRIMARY_COLOR, borderWidth: 2 },
+              ]}
+              onPress={() => { setGender('male'); setSelectedAvatarIndex(null); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="male" size={28} color={gender === 'male' ? PRIMARY_COLOR : colors.textSecondary} />
+              <Text style={[styles.genderText, { color: gender === 'male' ? PRIMARY_COLOR : colors.text }]}>Male</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.genderCard,
+                { backgroundColor: colors.surface || '#F3F4F6' },
+                gender === 'female' && { backgroundColor: '#EC489920', borderColor: '#EC4899', borderWidth: 2 },
+              ]}
+              onPress={() => { setGender('female'); setSelectedAvatarIndex(null); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="female" size={28} color={gender === 'female' ? '#EC4899' : colors.textSecondary} />
+              <Text style={[styles.genderText, { color: gender === 'female' ? '#EC4899' : colors.text }]}>Female</Text>
+            </TouchableOpacity>
+          </View>
+          {errors.gender && <Text style={styles.errorText}>{errors.gender}</Text>}
+
+          {/* Profile Picture */}
+          <Text style={[styles.sectionLabel, { color: colors.text, marginTop: 16 }]}>Profile Picture</Text>
+          <View style={styles.profilePicSection}>
+            <View style={styles.avatarPreview}>
+              {getProfileDisplay() ? (
+                <Image source={getProfileDisplay()} style={styles.avatarImage} />
+              ) : (
+                <View style={[styles.avatarPlaceholder, { backgroundColor: colors.surface || '#F3F4F6' }]}>
+                  <Ionicons name="person" size={40} color={colors.textSecondary} />
+                </View>
+              )}
+            </View>
+            <View style={styles.picBtnRow}>
+              <TouchableOpacity style={[styles.picBtn, { backgroundColor: PRIMARY_COLOR }]} onPress={takePhoto}>
+                <Ionicons name="camera" size={18} color="#000" />
+                <Text style={styles.picBtnText}>Selfie</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.picBtn, { backgroundColor: '#FEF3C7' }]} onPress={pickFromGallery}>
+                <Ionicons name="images" size={18} color="#000" />
+                <Text style={styles.picBtnText}>Gallery</Text>
+              </TouchableOpacity>
+              {gender && (
+                <TouchableOpacity style={[styles.picBtn, { backgroundColor: '#E0E7FF' }]} onPress={() => setShowAvatarModal(true)}>
+                  <Ionicons name="happy" size={18} color="#4F46E5" />
+                  <Text style={[styles.picBtnText, { color: '#4F46E5' }]}>Avatar</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           {/* Form */}
@@ -243,6 +385,38 @@ const PersonalInfoScreen = ({ navigation, route }) => {
           />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Avatar Selection Modal */}
+      <Modal visible={showAvatarModal} transparent animationType="slide" onRequestClose={() => setShowAvatarModal(false)}>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowAvatarModal(false)} />
+          <View style={[styles.modalSheet, { backgroundColor: colors.card || '#FFF' }]}>
+            <View style={styles.modalHandle} />
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Choose Your Avatar</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+              {gender === 'male' ? 'Male' : 'Female'} Avatars
+            </Text>
+            <FlatList
+              data={avatars}
+              numColumns={5}
+              keyExtractor={(_, i) => i.toString()}
+              contentContainerStyle={styles.avatarGrid}
+              renderItem={({ item, index }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.avatarGridItem,
+                    selectedAvatarIndex === index && { borderColor: PRIMARY_COLOR, borderWidth: 3 },
+                  ]}
+                  onPress={() => selectAvatar(index)}
+                  activeOpacity={0.7}
+                >
+                  <Image source={item} style={styles.avatarGridImage} />
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -281,11 +455,130 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
   },
+  sectionLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  genderRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 4,
+  },
+  genderCard: {
+    flex: 1,
+    height: 80,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  genderText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  profilePicSection: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  avatarPreview: {
+    marginBottom: 12,
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  picBtnRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  picBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 6,
+  },
+  picBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#000',
+  },
   form: {
     marginBottom: 24,
   },
   button: {
     marginBottom: 24,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalSheet: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+    maxHeight: '70%',
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#D1D5DB',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  avatarGrid: {
+    paddingHorizontal: 8,
+  },
+  avatarGridItem: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    margin: 4,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  avatarGridImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: AVATAR_SIZE / 2,
   },
 });
 

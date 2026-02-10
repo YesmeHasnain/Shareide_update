@@ -12,6 +12,10 @@ class SupportTicket extends Model
     protected $fillable = [
         'ticket_number',
         'user_id',
+        'guest_name',
+        'guest_email',
+        'guest_phone',
+        'reply_token',
         'user_type',
         'ride_request_id',
         'subject',
@@ -22,11 +26,46 @@ class SupportTicket extends Model
         'assigned_to',
         'resolved_at',
         'resolution_note',
+        'last_reply_at',
     ];
 
     protected $casts = [
         'resolved_at' => 'datetime',
+        'last_reply_at' => 'datetime',
     ];
+
+    // Get display name (user name or guest name)
+    public function getDisplayNameAttribute()
+    {
+        if ($this->user) {
+            return $this->user->name;
+        }
+        return $this->guest_name ?? 'Guest';
+    }
+
+    // Get contact email
+    public function getContactEmailAttribute()
+    {
+        if ($this->user) {
+            return $this->user->email;
+        }
+        return $this->guest_email;
+    }
+
+    // Check if ticket is from guest
+    public function getIsGuestAttribute()
+    {
+        return is_null($this->user_id);
+    }
+
+    // Generate reply URL for guest
+    public function getReplyUrlAttribute()
+    {
+        if ($this->reply_token) {
+            return url("/support/ticket/{$this->reply_token}");
+        }
+        return null;
+    }
 
     protected static function boot()
     {

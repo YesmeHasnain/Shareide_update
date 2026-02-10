@@ -7,9 +7,13 @@ export const onboardingAPI = {
     return response.data;
   },
 
-  // Step 2: Vehicle Info
-  submitVehicleInfo: async (data) => {
-    const response = await client.post('/onboarding/vehicle-info', data);
+  // Step 2: Vehicle Info (with optional vehicle images)
+  submitVehicleInfo: async (formData) => {
+    const response = await client.post('/onboarding/vehicle-info', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 

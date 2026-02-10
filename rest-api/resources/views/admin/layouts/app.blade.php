@@ -764,11 +764,16 @@
 
                         <!-- Notifications -->
                         <div x-data="{ open: false }" class="relative">
+                            @php
+                                $pendingDrivers = \App\Models\Driver::where('status', 'pending')->count();
+                                $activeSOS = \App\Models\SosAlert::where('status', 'active')->count() ?? 0;
+                                $openTickets = \App\Models\SupportTicket::where('status', 'open')->count();
+                                $totalNotifs = $pendingDrivers + $activeSOS + $openTickets;
+                            @endphp
                             <button @click="open = !open"
                                 class="p-2 rounded-lg transition-colors relative"
                                 :class="darkMode ? 'bg-dark-100 hover:bg-dark-300 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'">
                                 <i class="fas fa-bell"></i>
-                                @php $totalNotifs = \App\Models\Driver::where('status', 'pending')->count() + (\App\Models\SosAlert::where('status', 'active')->count() ?? 0); @endphp
                                 <span data-badge="header-notifications" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center {{ $totalNotifs > 0 ? '' : 'hidden' }}">{{ $totalNotifs }}</span>
                             </button>
                             <div x-show="open" @click.away="open = false" x-cloak
@@ -776,17 +781,53 @@
                                 <div class="px-4 py-3 border-b border-gray-100 dark:border-dark-100">
                                     <h3 class="font-semibold text-gray-800 dark:text-white">Notifications</h3>
                                 </div>
-                                @if($pendingCount > 0)
-                                    <a href="{{ route('admin.drivers.pending') }}" class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-dark-100 transition-colors">
-                                        <p class="text-sm font-medium text-gray-800 dark:text-white">{{ $pendingCount }} Pending Driver(s)</p>
-                                        <p class="text-xs text-gray-500">Waiting for approval</p>
-                                    </a>
-                                @else
-                                    <div class="px-4 py-6 text-center">
-                                        <i class="fas fa-check-circle text-3xl text-green-500 mb-2"></i>
-                                        <p class="text-sm text-gray-500">All caught up!</p>
-                                    </div>
-                                @endif
+                                <div class="max-h-80 overflow-y-auto">
+                                    @if($activeSOS > 0)
+                                        <a href="{{ route('admin.sos.active') }}" class="block px-4 py-3 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border-l-4 border-red-500">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-exclamation-triangle text-red-500 text-sm"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm font-medium text-red-700 dark:text-red-400">{{ $activeSOS }} Active SOS Alert(s)!</p>
+                                                    <p class="text-xs text-red-500">Requires immediate attention</p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    @endif
+                                    @if($openTickets > 0)
+                                        <a href="{{ route('admin.support.index', ['status' => 'open']) }}" class="block px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors border-l-4 border-purple-500">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-envelope text-purple-500 text-sm"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm font-medium text-purple-700 dark:text-purple-400">{{ $openTickets }} Open Support Ticket(s)</p>
+                                                    <p class="text-xs text-purple-500">Waiting for response</p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    @endif
+                                    @if($pendingDrivers > 0)
+                                        <a href="{{ route('admin.drivers.pending') }}" class="block px-4 py-3 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors border-l-4 border-yellow-500">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-user-clock text-yellow-600 text-sm"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm font-medium text-yellow-700 dark:text-yellow-400">{{ $pendingDrivers }} Pending Driver(s)</p>
+                                                    <p class="text-xs text-yellow-600">Waiting for approval</p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    @endif
+                                    @if($totalNotifs == 0)
+                                        <div class="px-4 py-6 text-center">
+                                            <i class="fas fa-check-circle text-3xl text-green-500 mb-2"></i>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">All caught up!</p>
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
                         </div>
 

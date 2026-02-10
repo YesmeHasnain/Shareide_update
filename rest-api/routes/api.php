@@ -61,6 +61,12 @@ Route::get('/wallet/recent-orders', [RiderWalletController::class, 'recentOrders
 // ============================================
 Route::post('/contact', [ContactController::class, 'submit']);
 
+// ============================================
+// SUPPORT TICKET ACCESS (Public - Token Based)
+// ============================================
+Route::get('/support/ticket/{token}', [ContactController::class, 'viewTicket']);
+Route::post('/support/ticket/{token}/reply', [ContactController::class, 'replyToTicket']);
+
 // Protected routes (authentication required)
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -173,6 +179,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/vehicle-info', [OnboardingController::class, 'vehicleInfo']);
         Route::post('/upload-documents', [OnboardingController::class, 'uploadDocuments']);
         Route::post('/upload-selfies', [OnboardingController::class, 'uploadSelfies']);
+        Route::post('/verify-cnic', [OnboardingController::class, 'verifyCnicFromSelfie']);
         Route::post('/submit', [OnboardingController::class, 'submitForApproval']);
         Route::get('/status', [OnboardingController::class, 'getStatus']);
     });

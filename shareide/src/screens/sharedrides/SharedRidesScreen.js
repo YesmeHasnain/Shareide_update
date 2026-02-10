@@ -135,37 +135,46 @@ const SharedRidesScreen = ({ navigation, route }) => {
           </View>
           <View style={styles.detailItem}>
             <Ionicons name="car-outline" size={16} color={colors.textSecondary} />
-            <Text style={[styles.detailText, { color: colors.textSecondary }]}>{item.vehicle_model || item.vehicle_type}</Text>
+            <Text style={[styles.detailText, { color: colors.textSecondary }]}>{item.vehicle?.model || item.vehicle_model || item.vehicle_type}</Text>
           </View>
-          <View style={styles.detailItem}>
-            <Ionicons name="people-outline" size={16} color={colors.textSecondary} />
-            <Text style={[styles.detailText, { color: colors.textSecondary }]}>{item.available_seats} seats left</Text>
+          <View style={styles.seatDetail}>
+            <Ionicons name="people" size={16} color={colors.primary} />
+            <Text style={[styles.seatDetailText, { color: colors.primary }]}>
+              {(item.booked_seats || (item.total_seats - item.available_seats) || 0)}/{item.total_seats || item.available_seats}
+            </Text>
+            <Text style={[styles.detailText, { color: colors.textSecondary }]}>booked</Text>
           </View>
         </View>
 
-        {item.confirmed_bookings?.length > 0 && (
-          <View style={styles.passengersSection}>
-            <Text style={[styles.passengersLabel, { color: colors.textSecondary }]}>Fellow Passengers:</Text>
-            <View style={styles.passengersRow}>
-              {item.confirmed_bookings.slice(0, 4).map((booking, index) => (
-                <Avatar
-                  key={booking.id}
-                  source={booking.passenger?.avatar ? { uri: booking.passenger.avatar } : null}
-                  name={booking.passenger?.name}
-                  size={32}
-                  style={[styles.passengerAvatar, { marginLeft: index > 0 ? -10 : 0, borderColor: colors.surface }]}
-                />
-              ))}
-              {item.confirmed_bookings.length > 4 && (
-                <View style={[styles.morePassengers, { backgroundColor: colors.surface }]}>
-                  <Text style={[styles.moreText, { color: colors.textSecondary }]}>+{item.confirmed_bookings.length - 4}</Text>
-                </View>
-              )}
-            </View>
+        {/* Passenger Previews + Seats Info */}
+        <View style={styles.passengersSection}>
+          <View style={styles.passengersRow}>
+            {(item.passenger_previews || item.confirmed_bookings || []).slice(0, 4).map((p, index) => (
+              <Avatar
+                key={p.id || index}
+                source={(p.photo || p.passenger?.avatar) ? { uri: p.photo || p.passenger?.avatar } : null}
+                name={p.name || p.passenger?.name}
+                size={28}
+                style={[styles.passengerAvatar, { marginLeft: index > 0 ? -8 : 0, borderColor: colors.surface }]}
+              />
+            ))}
+            {(item.passenger_previews || item.confirmed_bookings || []).length > 4 && (
+              <View style={[styles.morePassengers, { backgroundColor: colors.surface }]}>
+                <Text style={[styles.moreText, { color: colors.textSecondary }]}>
+                  +{(item.passenger_previews || item.confirmed_bookings).length - 4}
+                </Text>
+              </View>
+            )}
           </View>
-        )}
+          <Text style={[styles.seatsLeftText, { color: colors.success }]}>
+            {item.available_seats} seat{item.available_seats !== 1 ? 's' : ''} available
+          </Text>
+        </View>
 
         <View style={styles.preferencesRow}>
+          {item.ride_type && item.ride_type !== 'single' && (
+            <Badge text={item.ride_type.charAt(0).toUpperCase() + item.ride_type.slice(1)} variant="warning" size="small" />
+          )}
           {item.women_only && <Badge text="Women Only" variant="info" size="small" />}
           {item.ac_available && <Badge text="AC" variant="success" size="small" />}
           {item.luggage_allowed && <Badge text="Luggage OK" variant="default" size="small" />}
@@ -368,12 +377,20 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 12,
   },
-  passengersSection: {
-    marginBottom: 10,
+  seatDetail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
-  passengersLabel: {
-    fontSize: 12,
-    marginBottom: 8,
+  seatDetailText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  passengersSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   passengersRow: {
     flexDirection: 'row',
@@ -383,15 +400,19 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   morePassengers: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: -10,
+    marginLeft: -8,
   },
   moreText: {
-    fontSize: 11,
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  seatsLeftText: {
+    fontSize: 12,
     fontWeight: '600',
   },
   preferencesRow: {

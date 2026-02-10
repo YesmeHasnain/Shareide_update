@@ -75,6 +75,7 @@
             </select>
             <select name="category" class="rounded-lg border-gray-300 dark:border-dark-100 dark:bg-dark-300 dark:text-white focus:border-yellow-500 focus:ring-yellow-500">
                 <option value="">All Categories</option>
+                <option value="website_contact" {{ request('category') === 'website_contact' ? 'selected' : '' }}>Website Contact</option>
                 <option value="ride_issue" {{ request('category') === 'ride_issue' ? 'selected' : '' }}>Ride Issue</option>
                 <option value="payment" {{ request('category') === 'payment' ? 'selected' : '' }}>Payment</option>
                 <option value="driver_behavior" {{ request('category') === 'driver_behavior' ? 'selected' : '' }}>Driver Behavior</option>
@@ -117,9 +118,22 @@
                                 <span class="font-mono text-sm text-gray-600 dark:text-gray-400">{{ $ticket->ticket_number }}</span>
                             </td>
                             <td class="px-6 py-4">
-                                <div>
-                                    <p class="font-medium text-gray-900 dark:text-white">{{ $ticket->user->name ?? 'Unknown' }}</p>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ $ticket->user->phone ?? '' }}</p>
+                                <div class="flex items-center gap-2">
+                                    @if($ticket->is_guest)
+                                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-medium">
+                                            <i class="fas fa-globe"></i>
+                                        </span>
+                                    @endif
+                                    <div>
+                                        <p class="font-medium text-gray-900 dark:text-white">{{ $ticket->display_name }}</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                                            @if($ticket->is_guest)
+                                                {{ $ticket->guest_email }}
+                                            @else
+                                                {{ $ticket->user->phone ?? '' }}
+                                            @endif
+                                        </p>
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4">

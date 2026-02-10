@@ -5,9 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Image,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../context/ThemeContext';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
@@ -15,7 +18,7 @@ import { onboardingAPI } from '../../api/onboarding';
 
 const VehicleInfoScreen = ({ navigation }) => {
   const { colors } = useTheme();
-  
+
   const [loading, setLoading] = useState(false);
   const [selectedType, setSelectedType] = useState('');
   const [formData, setFormData] = useState({
@@ -26,12 +29,25 @@ const VehicleInfoScreen = ({ navigation }) => {
     year: '',
     color: '',
   });
+  const [vehicleImages, setVehicleImages] = useState({
+    vehicle_front: null,
+    vehicle_back: null,
+    vehicle_interior: null,
+    vehicle_with_plate: null,
+  });
   const [errors, setErrors] = useState({});
 
   const vehicleTypes = [
     { id: 'bike', name: 'Bike', icon: '🏍️' },
     { id: 'car', name: 'Car', icon: '🚗' },
     { id: 'rickshaw', name: 'Rickshaw', icon: '🛺' },
+  ];
+
+  const imageTypes = [
+    { key: 'vehicle_front', label: 'Front View', icon: 'car-outline' },
+    { key: 'vehicle_back', label: 'Back View', icon: 'car-outline' },
+    { key: 'vehicle_interior', label: 'Interior', icon: 'albums-outline' },
+    { key: 'vehicle_with_plate', label: 'Number Plate', icon: 'document-outline' },
   ];
 
   const handleTypeSelect = (type) => {
@@ -47,6 +63,72 @@ const VehicleInfoScreen = ({ navigation }) => {
     if (errors[field]) {
       setErrors({ ...errors, [field]: null });
     }
+  };
+
+  const pickImage = async (key) => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Please allow access to photos');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        setVehicleImages({ ...vehicleImages, [key]: result.assets[0] });
+        if (errors.images) {
+          setErrors({ ...errors, images: null });
+        }
+      }
+    } catch (error) {
+      console.error('Image picker error:', error);
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
+  const takePhoto = async (key) => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Please allow camera access');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        setVehicleImages({ ...vehicleImages, [key]: result.assets[0] });
+        if (errors.images) {
+          setErrors({ ...errors, images: null });
+        }
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+      Alert.alert('Error', 'Failed to take photo');
+    }
+  };
+
+  const showImageOptions = (key) => {
+    Alert.alert(
+      'Select Image',
+      'Choose an option',
+      [
+        { text: 'Take Photo', onPress: () => takePhoto(key) },
+        { text: 'Choose from Gallery', onPress: () => pickImage(key) },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+      { cancelable: true }
+    );
   };
 
   const validate = () => {
@@ -73,6 +155,11 @@ const VehicleInfoScreen = ({ navigation }) => {
       newErrors.color = 'Vehicle color is required';
     }
 
+    // Check at least front photo is provided
+    if (!vehicleImages.vehicle_front) {
+      newErrors.images = 'At least front view photo is required';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -82,7 +169,28 @@ const VehicleInfoScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const response = await onboardingAPI.submitVehicleInfo(formData);
+      // Build FormData with text fields + images
+      const submitData = new FormData();
+      submitData.append('type', formData.type);
+      submitData.append('registration_number', formData.registration_number);
+      submitData.append('make', formData.make);
+      submitData.append('model', formData.model);
+      submitData.append('year', formData.year);
+      submitData.append('color', formData.color);
+
+      // Append vehicle images
+      Object.keys(vehicleImages).forEach((key) => {
+        const img = vehicleImages[key];
+        if (img) {
+          submitData.append(key, {
+            uri: img.uri,
+            type: 'image/jpeg',
+            name: `${key}.jpg`,
+          });
+        }
+      });
+
+      const response = await onboardingAPI.submitVehicleInfo(submitData);
 
       if (response.success) {
         Alert.alert('Success', 'Vehicle information saved!', [
@@ -99,6 +207,8 @@ const VehicleInfoScreen = ({ navigation }) => {
       setLoading(false);
     }
   };
+
+  const uploadedCount = Object.values(vehicleImages).filter(Boolean).length;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -195,6 +305,79 @@ const VehicleInfoScreen = ({ navigation }) => {
           />
         </View>
 
+        {/* Vehicle Photos Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Vehicle Photos *
+          </Text>
+          <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+            Upload clear photos of your vehicle ({uploadedCount}/4)
+          </Text>
+
+          <View style={styles.imagesGrid}>
+            {imageTypes.map((imgType) => (
+              <TouchableOpacity
+                key={imgType.key}
+                style={[
+                  styles.imageCard,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: vehicleImages[imgType.key] ? colors.primary : colors.border,
+                  },
+                ]}
+                onPress={() => showImageOptions(imgType.key)}
+                activeOpacity={0.7}
+              >
+                {vehicleImages[imgType.key] ? (
+                  <View style={styles.imagePreviewContainer}>
+                    <Image
+                      source={{ uri: vehicleImages[imgType.key].uri }}
+                      style={styles.imagePreview}
+                    />
+                    <View style={[styles.imageCheckBadge, { backgroundColor: colors.primary }]}>
+                      <Ionicons name="checkmark" size={14} color="#000" />
+                    </View>
+                    <View style={styles.imageLabelOverlay}>
+                      <Text style={styles.imageLabelOverlayText}>{imgType.label}</Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <View style={[styles.iconCircle, { backgroundColor: colors.background }]}>
+                      <Ionicons name={imgType.icon} size={24} color={colors.textSecondary} />
+                    </View>
+                    <Text style={[styles.imageLabel, { color: colors.text }]}>
+                      {imgType.label}
+                    </Text>
+                    <Text style={[styles.imageTap, { color: colors.textSecondary }]}>
+                      Tap to upload
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {errors.images && (
+            <Text style={[styles.error, { color: colors.error, marginTop: 8 }]}>
+              {errors.images}
+            </Text>
+          )}
+        </View>
+
+        {/* Tips */}
+        <View style={[styles.tipsCard, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.tipsTitle, { color: colors.text }]}>
+            Photo Tips
+          </Text>
+          <Text style={[styles.tipsText, { color: colors.textSecondary }]}>
+            {'\u2022'} Take photos in good lighting{'\n'}
+            {'\u2022'} Make sure vehicle is clean{'\n'}
+            {'\u2022'} Number plate should be clearly visible{'\n'}
+            {'\u2022'} Front view photo is required
+          </Text>
+        </View>
+
         {/* Buttons */}
         <View style={styles.buttons}>
           <Button
@@ -255,11 +438,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
     marginBottom: 12,
   },
   typeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 8,
   },
   typeCard: {
     flex: 1,
@@ -282,6 +470,91 @@ const styles = StyleSheet.create({
   },
   form: {
     marginBottom: 24,
+  },
+  imagesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  imageCard: {
+    width: '48%',
+    height: 140,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  imagePreviewContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  imageCheckBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageLabelOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  imageLabelOverlayText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  imagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 8,
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  imageLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  imageTap: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  tipsCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+  },
+  tipsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  tipsText: {
+    fontSize: 13,
+    lineHeight: 20,
   },
   buttons: {
     flexDirection: 'row',
