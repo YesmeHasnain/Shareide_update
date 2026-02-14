@@ -47,8 +47,7 @@ const ScheduledRidesScreen = ({ navigation }) => {
         setPastRides(response.data.past || []);
       }
     } catch (error) {
-      console.error('Error fetching scheduled rides:', error);
-      // Show empty - real data only
+      // API not available or table not migrated yet - show empty state silently
       setUpcomingRides([]);
       setPastRides([]);
     } finally {

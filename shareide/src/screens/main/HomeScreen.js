@@ -8,6 +8,8 @@ import {
   Animated,
   Dimensions,
   Image,
+  ScrollView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -19,10 +21,9 @@ import { useAuth } from '../../context/AuthContext';
 const PRIMARY = '#FCC014';
 const DARK = '#1A1A2E';
 const GRAY = '#6B7280';
-const LIGHT_GRAY = '#F5F5F5';
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const LIGHT_BG = '#F7F8FA';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Clean minimal map style
 const MAP_STYLE = [
   { featureType: 'poi', stylers: [{ visibility: 'off' }] },
   { featureType: 'poi.park', elementType: 'geometry', stylers: [{ visibility: 'simplified' }, { color: '#e8f5e9' }] },
@@ -41,10 +42,10 @@ const MAP_STYLE = [
 
 const getGreeting = () => {
   const hour = new Date().getHours();
-  if (hour < 12) return { text: 'Good Morning', icon: 'sunny-outline', color: '#F59E0B' };
-  if (hour < 17) return { text: 'Good Afternoon', icon: 'partly-sunny-outline', color: '#F97316' };
-  if (hour < 21) return { text: 'Good Evening', icon: 'moon-outline', color: '#8B5CF6' };
-  return { text: 'Good Night', icon: 'moon-outline', color: '#6366F1' };
+  if (hour < 12) return { text: 'Good Morning', icon: 'sunny', color: '#F59E0B' };
+  if (hour < 17) return { text: 'Good Afternoon', icon: 'partly-sunny', color: '#F97316' };
+  if (hour < 21) return { text: 'Good Evening', icon: 'moon', color: '#8B5CF6' };
+  return { text: 'Good Night', icon: 'moon', color: '#6366F1' };
 };
 
 const getFirstName = (name) => {
@@ -59,6 +60,11 @@ const HomeScreen = ({ navigation, route }) => {
   const panelAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  // Staggered animations for bottom sheet items
+  const item1Anim = useRef(new Animated.Value(0)).current;
+  const item2Anim = useRef(new Animated.Value(0)).current;
+  const item3Anim = useRef(new Animated.Value(0)).current;
+  const item4Anim = useRef(new Animated.Value(0)).current;
   const greeting = getGreeting();
 
   const [currentLocation, setCurrentLocation] = useState({
@@ -66,11 +72,18 @@ const HomeScreen = ({ navigation, route }) => {
     longitude: 67.0011,
   });
   const [routeCoords, setRouteCoords] = useState([]);
-  const [routeInfo, setRouteInfo] = useState(null); // { distance, duration }
+  const [routeInfo, setRouteInfo] = useState(null);
 
   const pickup = route?.params?.pickup;
   const dropoff = route?.params?.dropoff;
   const hasRoute = pickup && dropoff;
+
+  const getInitials = () => {
+    if (!user?.name) return 'U';
+    const words = user.name.trim().split(' ');
+    if (words.length === 1) return words[0].charAt(0).toUpperCase();
+    return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
+  };
 
   // Pulse animation for location marker
   useEffect(() => {
@@ -86,13 +99,20 @@ const HomeScreen = ({ navigation, route }) => {
 
   useEffect(() => {
     getCurrentLocation();
+    // Staggered entrance animations
     Animated.parallel([
       Animated.spring(panelAnim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-    ]).start();
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+    ]).start(() => {
+      Animated.stagger(100, [
+        Animated.spring(item1Anim, { toValue: 1, friction: 8, tension: 50, useNativeDriver: true }),
+        Animated.spring(item2Anim, { toValue: 1, friction: 8, tension: 50, useNativeDriver: true }),
+        Animated.spring(item3Anim, { toValue: 1, friction: 8, tension: 50, useNativeDriver: true }),
+        Animated.spring(item4Anim, { toValue: 1, friction: 8, tension: 50, useNativeDriver: true }),
+      ]).start();
+    });
   }, []);
 
-  // Fetch route when pickup/dropoff change
   useEffect(() => {
     if (hasRoute) {
       fetchRoute();
@@ -131,14 +151,11 @@ const HomeScreen = ({ navigation, route }) => {
           longitude: c[0],
         }));
         setRouteCoords(coords);
-
-        // Extract distance and duration
         const distKm = (r.distance / 1000).toFixed(0);
         const durMin = Math.round(r.duration / 60);
         setRouteInfo({ distance: distKm, duration: durMin });
-
         mapRef.current?.fitToCoordinates(coords, {
-          edgePadding: { top: 100, right: 60, bottom: hasRoute ? 380 : 200, left: 60 },
+          edgePadding: { top: 100, right: 60, bottom: hasRoute ? 420 : 200, left: 60 },
           animated: true,
         });
       }
@@ -152,15 +169,33 @@ const HomeScreen = ({ navigation, route }) => {
     longitudeDelta: hasRoute ? 0.05 : 0.012,
   };
 
-  // Decorative nearby cars
   const nearbyCars = [
     { latitude: currentLocation.latitude + 0.003, longitude: currentLocation.longitude + 0.002 },
     { latitude: currentLocation.latitude - 0.002, longitude: currentLocation.longitude + 0.004 },
     { latitude: currentLocation.latitude + 0.001, longitude: currentLocation.longitude - 0.003 },
+    { latitude: currentLocation.latitude - 0.004, longitude: currentLocation.longitude - 0.001 },
   ];
 
-  // Progress ratio for progress bar (visual only)
   const progressRatio = routeInfo ? 0.45 : 0;
+
+  const savedPlaces = [
+    { id: 'home', icon: 'home', label: 'Home', color: '#3B82F6', bg: '#EFF6FF' },
+    { id: 'work', icon: 'briefcase', label: 'Work', color: '#8B5CF6', bg: '#F5F3FF' },
+    { id: 'gym', icon: 'fitness', label: 'Gym', color: '#10B981', bg: '#ECFDF5' },
+    { id: 'add', icon: 'add', label: 'Add New', color: '#6B7280', bg: '#F3F4F6' },
+  ];
+
+  const promoCards = [
+    { id: '1', title: 'First Ride Free', subtitle: 'Use code SHAREIDE', bg: '#1A1A2E', textColor: '#FFF', accent: PRIMARY },
+    { id: '2', title: 'Invite & Earn', subtitle: 'Get Rs. 100 per friend', bg: PRIMARY, textColor: '#000', accent: '#1A1A2E' },
+  ];
+
+  const staggerStyle = (anim) => ({
+    opacity: anim,
+    transform: [{
+      translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }),
+    }],
+  });
 
   return (
     <View style={styles.container}>
@@ -186,10 +221,7 @@ const HomeScreen = ({ navigation, route }) => {
           pitchEnabled={false}
         >
           {/* Current Location Marker */}
-          <Marker
-            coordinate={pickup || currentLocation}
-            anchor={{ x: 0.5, y: 0.5 }}
-          >
+          <Marker coordinate={pickup || currentLocation} anchor={{ x: 0.5, y: 0.5 }}>
             <View style={styles.locationMarkerWrap}>
               <Animated.View style={[
                 styles.locationPulse,
@@ -204,64 +236,73 @@ const HomeScreen = ({ navigation, route }) => {
 
           {/* Dropoff Marker */}
           {hasRoute && (
-            <Marker
-              coordinate={dropoff}
-              anchor={{ x: 0.5, y: 0.5 }}
-            >
+            <Marker coordinate={dropoff} anchor={{ x: 0.5, y: 1 }}>
               <View style={styles.dropoffMarkerWrap}>
-                <View style={styles.dropoffCircle} />
+                <View style={styles.dropoffPin}>
+                  <Ionicons name="location" size={20} color="#FFF" />
+                </View>
+                <View style={styles.dropoffPinTail} />
               </View>
             </Marker>
           )}
 
-          {/* Route Polyline - Yellow like Figma */}
+          {/* Route Polyline */}
           {routeCoords.length > 0 && (
-            <Polyline
-              coordinates={routeCoords}
-              strokeColor={PRIMARY}
-              strokeWidth={5}
-              lineCap="round"
-              lineJoin="round"
-            />
+            <>
+              <Polyline
+                coordinates={routeCoords}
+                strokeColor="rgba(0,0,0,0.08)"
+                strokeWidth={8}
+                lineCap="round"
+                lineJoin="round"
+              />
+              <Polyline
+                coordinates={routeCoords}
+                strokeColor={PRIMARY}
+                strokeWidth={5}
+                lineCap="round"
+                lineJoin="round"
+              />
+            </>
           )}
 
-          {/* Nearby Cars (decorative, only when no route) */}
+          {/* Nearby Cars */}
           {!hasRoute && nearbyCars.map((car, i) => (
-            <Marker
-              key={`car-${i}`}
-              coordinate={car}
-              anchor={{ x: 0.5, y: 0.5 }}
-            >
+            <Marker key={`car-${i}`} coordinate={car} anchor={{ x: 0.5, y: 0.5 }}>
               <View style={styles.carMarker}>
-                <Ionicons name="car" size={16} color={DARK} />
+                <Ionicons name="car" size={14} color={DARK} />
               </View>
             </Marker>
           ))}
         </MapView>
 
-        {/* Top Header - Logo + Greeting + Actions */}
-        <Animated.View style={[
-          styles.headerBar,
-          { top: insets.top + 8, opacity: fadeAnim },
-        ]}>
-          {/* Left: Logo */}
-          <View style={styles.headerLeft}>
+        {/* Top Header */}
+        <Animated.View style={[styles.headerBar, { top: insets.top + 8, opacity: fadeAnim }]}>
+          {/* Left: Avatar + Greeting */}
+          <TouchableOpacity
+            style={styles.headerLeft}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('Profile');
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={styles.avatarCircle}>
+              {user?.avatar ? (
+                <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.avatarText}>{getInitials()}</Text>
+              )}
+            </View>
+          </TouchableOpacity>
+
+          {/* Center: Logo */}
+          <View style={styles.headerCenter}>
             <Image
               source={require('../../../assets/black-01.png')}
               style={styles.headerLogo}
               resizeMode="contain"
             />
-          </View>
-
-          {/* Center: Greeting */}
-          <View style={styles.headerCenter}>
-            <View style={styles.greetingRow}>
-              <Ionicons name={greeting.icon} size={14} color={greeting.color} />
-              <Text style={styles.greetingText}>{greeting.text}</Text>
-            </View>
-            <Text style={styles.greetingName} numberOfLines={1}>
-              {getFirstName(user?.name)}
-            </Text>
           </View>
 
           {/* Right: Notification */}
@@ -274,32 +315,35 @@ const HomeScreen = ({ navigation, route }) => {
             activeOpacity={0.8}
           >
             <Ionicons name="notifications-outline" size={20} color={DARK} />
+            <View style={styles.notifDot} />
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Floating Destination Card on Map (when route exists) */}
-        {hasRoute && dropoff?.name && (
-          <Animated.View style={[styles.destFloat, { opacity: fadeAnim }]}>
-            <View style={styles.destFloatIcon}>
-              <Ionicons name="location" size={18} color={PRIMARY} />
+        {/* Floating Route Info Badge */}
+        {hasRoute && routeInfo && (
+          <Animated.View style={[styles.routeBadgeFloat, { opacity: fadeAnim }]}>
+            <View style={styles.routeBadgeItem}>
+              <Ionicons name="time-outline" size={14} color={PRIMARY} />
+              <Text style={styles.routeBadgeText}>{routeInfo.duration} min</Text>
             </View>
-            <View style={styles.destFloatContent}>
-              <Text style={styles.destFloatLabel}>Destination</Text>
-              <Text style={styles.destFloatName} numberOfLines={1}>{dropoff.name}</Text>
+            <View style={styles.routeBadgeDivider} />
+            <View style={styles.routeBadgeItem}>
+              <Ionicons name="navigate-outline" size={14} color={PRIMARY} />
+              <Text style={styles.routeBadgeText}>{routeInfo.distance} km</Text>
             </View>
           </Animated.View>
         )}
 
         {/* Center / My Location Button */}
         <TouchableOpacity
-          style={[styles.locateBtn, { bottom: hasRoute ? 400 : 140 }]}
+          style={[styles.locateBtn, { bottom: hasRoute ? 440 : 200 }]}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             getCurrentLocation();
           }}
           activeOpacity={0.8}
         >
-          <Ionicons name="navigate" size={20} color={DARK} />
+          <Ionicons name="navigate" size={20} color={PRIMARY} />
         </TouchableOpacity>
       </View>
 
@@ -309,7 +353,7 @@ const HomeScreen = ({ navigation, route }) => {
         { paddingBottom: insets.bottom + 8 },
         {
           transform: [{
-            translateY: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [400, 0] }),
+            translateY: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [500, 0] }),
           }],
         },
       ]}>
@@ -318,69 +362,71 @@ const HomeScreen = ({ navigation, route }) => {
         {hasRoute ? (
           /* ===== ROUTE INFO STATE ===== */
           <View style={styles.routeContent}>
-            {/* Duration & Distance Header */}
+            {/* Route Header */}
             <View style={styles.routeHeader}>
-              <Text style={styles.routeTitle}>
-                {routeInfo ? `${routeInfo.duration} min` : '...'}{' '}
-                <Text style={styles.routeTitleLight}>
-                  ({routeInfo ? `${routeInfo.distance} km` : '...'})
+              <View style={styles.routeHeaderLeft}>
+                <Text style={styles.routeTitle}>
+                  {routeInfo ? `${routeInfo.duration} min` : '...'}
                 </Text>
-              </Text>
+                <Text style={styles.routeDistance}>
+                  {routeInfo ? `${routeInfo.distance} km` : ''}
+                </Text>
+              </View>
+              <View style={styles.routeHeaderBadge}>
+                <Ionicons name="flash" size={12} color={PRIMARY} />
+                <Text style={styles.routeHeaderBadgeText}>Fastest</Text>
+              </View>
             </View>
-            <Text style={styles.routeSubtitle}>Fastest Route now due to traffic conditions</Text>
 
             {/* Progress Bar */}
             <View style={styles.progressWrap}>
               <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${progressRatio * 100}%` }]} />
-                <View style={[styles.progressArrow, { left: `${Math.max(0, progressRatio * 100 - 5)}%` }]}>
-                  <Ionicons name="caret-forward" size={18} color={PRIMARY} />
+                <Animated.View style={[styles.progressFill, { width: `${progressRatio * 100}%` }]} />
+                <View style={[styles.progressCar, { left: `${Math.max(0, progressRatio * 100 - 3)}%` }]}>
+                  <Ionicons name="car" size={14} color={DARK} />
                 </View>
               </View>
             </View>
 
             {/* Pickup / Dropoff Timeline */}
             <View style={styles.timeline}>
-              {/* Pickup Row */}
               <View style={styles.timelineRow}>
                 <View style={styles.timelineDotWrap}>
-                  <View style={[styles.timelineDot, { backgroundColor: PRIMARY }]} />
+                  <View style={[styles.timelineDotOuter, { borderColor: '#22c55e' }]}>
+                    <View style={[styles.timelineDotInner, { backgroundColor: '#22c55e' }]} />
+                  </View>
+                  <View style={styles.timelineLineVert} />
                 </View>
                 <TouchableOpacity
                   style={styles.timelineCard}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    navigation.navigate('LocationSearch', { type: 'pickup' });
+                    navigation.navigate('LocationSearch', { type: 'pickup', pickup, dropoff });
                   }}
                   activeOpacity={0.7}
                 >
+                  <Text style={styles.timelineLabel}>Pickup</Text>
                   <Text style={styles.timelineText} numberOfLines={1}>
                     {pickup?.name || 'Current Location'}
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              {/* Dotted Line */}
-              <View style={styles.timelineConnector}>
-                <View style={styles.dotLine}>
-                  {[0,1,2].map(i => <View key={i} style={styles.dot} />)}
-                </View>
-              </View>
-
-              {/* Dropoff Row */}
               <View style={styles.timelineRow}>
                 <View style={styles.timelineDotWrap}>
-                  <View style={[styles.timelineDot, { backgroundColor: '#D1D5DB' }]} />
-                  <Ionicons name="location" size={14} color={PRIMARY} style={styles.timelinePin} />
+                  <View style={[styles.timelineDotOuter, { borderColor: '#EF4444' }]}>
+                    <View style={[styles.timelineDotInner, { backgroundColor: '#EF4444' }]} />
+                  </View>
                 </View>
                 <TouchableOpacity
                   style={styles.timelineCard}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    navigation.navigate('LocationSearch', { type: 'dropoff', pickup });
+                    navigation.navigate('LocationSearch', { type: 'dropoff', pickup, dropoff });
                   }}
                   activeOpacity={0.7}
                 >
+                  <Text style={styles.timelineLabel}>Drop-off</Text>
                   <Text style={styles.timelineText} numberOfLines={1}>
                     {dropoff?.name || 'Select destination'}
                   </Text>
@@ -389,83 +435,214 @@ const HomeScreen = ({ navigation, route }) => {
             </View>
           </View>
         ) : (
-          /* ===== INITIAL STATE - Where to? ===== */
-          <View style={styles.initialContent}>
-            <Text style={styles.whereToLabel}>Where are you going?</Text>
-            <TouchableOpacity
-              style={styles.searchBar}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                navigation.navigate('LocationSearch', { type: 'dropoff' });
-              }}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="search" size={18} color={GRAY} />
-              <Text style={styles.searchBarText}>Search destination</Text>
-            </TouchableOpacity>
+          /* ===== INITIAL STATE ===== */
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+            style={styles.initialScroll}
+          >
+            {/* Greeting Banner */}
+            <Animated.View style={[styles.greetingBanner, staggerStyle(item1Anim)]}>
+              <View style={[styles.greetingIconBg, { backgroundColor: greeting.color + '18' }]}>
+                <Ionicons name={greeting.icon} size={22} color={greeting.color} />
+              </View>
+              <View style={styles.greetingInfo}>
+                <Text style={styles.greetingSubtext}>{greeting.text}</Text>
+                <Text style={styles.greetingName}>{getFirstName(user?.name)}</Text>
+              </View>
+              <View style={styles.greetingRight}>
+                <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
+              </View>
+            </Animated.View>
 
-            {/* Quick Actions */}
-            <View style={styles.quickActions}>
+            {/* Where to? - Single Tap */}
+            <Animated.View style={[styles.whereToSection, staggerStyle(item2Anim)]}>
+              <Text style={styles.whereToLabel}>Where are you going?</Text>
               <TouchableOpacity
-                style={styles.quickAction}
+                style={styles.searchBarMain}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  navigation.navigate('SharedRides');
+                  navigation.navigate('LocationSearch', { type: 'dropoff', pickup, dropoff });
                 }}
                 activeOpacity={0.7}
               >
-                <View style={[styles.quickActionIcon, { backgroundColor: '#EDE9FE' }]}>
-                  <Ionicons name="people" size={18} color="#7C3AED" />
-                </View>
-                <Text style={styles.quickActionText}>Carpool</Text>
+                <Ionicons name="search" size={18} color="#9CA3AF" />
+                <Text style={styles.searchBarMainText}>
+                  {dropoff?.name || 'Search destination'}
+                </Text>
               </TouchableOpacity>
 
+              {/* Pickup Row - subtle, below search */}
               <TouchableOpacity
-                style={styles.quickAction}
+                style={styles.pickupRow}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  navigation.navigate('ScheduledRides');
+                  navigation.navigate('LocationSearch', { type: 'pickup', pickup, dropoff });
                 }}
                 activeOpacity={0.7}
               >
-                <View style={[styles.quickActionIcon, { backgroundColor: '#FEF3C7' }]}>
-                  <Ionicons name="calendar" size={18} color="#D97706" />
-                </View>
-                <Text style={styles.quickActionText}>Schedule</Text>
+                <View style={styles.pickupDot} />
+                <Text style={styles.pickupRowText} numberOfLines={1}>
+                  {pickup?.name || 'Current location'}
+                </Text>
+                <Ionicons name="chevron-forward" size={14} color="#D1D5DB" />
               </TouchableOpacity>
+            </Animated.View>
 
-              <TouchableOpacity
-                style={styles.quickAction}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  navigation.navigate('SavedPlaces');
-                }}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.quickActionIcon, { backgroundColor: '#DBEAFE' }]}>
-                  <Ionicons name="bookmark" size={18} color="#2563EB" />
-                </View>
-                <Text style={styles.quickActionText}>Saved</Text>
-              </TouchableOpacity>
+            {/* Saved Places */}
+            <Animated.View style={[styles.savedSection, staggerStyle(item3Anim)]}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Quick Access</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    navigation.navigate('SavedPlaces');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.seeAllText}>See All</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.savedRow}>
+                {savedPlaces.map((place) => (
+                  <TouchableOpacity
+                    key={place.id}
+                    style={styles.savedItem}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      if (place.id === 'add') {
+                        navigation.navigate('SavedPlaces');
+                      } else {
+                        navigation.navigate('LocationSearch', { type: 'dropoff', pickup, dropoff });
+                      }
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.savedIcon, { backgroundColor: place.bg }]}>
+                      <Ionicons name={place.icon} size={18} color={place.color} />
+                    </View>
+                    <Text style={styles.savedLabel}>{place.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Animated.View>
 
-              <TouchableOpacity
-                style={styles.quickAction}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  navigation.navigate('AvailableRides');
-                }}
-                activeOpacity={0.7}
+            {/* Services / Quick Actions */}
+            <Animated.View style={[styles.servicesSection, staggerStyle(item4Anim)]}>
+              <Text style={styles.sectionTitle}>Services</Text>
+              <View style={styles.servicesRow}>
+                <TouchableOpacity
+                  style={styles.serviceCard}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    navigation.navigate('LocationSearch', { type: 'dropoff', pickup, dropoff });
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.serviceIconBg, { backgroundColor: '#FEF9E7' }]}>
+                    <Ionicons name="car" size={22} color={PRIMARY} />
+                  </View>
+                  <Text style={styles.serviceLabel}>Ride</Text>
+                  <Text style={styles.serviceDesc}>Book now</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.serviceCard}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    navigation.navigate('SharedRides');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.serviceIconBg, { backgroundColor: '#EDE9FE' }]}>
+                    <Ionicons name="people" size={22} color="#7C3AED" />
+                  </View>
+                  <Text style={styles.serviceLabel}>Carpool</Text>
+                  <Text style={styles.serviceDesc}>Share & save</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.serviceCard}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    navigation.navigate('ScheduledRides');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.serviceIconBg, { backgroundColor: '#FEF3C7' }]}>
+                    <Ionicons name="calendar" size={22} color="#D97706" />
+                  </View>
+                  <Text style={styles.serviceLabel}>Schedule</Text>
+                  <Text style={styles.serviceDesc}>Plan ahead</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.serviceCard}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    navigation.navigate('AvailableRides');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.serviceIconBg, { backgroundColor: '#D1FAE5' }]}>
+                    <Ionicons name="compass" size={22} color="#059669" />
+                  </View>
+                  <Text style={styles.serviceLabel}>Explore</Text>
+                  <Text style={styles.serviceDesc}>Nearby rides</Text>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+
+            {/* Promo Banner */}
+            <Animated.View style={staggerStyle(item4Anim)}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                pagingEnabled
+                snapToInterval={SCREEN_WIDTH - 48 + 12}
+                decelerationRate="fast"
+                contentContainerStyle={styles.promoScroll}
               >
-                <View style={[styles.quickActionIcon, { backgroundColor: '#D1FAE5' }]}>
-                  <Ionicons name="car-sport" size={18} color="#059669" />
-                </View>
-                <Text style={styles.quickActionText}>Rides</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                {promoCards.map((promo) => (
+                  <TouchableOpacity
+                    key={promo.id}
+                    style={[styles.promoCard, { backgroundColor: promo.bg }]}
+                    activeOpacity={0.9}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      navigation.navigate('PromoCodes');
+                    }}
+                  >
+                    <View style={styles.promoContent}>
+                      <Text style={[styles.promoTitle, { color: promo.textColor }]}>
+                        {promo.title}
+                      </Text>
+                      <Text style={[styles.promoSubtitle, { color: promo.textColor, opacity: 0.7 }]}>
+                        {promo.subtitle}
+                      </Text>
+                      <View style={[styles.promoBtn, { backgroundColor: promo.accent }]}>
+                        <Text style={[styles.promoBtnText, { color: promo.bg === PRIMARY ? '#FFF' : '#000' }]}>
+                          Apply
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={[styles.promoIconCircle, { backgroundColor: promo.accent + '20' }]}>
+                      <Ionicons
+                        name={promo.id === '1' ? 'gift' : 'people'}
+                        size={32}
+                        color={promo.accent}
+                      />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </Animated.View>
+
+            <View style={{ height: 16 }} />
+          </ScrollView>
         )}
 
-        {/* Find a Ride Button - Always Present */}
+        {/* Find a Ride Button */}
         <TouchableOpacity
           style={styles.findRideBtn}
           onPress={() => {
@@ -473,14 +650,13 @@ const HomeScreen = ({ navigation, route }) => {
             if (hasRoute) {
               navigation.navigate('RideOptions', { pickup, dropoff });
             } else {
-              navigation.navigate('LocationSearch', { type: 'dropoff' });
+              navigation.navigate('LocationSearch', { type: 'dropoff', pickup, dropoff });
             }
           }}
           activeOpacity={0.85}
         >
-          <Text style={styles.findRideBtnText}>
-            {hasRoute ? 'Find a Ride' : 'Find a Ride'}
-          </Text>
+          <Ionicons name={hasRoute ? 'car-sport' : 'search'} size={20} color={DARK} />
+          <Text style={styles.findRideBtnText}>Find a Ride</Text>
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -527,28 +703,36 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   dropoffMarkerWrap: {
-    width: 30,
-    height: 30,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  dropoffCircle: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#D1D5DB',
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  carMarker: {
+  dropoffPin: {
     width: 36,
     height: 36,
     borderRadius: 18,
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  dropoffPinTail: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#EF4444',
+    marginTop: -1,
+  },
+  carMarker: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -562,107 +746,112 @@ const styles = StyleSheet.create({
   /* ===== Header Bar ===== */
   headerBar: {
     position: 'absolute',
-    left: 12,
-    right: 12,
+    left: 16,
+    right: 16,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    borderRadius: 28,
+    paddingHorizontal: 6,
+    paddingVertical: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 8,
     zIndex: 10,
   },
   headerLeft: {
-    marginRight: 10,
+    padding: 2,
   },
-  headerLogo: {
-    width: 90,
-    height: 26,
+  avatarCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#FEF3C7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+  },
+  avatarText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: DARK,
   },
   headerCenter: {
     flex: 1,
-    alignItems: 'flex-end',
-    marginRight: 10,
-  },
-  greetingRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
   },
-  greetingText: {
-    fontSize: 11,
-    color: GRAY,
-    fontWeight: '500',
-  },
-  greetingName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: DARK,
-    marginTop: 1,
+  headerLogo: {
+    width: 100,
+    height: 28,
   },
   notifBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: LIGHT_GRAY,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: LIGHT_BG,
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  /* ===== Floating Destination Card ===== */
-  destFloat: {
+  notifDot: {
     position: 'absolute',
-    left: 16,
-    top: '42%',
+    top: 10,
+    right: 11,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+
+  /* ===== Floating Route Badge ===== */
+  routeBadgeFloat: {
+    position: 'absolute',
+    top: '15%',
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 10,
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 6,
-    maxWidth: SCREEN_WIDTH * 0.55,
   },
-  destFloatIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#FEF9E7',
-    justifyContent: 'center',
+  routeBadgeItem: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 5,
   },
-  destFloatContent: {
-    flex: 1,
-  },
-  destFloatLabel: {
-    fontSize: 11,
-    color: GRAY,
-    fontWeight: '400',
-  },
-  destFloatName: {
-    fontSize: 14,
+  routeBadgeText: {
+    fontSize: 13,
     fontWeight: '700',
     color: DARK,
-    marginTop: 1,
+  },
+  routeBadgeDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: '#E5E7EB',
   },
 
   /* ===== Locate Button ===== */
   locateBtn: {
     position: 'absolute',
     right: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -678,13 +867,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    paddingHorizontal: 24,
-    paddingTop: 10,
+    paddingHorizontal: 20,
+    paddingTop: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowOpacity: 0.06,
+    shadowRadius: 20,
+    elevation: 14,
+    maxHeight: '55%',
   },
   sheetHandle: {
     width: 36,
@@ -692,43 +882,124 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: '#E5E7EB',
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
 
-  /* ===== Initial State (no route) ===== */
-  initialContent: {
+  /* ===== Initial State ===== */
+  initialScroll: {
+    marginBottom: 8,
+  },
+
+  // Greeting Banner
+  greetingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: LIGHT_BG,
+    borderRadius: 16,
+    padding: 14,
     marginBottom: 16,
   },
+  greetingIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  greetingInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  greetingSubtext: {
+    fontSize: 12,
+    color: GRAY,
+    fontWeight: '500',
+  },
+  greetingName: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: DARK,
+    marginTop: 1,
+  },
+  greetingRight: {
+    paddingLeft: 8,
+  },
+
+  // Where to section
+  whereToSection: {
+    marginBottom: 18,
+  },
   whereToLabel: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     color: DARK,
     marginBottom: 12,
   },
-  searchBar: {
+  searchBarMain: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 48,
-    backgroundColor: LIGHT_GRAY,
-    borderRadius: 24,
-    paddingHorizontal: 16,
+    height: 50,
+    backgroundColor: LIGHT_BG,
+    borderRadius: 25,
+    paddingHorizontal: 18,
     gap: 10,
+    marginBottom: 10,
+  },
+  searchBarMainText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#9CA3AF',
+  },
+  pickupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 6,
+    gap: 8,
+  },
+  pickupDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#22c55e',
+  },
+  pickupRowText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '500',
+    color: GRAY,
+  },
+
+  // Saved Places
+  savedSection: {
     marginBottom: 18,
   },
-  searchBarText: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    fontWeight: '500',
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  quickActions: {
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: DARK,
+  },
+  seeAllText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: PRIMARY,
+  },
+  savedRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  quickAction: {
+  savedItem: {
     alignItems: 'center',
-    width: (SCREEN_WIDTH - 80) / 4,
+    width: (SCREEN_WIDTH - 72) / 4,
   },
-  quickActionIcon: {
+  savedIcon: {
     width: 48,
     height: 48,
     borderRadius: 16,
@@ -736,120 +1007,232 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 6,
   },
-  quickActionText: {
+  savedLabel: {
     fontSize: 11,
     fontWeight: '600',
     color: DARK,
   },
 
+  // Services
+  servicesSection: {
+    marginBottom: 16,
+  },
+  servicesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  serviceCard: {
+    alignItems: 'center',
+    width: (SCREEN_WIDTH - 72) / 4,
+  },
+  serviceIconBg: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  serviceLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: DARK,
+  },
+  serviceDesc: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: GRAY,
+    marginTop: 1,
+  },
+
+  // Promo Cards
+  promoScroll: {
+    gap: 12,
+  },
+  promoCard: {
+    width: SCREEN_WIDTH - 48,
+    borderRadius: 20,
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  promoContent: {
+    flex: 1,
+  },
+  promoTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  promoSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 3,
+    marginBottom: 12,
+  },
+  promoBtn: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 18,
+    paddingVertical: 7,
+    borderRadius: 20,
+  },
+  promoBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  promoIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+
   /* ===== Route Info State ===== */
   routeContent: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   routeHeader: {
-    marginBottom: 4,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  routeHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
   },
   routeTitle: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '800',
     color: DARK,
   },
-  routeTitleLight: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: DARK,
-  },
-  routeSubtitle: {
-    fontSize: 13,
+  routeDistance: {
+    fontSize: 16,
+    fontWeight: '600',
     color: GRAY,
-    fontWeight: '400',
-    marginBottom: 20,
+  },
+  routeHeaderBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: PRIMARY + '18',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    gap: 4,
+  },
+  routeHeaderBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: PRIMARY,
   },
 
   /* ===== Progress Bar ===== */
   progressWrap: {
-    marginBottom: 24,
+    marginBottom: 20,
+    marginTop: 8,
   },
   progressTrack: {
-    height: 8,
+    height: 6,
     backgroundColor: '#E5E7EB',
-    borderRadius: 4,
+    borderRadius: 3,
     overflow: 'visible',
     position: 'relative',
   },
   progressFill: {
-    height: 8,
+    height: 6,
     backgroundColor: PRIMARY,
-    borderRadius: 4,
+    borderRadius: 3,
   },
-  progressArrow: {
+  progressCar: {
     position: 'absolute',
-    top: -8,
-    width: 24,
-    height: 24,
+    top: -11,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: PRIMARY,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
 
   /* ===== Timeline ===== */
   timeline: {
-    paddingLeft: 4,
+    gap: 2,
   },
   timelineRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   timelineDotWrap: {
-    width: 28,
+    width: 32,
     alignItems: 'center',
+  },
+  timelineDotOuter: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2.5,
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  timelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+  timelineDotInner: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
-  timelinePin: {
-    position: 'absolute',
-    bottom: -10,
+  timelineLineVert: {
+    width: 2,
+    height: 16,
+    backgroundColor: '#D1D5DB',
+    marginTop: 3,
+    borderRadius: 1,
   },
   timelineCard: {
     flex: 1,
-    height: 48,
-    backgroundColor: LIGHT_GRAY,
-    borderRadius: 24,
+    height: 52,
+    backgroundColor: LIGHT_BG,
+    borderRadius: 16,
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    marginLeft: 10,
+    paddingHorizontal: 16,
+    marginLeft: 8,
+  },
+  timelineLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: GRAY,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   timelineText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     color: DARK,
-  },
-  timelineConnector: {
-    paddingLeft: 12,
-    height: 24,
-    justifyContent: 'center',
-  },
-  dotLine: {
-    gap: 4,
-  },
-  dot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#D1D5DB',
+    marginTop: 1,
   },
 
   /* ===== Find a Ride Button ===== */
   findRideBtn: {
     backgroundColor: PRIMARY,
-    height: 54,
-    borderRadius: 27,
+    height: 56,
+    borderRadius: 28,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 8,
     marginBottom: 8,
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   findRideBtnText: {
     fontSize: 16,
