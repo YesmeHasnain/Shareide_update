@@ -7,6 +7,7 @@ import {
   StatusBar,
   Animated,
   Dimensions,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -38,6 +39,19 @@ const MAP_STYLE = [
   { featureType: 'administrative', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
 ];
 
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return { text: 'Good Morning', icon: 'sunny-outline', color: '#F59E0B' };
+  if (hour < 17) return { text: 'Good Afternoon', icon: 'partly-sunny-outline', color: '#F97316' };
+  if (hour < 21) return { text: 'Good Evening', icon: 'moon-outline', color: '#8B5CF6' };
+  return { text: 'Good Night', icon: 'moon-outline', color: '#6366F1' };
+};
+
+const getFirstName = (name) => {
+  if (!name) return 'there';
+  return name.trim().split(' ')[0];
+};
+
 const HomeScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
@@ -45,6 +59,7 @@ const HomeScreen = ({ navigation, route }) => {
   const panelAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const greeting = getGreeting();
 
   const [currentLocation, setCurrentLocation] = useState({
     latitude: 24.8607,
@@ -224,11 +239,32 @@ const HomeScreen = ({ navigation, route }) => {
           ))}
         </MapView>
 
-        {/* Notification Bell - floating top right */}
+        {/* Top Header - Logo + Greeting + Actions */}
         <Animated.View style={[
-          styles.notifBtnWrap,
-          { top: insets.top + 12, opacity: fadeAnim },
+          styles.headerBar,
+          { top: insets.top + 8, opacity: fadeAnim },
         ]}>
+          {/* Left: Logo */}
+          <View style={styles.headerLeft}>
+            <Image
+              source={require('../../../assets/black-01.png')}
+              style={styles.headerLogo}
+              resizeMode="contain"
+            />
+          </View>
+
+          {/* Center: Greeting */}
+          <View style={styles.headerCenter}>
+            <View style={styles.greetingRow}>
+              <Ionicons name={greeting.icon} size={14} color={greeting.color} />
+              <Text style={styles.greetingText}>{greeting.text}</Text>
+            </View>
+            <Text style={styles.greetingName} numberOfLines={1}>
+              {getFirstName(user?.name)}
+            </Text>
+          </View>
+
+          {/* Right: Notification */}
           <TouchableOpacity
             style={styles.notifBtn}
             onPress={() => {
@@ -237,7 +273,7 @@ const HomeScreen = ({ navigation, route }) => {
             }}
             activeOpacity={0.8}
           >
-            <Ionicons name="notifications-outline" size={22} color={DARK} />
+            <Ionicons name="notifications-outline" size={20} color={DARK} />
           </TouchableOpacity>
         </Animated.View>
 
@@ -353,8 +389,80 @@ const HomeScreen = ({ navigation, route }) => {
             </View>
           </View>
         ) : (
-          /* ===== INITIAL STATE - Minimal ===== */
-          <View style={styles.initialContent} />
+          /* ===== INITIAL STATE - Where to? ===== */
+          <View style={styles.initialContent}>
+            <Text style={styles.whereToLabel}>Where are you going?</Text>
+            <TouchableOpacity
+              style={styles.searchBar}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate('LocationSearch', { type: 'dropoff' });
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="search" size={18} color={GRAY} />
+              <Text style={styles.searchBarText}>Search destination</Text>
+            </TouchableOpacity>
+
+            {/* Quick Actions */}
+            <View style={styles.quickActions}>
+              <TouchableOpacity
+                style={styles.quickAction}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  navigation.navigate('SharedRides');
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: '#EDE9FE' }]}>
+                  <Ionicons name="people" size={18} color="#7C3AED" />
+                </View>
+                <Text style={styles.quickActionText}>Carpool</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickAction}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  navigation.navigate('ScheduledRides');
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: '#FEF3C7' }]}>
+                  <Ionicons name="calendar" size={18} color="#D97706" />
+                </View>
+                <Text style={styles.quickActionText}>Schedule</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickAction}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  navigation.navigate('SavedPlaces');
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: '#DBEAFE' }]}>
+                  <Ionicons name="bookmark" size={18} color="#2563EB" />
+                </View>
+                <Text style={styles.quickActionText}>Saved</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickAction}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  navigation.navigate('AvailableRides');
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: '#D1FAE5' }]}>
+                  <Ionicons name="car-sport" size={18} color="#059669" />
+                </View>
+                <Text style={styles.quickActionText}>Rides</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
 
         {/* Find a Ride Button - Always Present */}
@@ -451,23 +559,59 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
-  /* ===== Notification Button ===== */
-  notifBtnWrap: {
+  /* ===== Header Bar ===== */
+  headerBar: {
     position: 'absolute',
-    right: 16,
+    left: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 6,
+    zIndex: 10,
+  },
+  headerLeft: {
+    marginRight: 10,
+  },
+  headerLogo: {
+    width: 90,
+    height: 26,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'flex-end',
+    marginRight: 10,
+  },
+  greetingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  greetingText: {
+    fontSize: 11,
+    color: GRAY,
+    fontWeight: '500',
+  },
+  greetingName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: DARK,
+    marginTop: 1,
   },
   notifBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFFFFF',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: LIGHT_GRAY,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
 
   /* ===== Floating Destination Card ===== */
@@ -553,7 +697,49 @@ const styles = StyleSheet.create({
 
   /* ===== Initial State (no route) ===== */
   initialContent: {
-    height: 8,
+    marginBottom: 16,
+  },
+  whereToLabel: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: DARK,
+    marginBottom: 12,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    backgroundColor: LIGHT_GRAY,
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    gap: 10,
+    marginBottom: 18,
+  },
+  searchBarText: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    fontWeight: '500',
+  },
+  quickActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  quickAction: {
+    alignItems: 'center',
+    width: (SCREEN_WIDTH - 80) / 4,
+  },
+  quickActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  quickActionText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: DARK,
   },
 
   /* ===== Route Info State ===== */
