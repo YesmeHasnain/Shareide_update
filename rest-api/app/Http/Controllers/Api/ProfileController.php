@@ -78,7 +78,7 @@ class ProfileController extends Controller
             'profile' => [
                 'full_name' => $profile->full_name,
                 'avatar_path' => $profile->avatar_path,
-                'avatar_url' => $profile->avatar_path ? Storage::url($profile->avatar_path) : null,
+                'avatar_url' => $profile->avatar_path ? url('storage/' . $profile->avatar_path) : null,
                 'default_city' => $profile->default_city,
             ],
         ]);
@@ -104,7 +104,7 @@ class ProfileController extends Controller
             'profile' => [
                 'full_name' => $profile->full_name,
                 'avatar_path' => $profile->avatar_path,
-                'avatar_url' => $profile->avatar_path ? Storage::url($profile->avatar_path) : null,
+                'avatar_url' => $profile->avatar_path ? url('storage/' . $profile->avatar_path) : null,
                 'default_city' => $profile->default_city,
             ],
         ]);

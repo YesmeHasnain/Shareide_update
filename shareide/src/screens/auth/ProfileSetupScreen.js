@@ -102,6 +102,28 @@ const ProfileSetupScreen = ({ route, navigation }) => {
     }
   };
 
+  const uploadAvatar = async (authToken) => {
+    if (!profileImage) return null;
+    try {
+      const formData = new FormData();
+      formData.append('avatar', {
+        uri: profileImage.uri,
+        type: profileImage.mimeType || 'image/jpeg',
+        name: profileImage.fileName || 'avatar.jpg',
+      });
+      const res = await apiClient.post('/profile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      return res.data?.profile?.avatar_url || null;
+    } catch (e) {
+      console.log('Avatar upload failed:', e.message);
+      return null;
+    }
+  };
+
   const handleComplete = async () => {
     if (!name.trim()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -116,8 +138,8 @@ const ProfileSetupScreen = ({ route, navigation }) => {
       if (token && !isNewUser) {
         await login(user, token);
         await apiClient.put('/profile', { name: name.trim(), gender });
+        if (profileImage) await uploadAvatar(token);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        // Navigator auto-switches to MainTabs via conditional rendering
       } else {
         if (!verificationToken) {
           Alert.alert('Error', 'Please go back and verify OTP again.');
@@ -131,9 +153,16 @@ const ProfileSetupScreen = ({ route, navigation }) => {
         });
 
         if (response.success) {
+          // Upload avatar if selected
+          let avatarUrl = null;
+          if (profileImage) {
+            avatarUrl = await uploadAvatar(response.token);
+          }
+          const userData = { ...response.user };
+          if (avatarUrl) userData.avatar = avatarUrl;
+
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          await login(response.user, response.token);
-          // Navigator auto-switches to MainTabs via conditional rendering
+          await login(userData, response.token);
         }
       }
     } catch (error) {

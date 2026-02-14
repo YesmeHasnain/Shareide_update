@@ -210,7 +210,7 @@ class AuthController extends Controller
             'name' => $user->name,
             'phone' => $user->phone,
             'email' => $user->email,
-            'avatar' => $profile?->avatar_path,
+            'avatar' => $profile?->avatar_path ? url('storage/' . $profile->avatar_path) : null,
             'gender' => $profile?->gender,
             'profile_complete' => $isProfileComplete,
         ];
@@ -377,7 +377,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'phone' => $user->phone,
                 'email' => $user->email,
-                'avatar' => $user->riderProfile?->avatar_path,
+                'avatar' => $user->riderProfile?->avatar_path ? url('storage/' . $user->riderProfile->avatar_path) : null,
                 'gender' => $user->riderProfile?->gender,
                 'profile_complete' => true,
             ],
@@ -401,9 +401,10 @@ class AuthController extends Controller
         ];
 
         if ($user->riderProfile) {
+            $userData['avatar'] = $user->riderProfile->avatar_path ? url('storage/' . $user->riderProfile->avatar_path) : null;
             $userData['rider_profile'] = [
                 'full_name' => $user->riderProfile->full_name,
-                'avatar_path' => $user->riderProfile->avatar_path,
+                'avatar_url' => $user->riderProfile->avatar_path ? url('storage/' . $user->riderProfile->avatar_path) : null,
                 'default_city' => $user->riderProfile->default_city,
             ];
         }

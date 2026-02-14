@@ -10,6 +10,7 @@ import {
   Animated,
   Platform,
   Linking,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -88,7 +89,11 @@ const ProfileScreen = ({ navigation }) => {
           activeOpacity={0.8}
         >
           <View style={styles.avatarLarge}>
-            <Text style={styles.avatarLargeText}>{getInitials()}</Text>
+            {user?.avatar ? (
+              <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarLargeText}>{getInitials()}</Text>
+            )}
             <View style={styles.editBadge}>
               <Ionicons name="pencil" size={10} color="#FFF" />
             </View>
@@ -247,6 +252,11 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     color: DARK,
+  },
+  avatarImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 20,
   },
   editBadge: {
     position: 'absolute',
