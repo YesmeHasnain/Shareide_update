@@ -3,14 +3,16 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   RefreshControl,
   Dimensions,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { walletAPI } from '../../api/wallet';
+import Header from '../../components/Header';
+import { spacing, typography, borderRadius } from '../../theme/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -64,16 +66,13 @@ const EarningsScreen = ({ navigation }) => {
   ];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Earnings</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('RideHistory')}>
-          <Text style={styles.historyText}>History</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Header
+        title="Earnings"
+        onLeftPress={() => navigation.goBack()}
+        rightIcon="time-outline"
+        onRightPress={() => navigation.navigate('RideHistory')}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -170,7 +169,9 @@ const EarningsScreen = ({ navigation }) => {
 
           <View style={styles.breakdownRow}>
             <View style={styles.breakdownLeft}>
-              <Text style={styles.breakdownIcon}>💰</Text>
+              <View style={[styles.iconBg, { backgroundColor: 'rgba(252, 192, 20, 0.12)' }]}>
+                <Ionicons name="cash" size={20} color="#FCC014" />
+              </View>
               <Text style={[styles.breakdownLabel, { color: colors.text }]}>Ride Earnings</Text>
             </View>
             <Text style={[styles.breakdownValue, { color: colors.text }]}>
@@ -180,7 +181,9 @@ const EarningsScreen = ({ navigation }) => {
 
           <View style={styles.breakdownRow}>
             <View style={styles.breakdownLeft}>
-              <Text style={styles.breakdownIcon}>🎁</Text>
+              <View style={[styles.iconBg, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
+                <Ionicons name="gift" size={20} color="#10B981" />
+              </View>
               <Text style={[styles.breakdownLabel, { color: colors.text }]}>Tips</Text>
             </View>
             <Text style={[styles.breakdownValue, { color: '#22c55e' }]}>
@@ -192,7 +195,9 @@ const EarningsScreen = ({ navigation }) => {
 
           <View style={styles.breakdownRow}>
             <View style={styles.breakdownLeft}>
-              <Text style={styles.breakdownIcon}>📊</Text>
+              <View style={[styles.iconBg, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
+                <Ionicons name="bar-chart" size={20} color="#EF4444" />
+              </View>
               <Text style={[styles.breakdownLabel, { color: colors.text }]}>Platform Fee (20%)</Text>
             </View>
             <Text style={[styles.breakdownValue, { color: '#ef4444' }]}>
@@ -204,7 +209,9 @@ const EarningsScreen = ({ navigation }) => {
 
           <View style={styles.breakdownRow}>
             <View style={styles.breakdownLeft}>
-              <Text style={styles.breakdownIcon}>✅</Text>
+              <View style={[styles.iconBg, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
+                <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+              </View>
               <Text style={[styles.breakdownLabel, { color: colors.text, fontWeight: 'bold' }]}>
                 Net Earnings
               </Text>
@@ -218,19 +225,25 @@ const EarningsScreen = ({ navigation }) => {
         {/* Quick Stats */}
         <View style={styles.quickStats}>
           <View style={[styles.quickStatCard, { backgroundColor: colors.surface }]}>
-            <Text style={styles.quickStatIcon}>⭐</Text>
+            <View style={[styles.iconBg, { backgroundColor: 'rgba(252, 192, 20, 0.12)' }]}>
+              <Ionicons name="star" size={20} color="#FCC014" />
+            </View>
             <Text style={[styles.quickStatValue, { color: colors.text }]}>4.8</Text>
             <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>Rating</Text>
           </View>
           <View style={[styles.quickStatCard, { backgroundColor: colors.surface }]}>
-            <Text style={styles.quickStatIcon}>📍</Text>
+            <View style={[styles.iconBg, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
+              <Ionicons name="location" size={20} color="#3B82F6" />
+            </View>
             <Text style={[styles.quickStatValue, { color: colors.text }]}>
               {selectedPeriod === 'today' ? '45' : selectedPeriod === 'week' ? '320' : '1,280'}
             </Text>
             <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>km Driven</Text>
           </View>
           <View style={[styles.quickStatCard, { backgroundColor: colors.surface }]}>
-            <Text style={styles.quickStatIcon}>✅</Text>
+            <View style={[styles.iconBg, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
+              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+            </View>
             <Text style={[styles.quickStatValue, { color: colors.text }]}>
               {selectedPeriod === 'today' ? '95' : selectedPeriod === 'week' ? '92' : '94'}%
             </Text>
@@ -240,7 +253,7 @@ const EarningsScreen = ({ navigation }) => {
 
         <View style={{ height: 30 }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -248,58 +261,36 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
-  },
-  backIcon: {
-    fontSize: 28,
-    color: '#000',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  historyText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
-  },
   periodContainer: {
     flexDirection: 'row',
-    padding: 16,
-    gap: 8,
+    padding: spacing.lg,
+    gap: spacing.sm,
   },
   periodButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
   },
   periodText: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     fontWeight: '600',
   },
   earningsCard: {
-    margin: 16,
+    margin: spacing.lg,
     marginTop: 0,
-    padding: 24,
-    borderRadius: 20,
+    padding: spacing.xxl,
+    borderRadius: borderRadius.xl,
     alignItems: 'center',
   },
   cardLabel: {
-    fontSize: 14,
-    marginBottom: 8,
+    fontSize: typography.bodySmall,
+    marginBottom: spacing.sm,
   },
   cardAmount: {
-    fontSize: 40,
+    fontSize: typography.displayLarge,
     fontWeight: 'bold',
-    marginBottom: 24,
+    marginBottom: spacing.xxl,
   },
   cardStats: {
     flexDirection: 'row',
@@ -310,27 +301,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardStatValue: {
-    fontSize: 18,
+    fontSize: typography.h5,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   cardStatLabel: {
-    fontSize: 12,
+    fontSize: typography.caption,
   },
   cardDivider: {
     width: 1,
     height: '100%',
   },
   chartCard: {
-    margin: 16,
+    margin: spacing.lg,
     marginTop: 0,
-    padding: 16,
-    borderRadius: 16,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
   },
   chartTitle: {
-    fontSize: 16,
+    fontSize: typography.h6,
     fontWeight: '600',
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   chartContainer: {
     flexDirection: 'row',
@@ -343,55 +334,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   barValue: {
-    fontSize: 10,
-    marginBottom: 4,
+    fontSize: typography.tiny,
+    marginBottom: spacing.xs,
   },
   barWrapper: {
     width: 24,
     height: 100,
     justifyContent: 'flex-end',
-    borderRadius: 4,
+    borderRadius: borderRadius.xs,
     overflow: 'hidden',
     backgroundColor: '#e5e5e5',
   },
   bar: {
     width: '100%',
-    borderRadius: 4,
+    borderRadius: borderRadius.xs,
   },
   barLabel: {
     fontSize: 11,
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   breakdownCard: {
-    margin: 16,
+    margin: spacing.lg,
     marginTop: 0,
-    padding: 16,
-    borderRadius: 16,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
   },
   breakdownTitle: {
-    fontSize: 16,
+    fontSize: typography.h6,
     fontWeight: '600',
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   breakdownRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
   },
   breakdownLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  breakdownIcon: {
-    fontSize: 20,
-    marginRight: 12,
+  iconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
   },
   breakdownLabel: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
   },
   breakdownValue: {
-    fontSize: 16,
+    fontSize: typography.h6,
     fontWeight: '600',
   },
   breakdownDivider: {
@@ -399,23 +394,20 @@ const styles = StyleSheet.create({
   },
   quickStats: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 8,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
   },
   quickStatCard: {
     flex: 1,
-    padding: 16,
-    borderRadius: 12,
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
   },
-  quickStatIcon: {
-    fontSize: 24,
-    marginBottom: 8,
-  },
   quickStatValue: {
-    fontSize: 18,
+    fontSize: typography.h5,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
+    marginTop: spacing.sm,
   },
   quickStatLabel: {
     fontSize: 11,

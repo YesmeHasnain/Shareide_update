@@ -3,14 +3,17 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   FlatList,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import Header from '../../components/Header';
+import Loading from '../../components/Loading';
 import { rideAPI } from '../../api/ride';
+import { spacing, typography, borderRadius } from '../../theme/colors';
 
 const RideHistoryScreen = ({ navigation }) => {
   const { colors } = useTheme();
@@ -35,7 +38,6 @@ const RideHistoryScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.log('Error fetching ride history:', error);
-      // Show empty - real data only
       setRides([]);
       setHasMore(false);
     } finally {
@@ -58,9 +60,9 @@ const RideHistoryScreen = ({ navigation }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'completed':
-        return '#22c55e';
+        return colors.success || '#22c55e';
       case 'cancelled':
-        return '#ef4444';
+        return colors.error || '#ef4444';
       default:
         return colors.textSecondary;
     }
@@ -68,8 +70,9 @@ const RideHistoryScreen = ({ navigation }) => {
 
   const renderRide = ({ item }) => (
     <TouchableOpacity
-      style={[styles.rideCard, { backgroundColor: colors.surface }]}
+      style={[styles.rideCard, { backgroundColor: colors.card || colors.surface }]}
       onPress={() => navigation.navigate('RideDetails', { ride: item })}
+      activeOpacity={0.7}
     >
       <View style={styles.rideHeader}>
         <View style={styles.passengerInfo}>
@@ -100,21 +103,21 @@ const RideHistoryScreen = ({ navigation }) => {
 
       <View style={styles.routeContainer}>
         <View style={styles.routePoint}>
-          <View style={[styles.routeDot, { backgroundColor: '#22c55e' }]} />
+          <View style={[styles.routeDot, { backgroundColor: colors.pickupDot || '#22c55e' }]} />
           <Text style={[styles.routeAddress, { color: colors.text }]} numberOfLines={1}>
             {item.pickup_address}
           </Text>
         </View>
-        <View style={[styles.routeLine, { backgroundColor: colors.border }]} />
+        <View style={[styles.routeLine, { backgroundColor: colors.routeConnector || colors.border }]} />
         <View style={styles.routePoint}>
-          <View style={[styles.routeDot, { backgroundColor: '#ef4444' }]} />
+          <View style={[styles.routeDot, { backgroundColor: colors.dropoffDot || '#ef4444' }]} />
           <Text style={[styles.routeAddress, { color: colors.text }]} numberOfLines={1}>
             {item.dropoff_address}
           </Text>
         </View>
       </View>
 
-      <View style={styles.rideFooter}>
+      <View style={[styles.rideFooter, { borderTopColor: colors.border }]}>
         <View style={styles.rideStats}>
           <View style={styles.rideStat}>
             <Text style={[styles.rideStatValue, { color: colors.text }]}>
@@ -130,9 +133,12 @@ const RideHistoryScreen = ({ navigation }) => {
           </View>
           {item.rating && (
             <View style={styles.rideStat}>
-              <Text style={[styles.rideStatValue, { color: colors.text }]}>
-                {item.rating} ⭐
-              </Text>
+              <View style={styles.ratingRow}>
+                <Text style={[styles.rideStatValue, { color: colors.text }]}>
+                  {item.rating}
+                </Text>
+                <Ionicons name="star" size={14} color={colors.star || colors.primary} style={{ marginLeft: 2 }} />
+              </View>
               <Text style={[styles.rideStatLabel, { color: colors.textSecondary }]}>Rating</Text>
             </View>
           )}
@@ -144,30 +150,16 @@ const RideHistoryScreen = ({ navigation }) => {
 
   if (loading && rides.length === 0) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={[styles.header, { backgroundColor: colors.primary }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backIcon}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Ride History</Text>
-          <View style={{ width: 28 }} />
-        </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      </SafeAreaView>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Header title="Ride History" onLeftPress={() => navigation.goBack()} />
+        <Loading />
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Ride History</Text>
-        <View style={{ width: 28 }} />
-      </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Header title="Ride History" onLeftPress={() => navigation.goBack()} />
 
       <FlatList
         data={rides}
@@ -181,8 +173,10 @@ const RideHistoryScreen = ({ navigation }) => {
         onEndReachedThreshold={0.5}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🚗</Text>
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+            <View style={[styles.emptyIconBg, { backgroundColor: colors.primaryMuted }]}>
+              <Ionicons name="car-outline" size={48} color={colors.primary} />
+            </View>
+            <Text style={[styles.emptyText, { color: colors.text }]}>
               No rides yet
             </Text>
             <Text style={[styles.emptyHint, { color: colors.textSecondary }]}>
@@ -196,7 +190,7 @@ const RideHistoryScreen = ({ navigation }) => {
           ) : null
         }
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -204,41 +198,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
-  },
-  backIcon: {
-    fontSize: 28,
-    color: '#000',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   listContent: {
-    padding: 16,
+    padding: spacing.lg,
   },
   rideCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
   },
   rideHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   passengerInfo: {
     flexDirection: 'row',
@@ -250,33 +222,33 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   avatarText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: typography.h5,
+    fontWeight: '700',
     color: '#000',
   },
   passengerName: {
-    fontSize: 16,
+    fontSize: typography.h6,
     fontWeight: '600',
   },
   rideDate: {
-    fontSize: 12,
+    fontSize: typography.caption,
     marginTop: 2,
   },
   statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: typography.caption,
     fontWeight: '600',
     textTransform: 'capitalize',
   },
   routeContainer: {
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   routePoint: {
     flexDirection: 'row',
@@ -286,16 +258,16 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   routeLine: {
     width: 2,
     height: 20,
-    marginLeft: 4,
-    marginVertical: 4,
+    marginLeft: spacing.xs,
+    marginVertical: spacing.xs,
   },
   routeAddress: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     flex: 1,
   },
   rideFooter: {
@@ -303,45 +275,52 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#e5e5e5',
-    paddingTop: 12,
+    paddingTop: spacing.md,
   },
   rideStats: {
     flexDirection: 'row',
   },
   rideStat: {
-    marginRight: 16,
+    marginRight: spacing.lg,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   rideStatValue: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     fontWeight: '600',
   },
   rideStatLabel: {
-    fontSize: 11,
+    fontSize: typography.tiny + 1,
   },
   rideFare: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: typography.h4,
+    fontWeight: '800',
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 60,
+    paddingVertical: spacing.massive,
   },
-  emptyIcon: {
-    fontSize: 60,
-    marginBottom: 16,
+  emptyIconBg: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.xl,
   },
   emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
+    fontSize: typography.h5,
+    fontWeight: '700',
+    marginBottom: spacing.sm,
   },
   emptyHint: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     textAlign: 'center',
   },
   footer: {
-    paddingVertical: 20,
+    paddingVertical: spacing.xl,
   },
 });
 

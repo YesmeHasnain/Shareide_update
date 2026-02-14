@@ -1,28 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Alert,
   Modal,
   Switch,
+  Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
+import Header from '../../components/Header';
+import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import { scheduleAPI } from '../../api/schedule';
+import { spacing, typography, borderRadius, shadows } from '../../theme/colors';
 
 const ScheduleScreen = () => {
   const { colors } = useTheme();
-  
+
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState(null);
-  
+  const cardAnims = useRef([]).current;
+
   const [formData, setFormData] = useState({
     from_location: '',
     from_latitude: '',
@@ -48,6 +54,27 @@ const ScheduleScreen = () => {
     fetchSchedules();
   }, []);
 
+  useEffect(() => {
+    if (schedules.length > 0) {
+      // Ensure we have enough anims
+      while (cardAnims.length < schedules.length) {
+        cardAnims.push(new Animated.Value(0));
+      }
+      cardAnims.forEach((anim) => anim.setValue(0));
+      Animated.stagger(
+        60,
+        cardAnims.slice(0, schedules.length).map((anim) =>
+          Animated.spring(anim, {
+            toValue: 1,
+            friction: 8,
+            tension: 40,
+            useNativeDriver: true,
+          })
+        )
+      ).start();
+    }
+  }, [schedules]);
+
   const fetchSchedules = async () => {
     try {
       const response = await scheduleAPI.getSchedules();
@@ -60,15 +87,16 @@ const ScheduleScreen = () => {
   };
 
   const handleDayToggle = (day) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const days = [...formData.days];
     const index = days.indexOf(day);
-    
+
     if (index > -1) {
       days.splice(index, 1);
     } else {
       days.push(day);
     }
-    
+
     setFormData({ ...formData, days });
   };
 
@@ -86,7 +114,7 @@ const ScheduleScreen = () => {
     setLoading(true);
     try {
       let response;
-      
+
       if (editingSchedule) {
         response = await scheduleAPI.updateSchedule(editingSchedule.id, formData);
       } else {
@@ -108,6 +136,7 @@ const ScheduleScreen = () => {
   };
 
   const handleEdit = (schedule) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEditingSchedule(schedule);
     setFormData({
       from_location: schedule.from_location,
@@ -123,6 +152,7 @@ const ScheduleScreen = () => {
   };
 
   const handleDelete = (id) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       'Delete Schedule',
       'Are you sure you want to delete this schedule?',
@@ -145,6 +175,7 @@ const ScheduleScreen = () => {
   };
 
   const handleToggle = async (id) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await scheduleAPI.toggleSchedule(id);
       fetchSchedules();
@@ -167,27 +198,42 @@ const ScheduleScreen = () => {
     });
   };
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>My Schedules 📅</Text>
-        <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: colors.primary }]}
-          onPress={() => {
-            resetForm();
-            setModalVisible(true);
-          }}
-        >
-          <Text style={styles.addButtonText}>+ Add</Text>
-        </TouchableOpacity>
-      </View>
+  const handleAddPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    resetForm();
+    setModalVisible(true);
+  };
 
-      {/* Schedules List */}
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.content}>
+  const getAnimStyle = (index) => {
+    const anim = cardAnims[index];
+    if (!anim) return {};
+    return {
+      opacity: anim,
+      transform: [
+        {
+          translateY: anim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [30, 0],
+          }),
+        },
+      ],
+    };
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Header
+        title="Schedules"
+        rightIcon="add"
+        onRightPress={handleAddPress}
+      />
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         {schedules.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📅</Text>
+            <View style={[styles.emptyIconBg, { backgroundColor: colors.primaryMuted }]}>
+              <Ionicons name="calendar-outline" size={48} color={colors.primary} />
+            </View>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
               No schedules yet
             </Text>
@@ -196,88 +242,99 @@ const ScheduleScreen = () => {
             </Text>
           </View>
         ) : (
-          schedules.map((schedule) => (
-            <View
-              key={schedule.id}
-              style={[styles.scheduleCard, { backgroundColor: colors.surface }]}
-            >
-              <View style={styles.scheduleHeader}>
-                <View style={styles.scheduleInfo}>
-                  <Text style={[styles.scheduleRoute, { color: colors.text }]}>
-                    📍 {schedule.from_location}
-                  </Text>
-                  <Text style={[styles.scheduleRoute, { color: colors.text }]}>
-                    🎯 {schedule.to_location}
-                  </Text>
-                </View>
-                <Switch
-                  value={schedule.is_active}
-                  onValueChange={() => handleToggle(schedule.id)}
-                  trackColor={{ false: colors.border, true: colors.primary }}
-                  thumbColor="#FFFFFF"
-                />
-              </View>
-
-              <View style={styles.scheduleDetails}>
-                <View style={styles.scheduleTime}>
-                  <Text style={styles.scheduleTimeIcon}>🕐</Text>
-                  <Text style={[styles.scheduleTimeText, { color: colors.textSecondary }]}>
-                    {schedule.departure_time}
-                  </Text>
-                </View>
-
-                <View style={styles.scheduleDays}>
-                  {schedule.days.map((day) => (
-                    <View
-                      key={day}
-                      style={[styles.dayBadge, { backgroundColor: colors.primary }]}
-                    >
-                      <Text style={styles.dayBadgeText}>
-                        {day.substring(0, 3).toUpperCase()}
+          schedules.map((schedule, index) => (
+            <Animated.View key={schedule.id} style={getAnimStyle(index)}>
+              <Card style={styles.scheduleCard}>
+                <View style={styles.scheduleHeader}>
+                  {/* Route Timeline */}
+                  <View style={styles.routeSection}>
+                    <View style={styles.routeRow}>
+                      <View style={[styles.routeDot, { backgroundColor: colors.pickupDot || '#10B981' }]} />
+                      <Text style={[styles.routeText, { color: colors.text }]} numberOfLines={1}>
+                        {schedule.from_location}
                       </Text>
                     </View>
-                  ))}
+                    <View style={[styles.routeLine, { borderColor: colors.routeConnector || colors.border }]} />
+                    <View style={styles.routeRow}>
+                      <View style={[styles.routeDot, { backgroundColor: colors.dropoffDot || '#EF4444' }]} />
+                      <Text style={[styles.routeText, { color: colors.text }]} numberOfLines={1}>
+                        {schedule.to_location}
+                      </Text>
+                    </View>
+                  </View>
+                  <Switch
+                    value={schedule.is_active}
+                    onValueChange={() => handleToggle(schedule.id)}
+                    trackColor={{ false: colors.border, true: colors.primary }}
+                    thumbColor="#FFFFFF"
+                  />
                 </View>
-              </View>
 
-              <View style={styles.scheduleStats}>
-                <View style={styles.scheduleStat}>
-                  <Text style={[styles.scheduleStatValue, { color: colors.text }]}>
-                    {schedule.matched_rides || 0}
-                  </Text>
-                  <Text style={[styles.scheduleStatLabel, { color: colors.textSecondary }]}>
-                    Matched Rides
-                  </Text>
-                </View>
-                <View style={styles.scheduleStat}>
-                  <Text style={[styles.scheduleStatValue, { color: colors.text }]}>
-                    Rs. {schedule.total_earnings || 0}
-                  </Text>
-                  <Text style={[styles.scheduleStatLabel, { color: colors.textSecondary }]}>
-                    Earnings
-                  </Text>
-                </View>
-              </View>
+                <View style={styles.scheduleDetails}>
+                  <View style={styles.scheduleTime}>
+                    <Ionicons name="time" size={16} color={colors.textSecondary} />
+                    <Text style={[styles.scheduleTimeText, { color: colors.textSecondary }]}>
+                      {schedule.departure_time}
+                    </Text>
+                  </View>
 
-              <View style={styles.scheduleActions}>
-                <TouchableOpacity
-                  style={[styles.actionButton, { borderColor: colors.border }]}
-                  onPress={() => handleEdit(schedule)}
-                >
-                  <Text style={[styles.actionButtonText, { color: colors.text }]}>
-                    ✏️ Edit
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.actionButton, { borderColor: colors.error }]}
-                  onPress={() => handleDelete(schedule.id)}
-                >
-                  <Text style={[styles.actionButtonText, { color: colors.error }]}>
-                    🗑️ Delete
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+                  <View style={styles.scheduleDays}>
+                    {schedule.days.map((day) => (
+                      <View
+                        key={day}
+                        style={[styles.dayBadge, { backgroundColor: colors.primary }]}
+                      >
+                        <Text style={styles.dayBadgeText}>
+                          {day.substring(0, 3).toUpperCase()}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                <View style={styles.scheduleStats}>
+                  <View style={styles.scheduleStat}>
+                    <Text style={[styles.scheduleStatValue, { color: colors.text }]}>
+                      {schedule.matched_rides || 0}
+                    </Text>
+                    <Text style={[styles.scheduleStatLabel, { color: colors.textSecondary }]}>
+                      Matched Rides
+                    </Text>
+                  </View>
+                  <View style={styles.scheduleStat}>
+                    <Text style={[styles.scheduleStatValue, { color: colors.text }]}>
+                      Rs. {schedule.total_earnings || 0}
+                    </Text>
+                    <Text style={[styles.scheduleStatLabel, { color: colors.textSecondary }]}>
+                      Earnings
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.scheduleActions}>
+                  <TouchableOpacity
+                    style={[styles.actionButton, { borderColor: colors.border }]}
+                    onPress={() => handleEdit(schedule)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="create-outline" size={16} color={colors.text} />
+                    <Text style={[styles.actionButtonText, { color: colors.text }]}>
+                      Edit
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.actionButton, { borderColor: colors.error }]}
+                    onPress={() => handleDelete(schedule.id)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="trash-outline" size={16} color={colors.error} />
+                    <Text style={[styles.actionButtonText, { color: colors.error }]}>
+                      Delete
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </Card>
+            </Animated.View>
           ))
         )}
       </ScrollView>
@@ -290,11 +347,21 @@ const ScheduleScreen = () => {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card || colors.surface }]}>
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
-                {editingSchedule ? 'Edit Schedule' : 'Add Schedule'}
-              </Text>
+              {/* Modal Header */}
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>
+                  {editingSchedule ? 'Edit Schedule' : 'Add Schedule'}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setModalVisible(false)}
+                  style={[styles.modalCloseBtn, { backgroundColor: colors.inputBackground }]}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close" size={20} color={colors.text} />
+                </TouchableOpacity>
+              </View>
 
               <Input
                 label="From Location *"
@@ -368,7 +435,7 @@ const ScheduleScreen = () => {
                         backgroundColor: formData.days.includes(day.key)
                           ? colors.primary
                           : colors.background,
-                        borderColor: colors.border,
+                        borderColor: formData.days.includes(day.key) ? colors.primary : colors.border,
                       },
                     ]}
                     onPress={() => handleDayToggle(day.key)}
@@ -407,7 +474,7 @@ const ScheduleScreen = () => {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -415,128 +482,128 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  addButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  addButtonText: {
-    color: '#000',
-    fontWeight: '600',
-    fontSize: 14,
-  },
   content: {
-    flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.huge,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 60,
+    paddingVertical: spacing.massive,
   },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
+  emptyIconBg: {
+    width: 100,
+    height: 100,
+    borderRadius: borderRadius.pill,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.xl,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontSize: typography.h5,
+    fontWeight: '700',
+    marginBottom: spacing.sm,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     textAlign: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: spacing.xxxl,
   },
   scheduleCard: {
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   scheduleHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
-  scheduleInfo: {
+  routeSection: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  routeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  routeDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: spacing.md,
+  },
+  routeLine: {
+    width: 0,
+    height: 16,
+    borderLeftWidth: 2,
+    borderStyle: 'dashed',
+    marginLeft: 4,
+    marginVertical: 2,
+  },
+  routeText: {
+    fontSize: typography.body,
+    fontWeight: '500',
     flex: 1,
   },
-  scheduleRoute: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
   scheduleDetails: {
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   scheduleTime: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  scheduleTimeIcon: {
-    fontSize: 16,
-    marginRight: 8,
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
   },
   scheduleTimeText: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
   },
   scheduleDays: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
   dayBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginRight: 6,
-    marginBottom: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.xs,
+    marginRight: spacing.xs + 2,
+    marginBottom: spacing.xs + 2,
   },
   dayBadgeText: {
-    fontSize: 12,
+    fontSize: typography.caption,
     fontWeight: '600',
     color: '#000',
   },
   scheduleStats: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   scheduleStat: {
     flex: 1,
     alignItems: 'center',
   },
   scheduleStatValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: typography.h5,
+    fontWeight: '700',
     marginBottom: 2,
   },
   scheduleStatLabel: {
-    fontSize: 12,
+    fontSize: typography.caption,
   },
   scheduleActions: {
     flexDirection: 'row',
+    gap: spacing.sm,
   },
   actionButton: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginHorizontal: 4,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    gap: spacing.xs,
   },
   actionButtonText: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     fontWeight: '600',
   },
   modalOverlay: {
@@ -545,15 +612,27 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
+    borderTopLeftRadius: borderRadius.xxl,
+    borderTopRightRadius: borderRadius.xxl,
+    padding: spacing.xxl,
     maxHeight: '90%',
   },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontSize: typography.h4,
+    fontWeight: '700',
+  },
+  modalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   coordRow: {
     flexDirection: 'row',
@@ -561,36 +640,36 @@ const styles = StyleSheet.create({
   },
   coordInput: {
     flex: 1,
-    marginHorizontal: 4,
+    marginHorizontal: spacing.xs,
   },
   daysSectionLabel: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     fontWeight: '600',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   daysContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 24,
+    marginBottom: spacing.xxl,
   },
   dayButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.sm,
     borderWidth: 1,
-    marginRight: 8,
-    marginBottom: 8,
+    marginRight: spacing.sm,
+    marginBottom: spacing.sm,
   },
   dayButtonText: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     fontWeight: '600',
   },
   modalButtons: {
     flexDirection: 'row',
+    gap: spacing.sm,
   },
   modalButton: {
     flex: 1,
-    marginHorizontal: 4,
   },
 });
 

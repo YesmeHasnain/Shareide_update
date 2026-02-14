@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Rating;
 use App\Models\RideRequest;
 use App\Models\Driver;
+use App\Models\User;
+use App\Models\LoyaltyPoint;
 use App\Services\NotificationService;
 
 class RatingController extends Controller
@@ -28,6 +30,7 @@ class RatingController extends Controller
         $validator = Validator::make($request->all(), [
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:500',
+            'negative_reason' => 'required_if:rating,1,2|string|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -44,7 +47,7 @@ class RatingController extends Controller
             $ride = RideRequest::findOrFail($rideId);
 
             // Check if user is the rider
-            if ($ride->user_id !== $user->id) {
+            if ($ride->rider_id !== $user->id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized'
@@ -75,24 +78,57 @@ class RatingController extends Controller
 
             try {
                 // Create or update rating
+                $ratingData = [
+                    'driver_rating' => $request->rating,
+                    'driver_comment' => $request->comment,
+                ];
+
+                if ($request->rating <= 2) {
+                    $ratingData['driver_negative_reason'] = $request->negative_reason;
+                }
+
                 $rating = Rating::updateOrCreate(
                     [
                         'ride_request_id' => $rideId,
                         'driver_id' => $ride->driver_id,
                         'rider_id' => $user->id,
                     ],
-                    [
-                        'driver_rating' => $request->rating,
-                        'driver_comment' => $request->comment,
-                    ]
+                    $ratingData
                 );
 
                 // Update driver's average rating
                 $this->updateDriverRating($ride->driver_id);
 
+                // Award or deduct loyalty points on the driver
+                $driverProfile = Driver::where('user_id', $ride->driver_id)->first();
+                $driverUser = $driverProfile?->user ?? User::find($ride->driver_id);
+
+                if ($driverUser) {
+                    $pointsMap = [5 => 50, 4 => 40, 3 => 30];
+
+                    if ($request->rating >= 3) {
+                        $points = $pointsMap[$request->rating];
+                        LoyaltyPoint::earnPoints(
+                            $driverUser,
+                            $points,
+                            'ride_rating',
+                            $rideId,
+                            "Earned from {$request->rating}-star rating"
+                        );
+                    } else {
+                        LoyaltyPoint::deductPoints(
+                            $driverUser,
+                            20,
+                            'negative_rating',
+                            $rideId,
+                            $request->negative_reason
+                        );
+                    }
+                }
+
                 // Send notification to driver
                 $this->notificationService->notifyNewRating(
-                    $ride->driver->user_id,
+                    $ride->driver_id,
                     $request->rating,
                     $rideId
                 );
@@ -129,6 +165,7 @@ class RatingController extends Controller
         $validator = Validator::make($request->all(), [
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:500',
+            'negative_reason' => 'required_if:rating,1,2|string|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -152,8 +189,8 @@ class RatingController extends Controller
             // Get ride
             $ride = RideRequest::findOrFail($rideId);
 
-            // Check if user is the driver
-            if ($ride->driver_id !== $driver->id) {
+            // Check if user is the driver (driver_id stores user_id)
+            if ($ride->driver_id !== $user->id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized'
@@ -180,33 +217,75 @@ class RatingController extends Controller
                 ], 400);
             }
 
-            // Create or update rating
-            $rating = Rating::updateOrCreate(
-                [
-                    'ride_request_id' => $rideId,
-                    'driver_id' => $driver->id,
-                    'rider_id' => $ride->user_id,
-                ],
-                [
+            DB::beginTransaction();
+
+            try {
+                // Create or update rating
+                $ratingData = [
                     'rider_rating' => $request->rating,
                     'rider_comment' => $request->comment,
-                ]
-            );
+                ];
 
-            // Send notification to rider
-            $this->notificationService->notifyNewRating(
-                $ride->user_id,
-                $request->rating,
-                $rideId
-            );
+                if ($request->rating <= 2) {
+                    $ratingData['rider_negative_reason'] = $request->negative_reason;
+                }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Rating submitted successfully',
-                'data' => [
-                    'rating' => $rating
-                ]
-            ], 200);
+                $rating = Rating::updateOrCreate(
+                    [
+                        'ride_request_id' => $rideId,
+                        'driver_id' => $user->id,
+                        'rider_id' => $ride->rider_id,
+                    ],
+                    $ratingData
+                );
+
+                // Award or deduct loyalty points on the rider
+                $riderUser = User::find($ride->rider_id);
+
+                if ($riderUser) {
+                    $pointsMap = [5 => 50, 4 => 40, 3 => 30];
+
+                    if ($request->rating >= 3) {
+                        $points = $pointsMap[$request->rating];
+                        LoyaltyPoint::earnPoints(
+                            $riderUser,
+                            $points,
+                            'ride_rating',
+                            $rideId,
+                            "Earned from {$request->rating}-star rating"
+                        );
+                    } else {
+                        LoyaltyPoint::deductPoints(
+                            $riderUser,
+                            20,
+                            'negative_rating',
+                            $rideId,
+                            $request->negative_reason
+                        );
+                    }
+                }
+
+                // Send notification to rider
+                $this->notificationService->notifyNewRating(
+                    $ride->rider_id,
+                    $request->rating,
+                    $rideId
+                );
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Rating submitted successfully',
+                    'data' => [
+                        'rating' => $rating
+                    ]
+                ], 200);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
 
         } catch (\Exception $e) {
             return response()->json([
@@ -229,7 +308,7 @@ class RatingController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->paginate(20);
 
-            $driver = Driver::findOrFail($driverId);
+            $driver = Driver::where('user_id', $driverId)->firstOrFail();
 
             return response()->json([
                 'success' => true,
@@ -302,7 +381,7 @@ class RatingController extends Controller
             ->whereNotNull('driver_rating')
             ->count();
 
-        Driver::where('id', $driverId)->update([
+        Driver::where('user_id', $driverId)->update([
             'rating' => round($avgRating, 2),
             'total_rides' => $totalRatings,
         ]);

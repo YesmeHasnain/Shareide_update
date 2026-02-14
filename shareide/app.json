@@ -55,7 +55,8 @@
         {
           "locationAlwaysAndWhenInUsePermission": "SHAREIDE needs your location to find nearby drivers and track your ride."
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }

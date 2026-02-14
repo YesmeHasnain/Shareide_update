@@ -1,27 +1,60 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Alert,
+  Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
+import Header from '../../components/Header';
+import Card from '../../components/Card';
 import Button from '../../components/Button';
+import Loading from '../../components/Loading';
 import { rideAPI } from '../../api/ride';
+import { spacing, typography, borderRadius, shadows } from '../../theme/colors';
+
+const ICON_TINTS = {
+  pickup: { bg: 'rgba(16, 185, 129, 0.12)', color: '#10B981' },
+  dropoff: { bg: 'rgba(239, 68, 68, 0.12)', color: '#EF4444' },
+  chat: { bg: 'rgba(59, 130, 246, 0.12)', color: '#3B82F6' },
+  earnings: { bg: 'rgba(252, 192, 20, 0.12)', color: '#FCC014' },
+};
 
 const RideRequestScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
   const { rideId } = route.params;
-  
+
   const [loading, setLoading] = useState(false);
   const [ride, setRide] = useState(null);
+
+  // Stagger animations
+  const cardAnims = useRef([...Array(4)].map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
     fetchRideDetails();
   }, []);
+
+  useEffect(() => {
+    if (ride) {
+      cardAnims.forEach((anim) => anim.setValue(0));
+      Animated.stagger(
+        80,
+        cardAnims.map((anim) =>
+          Animated.spring(anim, {
+            toValue: 1,
+            friction: 8,
+            tension: 40,
+            useNativeDriver: true,
+          })
+        )
+      ).start();
+    }
+  }, [ride]);
 
   const fetchRideDetails = async () => {
     try {
@@ -43,7 +76,7 @@ const RideRequestScreen = ({ route, navigation }) => {
       if (response.success) {
         Alert.alert('Success', `Ride ${status}!`);
         fetchRideDetails();
-        
+
         if (status === 'completed') {
           navigation.navigate('Dashboard');
         }
@@ -57,6 +90,7 @@ const RideRequestScreen = ({ route, navigation }) => {
   };
 
   const handleStartRide = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       'Start Ride',
       'Are you sure you want to start this ride?',
@@ -68,6 +102,7 @@ const RideRequestScreen = ({ route, navigation }) => {
   };
 
   const handleCompleteRide = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       'Complete Ride',
       'Are you sure you want to complete this ride?',
@@ -79,6 +114,7 @@ const RideRequestScreen = ({ route, navigation }) => {
   };
 
   const handleCancelRide = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       'Cancel Ride',
       'Are you sure you want to cancel this ride?',
@@ -90,156 +126,190 @@ const RideRequestScreen = ({ route, navigation }) => {
   };
 
   const handleOpenChat = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate('Chat', { rideId });
+  };
+
+  const getStatusConfig = () => {
+    switch (ride?.status) {
+      case 'matched':
+        return { color: colors.info, icon: 'information-circle', label: 'MATCHED' };
+      case 'accepted':
+        return { color: colors.warning, icon: 'time', label: 'ACCEPTED' };
+      case 'started':
+        return { color: colors.success, icon: 'navigate', label: 'IN PROGRESS' };
+      case 'completed':
+        return { color: colors.success, icon: 'checkmark-circle', label: 'COMPLETED' };
+      case 'cancelled':
+        return { color: colors.error, icon: 'close-circle', label: 'CANCELLED' };
+      default:
+        return { color: colors.textSecondary, icon: 'ellipse', label: ride?.status?.toUpperCase() || '' };
+    }
   };
 
   if (!ride) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: colors.text }]}>Loading...</Text>
-        </View>
-      </SafeAreaView>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Header title="Ride Details" onLeftPress={() => navigation.goBack()} />
+        <Loading />
+      </View>
     );
   }
 
-  const getStatusColor = () => {
-    switch (ride.status) {
-      case 'matched': return colors.info;
-      case 'accepted': return colors.warning;
-      case 'started': return colors.success;
-      case 'completed': return colors.success;
-      case 'cancelled': return colors.error;
-      default: return colors.textSecondary;
-    }
-  };
+  const statusConfig = getStatusConfig();
+
+  const animatedStyle = (index) => ({
+    opacity: cardAnims[index],
+    transform: [
+      {
+        translateY: cardAnims[index].interpolate({
+          inputRange: [0, 1],
+          outputRange: [30, 0],
+        }),
+      },
+    ],
+  });
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={styles.backIcon}>←</Text>
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Ride Details</Text>
-          <View style={styles.backButton} />
-        </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Header title="Ride Details" onLeftPress={() => navigation.goBack()} />
 
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Status Badge */}
-        <View style={styles.statusContainer}>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor() + '20' }]}>
-            <Text style={[styles.statusText, { color: getStatusColor() }]}>
-              {ride.status.toUpperCase()}
+        <Animated.View style={[styles.statusContainer, animatedStyle(0)]}>
+          <View style={[styles.statusBadge, { backgroundColor: statusConfig.color + '18' }]}>
+            <Ionicons name={statusConfig.icon} size={18} color={statusConfig.color} />
+            <Text style={[styles.statusText, { color: statusConfig.color }]}>
+              {statusConfig.label}
             </Text>
           </View>
-        </View>
+        </Animated.View>
 
-        {/* Rider Info */}
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Rider Information</Text>
-          <View style={styles.riderInfo}>
-            <View style={styles.riderAvatar}>
-              <Text style={styles.riderAvatarText}>
-                {ride.user?.name?.charAt(0) || 'R'}
-              </Text>
-            </View>
-            <View style={styles.riderDetails}>
-              <Text style={[styles.riderName, { color: colors.text }]}>
-                {ride.user?.name || 'Rider'}
-              </Text>
-              {ride.user?.rating && (
-                <Text style={[styles.riderRating, { color: colors.textSecondary }]}>
-                  ⭐ {ride.user.rating.toFixed(1)}
+        {/* Rider Info Card */}
+        <Animated.View style={animatedStyle(1)}>
+          <Card style={styles.card}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Rider Information</Text>
+            <View style={styles.riderInfo}>
+              <View style={[styles.riderAvatar, { backgroundColor: colors.primary }]}>
+                <Text style={styles.riderAvatarText}>
+                  {ride.user?.name?.charAt(0) || 'R'}
                 </Text>
-              )}
+              </View>
+              <View style={styles.riderDetails}>
+                <Text style={[styles.riderName, { color: colors.text }]}>
+                  {ride.user?.name || 'Rider'}
+                </Text>
+                {ride.user?.rating && (
+                  <View style={styles.ratingRow}>
+                    <Ionicons name="star" size={14} color={colors.star || colors.primary} />
+                    <Text style={[styles.riderRating, { color: colors.textSecondary }]}>
+                      {' '}{ride.user.rating.toFixed(1)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <TouchableOpacity
+                style={[styles.chatButton, { backgroundColor: ICON_TINTS.chat.bg }]}
+                onPress={handleOpenChat}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="chatbubble" size={20} color={ICON_TINTS.chat.color} />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={[styles.chatButton, { backgroundColor: colors.primary }]}
-              onPress={handleOpenChat}
-            >
-              <Text style={styles.chatButtonText}>💬</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          </Card>
+        </Animated.View>
 
-        {/* Route Info */}
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Route Details</Text>
-          
-          <View style={styles.routeItem}>
-            <View style={styles.routeIcon}>
-              <Text style={styles.routeIconText}>📍</Text>
-            </View>
-            <View style={styles.routeDetails}>
-              <Text style={[styles.routeLabel, { color: colors.textSecondary }]}>Pickup</Text>
-              <Text style={[styles.routeText, { color: colors.text }]}>
-                {ride.pickup_location}
-              </Text>
-            </View>
-          </View>
+        {/* Route Info Card */}
+        <Animated.View style={animatedStyle(2)}>
+          <Card style={styles.card}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Route Details</Text>
 
-          <View style={styles.routeDivider} />
+            {/* Route Timeline */}
+            <View style={styles.routeTimeline}>
+              {/* Pickup */}
+              <View style={styles.routeItem}>
+                <View style={styles.routeIconCol}>
+                  <View style={[styles.routeDot, { backgroundColor: colors.pickupDot || '#10B981' }]} />
+                  <View style={[styles.routeConnector, { borderColor: colors.routeConnector || colors.border }]} />
+                </View>
+                <View style={styles.routeDetails}>
+                  <Text style={[styles.routeLabel, { color: colors.textSecondary }]}>Pickup</Text>
+                  <Text style={[styles.routeText, { color: colors.text }]}>
+                    {ride.pickup_location}
+                  </Text>
+                </View>
+              </View>
 
-          <View style={styles.routeItem}>
-            <View style={styles.routeIcon}>
-              <Text style={styles.routeIconText}>🎯</Text>
+              {/* Dropoff */}
+              <View style={styles.routeItem}>
+                <View style={styles.routeIconCol}>
+                  <View style={[styles.routeDot, { backgroundColor: colors.dropoffDot || '#EF4444' }]} />
+                </View>
+                <View style={styles.routeDetails}>
+                  <Text style={[styles.routeLabel, { color: colors.textSecondary }]}>Dropoff</Text>
+                  <Text style={[styles.routeText, { color: colors.text }]}>
+                    {ride.dropoff_location}
+                  </Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.routeDetails}>
-              <Text style={[styles.routeLabel, { color: colors.textSecondary }]}>Dropoff</Text>
-              <Text style={[styles.routeText, { color: colors.text }]}>
-                {ride.dropoff_location}
-              </Text>
-            </View>
-          </View>
 
-          <View style={styles.routeStats}>
-            <View style={styles.routeStat}>
-              <Text style={[styles.routeStatValue, { color: colors.text }]}>
-                {ride.distance_km} km
-              </Text>
-              <Text style={[styles.routeStatLabel, { color: colors.textSecondary }]}>
-                Distance
-              </Text>
+            <View style={[styles.routeStats, { borderTopColor: colors.border }]}>
+              <View style={styles.routeStat}>
+                <Text style={[styles.routeStatValue, { color: colors.text }]}>
+                  {ride.distance_km} km
+                </Text>
+                <Text style={[styles.routeStatLabel, { color: colors.textSecondary }]}>
+                  Distance
+                </Text>
+              </View>
+              <View style={[styles.routeStatDivider, { backgroundColor: colors.border }]} />
+              <View style={styles.routeStat}>
+                <Text style={[styles.routeStatValue, { color: colors.text }]}>
+                  {ride.duration_minutes} min
+                </Text>
+                <Text style={[styles.routeStatLabel, { color: colors.textSecondary }]}>
+                  Duration
+                </Text>
+              </View>
             </View>
-            <View style={styles.routeStat}>
-              <Text style={[styles.routeStatValue, { color: colors.text }]}>
-                {ride.duration_minutes} min
-              </Text>
-              <Text style={[styles.routeStatLabel, { color: colors.textSecondary }]}>
-                Duration
-              </Text>
-            </View>
-          </View>
-        </View>
+          </Card>
+        </Animated.View>
 
-        {/* Fare Info */}
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Fare Details</Text>
-          
-          <View style={styles.fareRow}>
-            <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Total Fare</Text>
-            <Text style={[styles.fareValue, { color: colors.text }]}>
-              Rs. {ride.fare}
-            </Text>
-          </View>
-          
-          <View style={styles.fareRow}>
-            <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Commission (20%)</Text>
-            <Text style={[styles.fareValue, { color: colors.error }]}>
-              - Rs. {ride.commission_amount}
-            </Text>
-          </View>
-          
-          <View style={[styles.fareDivider, { backgroundColor: colors.border }]} />
-          
-          <View style={styles.fareRow}>
-            <Text style={[styles.fareLabelBold, { color: colors.text }]}>Your Earning</Text>
-            <Text style={[styles.fareValueBold, { color: colors.primary }]}>
-              Rs. {ride.driver_earning}
-            </Text>
-          </View>
-        </View>
+        {/* Fare Info Card */}
+        <Animated.View style={animatedStyle(3)}>
+          <Card style={styles.card}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Fare Details</Text>
+
+            <View style={styles.fareRow}>
+              <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Total Fare</Text>
+              <Text style={[styles.fareValue, { color: colors.text }]}>
+                Rs. {ride.fare}
+              </Text>
+            </View>
+
+            <View style={styles.fareRow}>
+              <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Commission (20%)</Text>
+              <Text style={[styles.fareValue, { color: colors.error }]}>
+                - Rs. {ride.commission_amount}
+              </Text>
+            </View>
+
+            <View style={[styles.fareDivider, { backgroundColor: colors.border }]} />
+
+            <View style={styles.fareRow}>
+              <View style={styles.earningLabelRow}>
+                <View style={[styles.earningIconBg, { backgroundColor: ICON_TINTS.earnings.bg }]}>
+                  <Ionicons name="cash" size={16} color={ICON_TINTS.earnings.color} />
+                </View>
+                <Text style={[styles.fareLabelBold, { color: colors.text }]}>Your Earning</Text>
+              </View>
+              <Text style={[styles.fareValueBold, { color: colors.primary }]}>
+                Rs. {ride.driver_earning}
+              </Text>
+            </View>
+          </Card>
+        </Animated.View>
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
@@ -286,7 +356,7 @@ const RideRequestScreen = ({ route, navigation }) => {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -294,55 +364,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16,
-  },
-  backButton: {
-    width: 40,
-  },
-  backIcon: {
-    fontSize: 24,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  scrollContent: {
+    paddingBottom: spacing.huge,
   },
   statusContainer: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: spacing.lg,
+    marginTop: spacing.sm,
   },
   statusBadge: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.pill,
+    gap: spacing.sm,
   },
   statusText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: typography.bodySmall,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   card: {
-    marginHorizontal: 24,
-    marginBottom: 16,
-    padding: 20,
-    borderRadius: 16,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 16,
+    fontSize: typography.h6,
+    fontWeight: '700',
+    marginBottom: spacing.lg,
   },
   riderInfo: {
     flexDirection: 'row',
@@ -352,113 +402,139 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#FFD700',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   riderAvatarText: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: typography.h4,
+    fontWeight: '700',
     color: '#000',
   },
   riderDetails: {
     flex: 1,
   },
   riderName: {
-    fontSize: 16,
+    fontSize: typography.h6,
     fontWeight: '600',
     marginBottom: 2,
   },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   riderRating: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
   },
   chatButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  chatButtonText: {
-    fontSize: 20,
+  routeTimeline: {
+    marginBottom: spacing.lg,
   },
   routeItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
-  routeIcon: {
-    marginRight: 12,
+  routeIconCol: {
+    alignItems: 'center',
+    width: 24,
+    marginRight: spacing.md,
   },
-  routeIconText: {
-    fontSize: 24,
+  routeDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  routeConnector: {
+    width: 0,
+    height: 28,
+    borderLeftWidth: 2,
+    borderStyle: 'dashed',
+    marginVertical: 2,
   },
   routeDetails: {
     flex: 1,
+    paddingBottom: spacing.sm,
   },
   routeLabel: {
-    fontSize: 12,
-    marginBottom: 4,
+    fontSize: typography.caption,
+    fontWeight: '500',
+    marginBottom: 2,
   },
   routeText: {
-    fontSize: 16,
-  },
-  routeDivider: {
-    width: 2,
-    height: 20,
-    backgroundColor: '#E0E0E0',
-    marginLeft: 12,
-    marginVertical: 8,
+    fontSize: typography.body,
+    fontWeight: '500',
   },
   routeStats: {
     flexDirection: 'row',
-    marginTop: 16,
-    paddingTop: 16,
+    marginTop: spacing.lg,
+    paddingTop: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
   },
   routeStat: {
     flex: 1,
     alignItems: 'center',
   },
+  routeStatDivider: {
+    width: 1,
+    height: '100%',
+  },
   routeStatValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: typography.h5,
+    fontWeight: '700',
+    marginBottom: spacing.xs,
   },
   routeStatLabel: {
-    fontSize: 12,
+    fontSize: typography.caption,
   },
   fareRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
   fareLabel: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
   },
   fareValue: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     fontWeight: '600',
-  },
-  fareLabelBold: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  fareValueBold: {
-    fontSize: 18,
-    fontWeight: 'bold',
   },
   fareDivider: {
     height: 1,
-    marginVertical: 12,
+    marginVertical: spacing.md,
+  },
+  earningLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  earningIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fareLabelBold: {
+    fontSize: typography.h6,
+    fontWeight: '700',
+  },
+  fareValueBold: {
+    fontSize: typography.h5,
+    fontWeight: '800',
   },
   actionsContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
   actionButton: {
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
 });
 

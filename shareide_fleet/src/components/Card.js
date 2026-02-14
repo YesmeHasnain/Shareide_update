@@ -50,7 +50,7 @@ const Card = ({
         return {
           backgroundColor: colors.card,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: colors.cardBorder || colors.border,
         };
       default:
         return {

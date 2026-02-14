@@ -9,12 +9,15 @@ class TwilioWhatsAppService
 {
     protected $client;
     protected $fromNumber;
+    protected $verifySid;
 
     public function __construct()
     {
         $sid = config('services.twilio.sid');
         $token = config('services.twilio.token');
-        $this->fromNumber = config('services.twilio.whatsapp_from');
+        $from = config('services.twilio.whatsapp_from');
+        $this->fromNumber = str_replace('whatsapp:', '', $from);
+        $this->verifySid = config('services.twilio.verify_sid');
 
         if ($sid && $token) {
             $this->client = new Client($sid, $token);
@@ -22,43 +25,32 @@ class TwilioWhatsAppService
     }
 
     /**
-     * Send OTP via WhatsApp
+     * Send OTP - uses Verify API if configured, falls back to WhatsApp messaging
      */
     public function sendOTP(string $phoneNumber, string $otp): array
     {
         try {
-            // Format phone number for WhatsApp (must include country code)
             $formattedNumber = $this->formatPhoneNumber($phoneNumber);
 
             if (!$this->client) {
-                // Development mode - log OTP instead of sending
-                Log::info("WhatsApp OTP for {$formattedNumber}: {$otp}");
+                Log::info("OTP for {$formattedNumber}: {$otp}");
                 return [
                     'success' => true,
                     'message' => 'OTP sent (dev mode)',
-                    'dev_otp' => $otp, // Only in dev
+                    'dev_otp' => $otp,
                 ];
             }
 
-            $message = $this->client->messages->create(
-                "whatsapp:{$formattedNumber}",
-                [
-                    'from' => "whatsapp:{$this->fromNumber}",
-                    'body' => $this->getOTPMessage($otp),
-                ]
-            );
+            // PRODUCTION: Use Twilio Verify API (sends SMS automatically)
+            if ($this->verifySid) {
+                return $this->sendViaVerifyAPI($formattedNumber);
+            }
 
-            Log::info("WhatsApp OTP sent to {$formattedNumber}, SID: {$message->sid}");
-
-            return [
-                'success' => true,
-                'message' => 'OTP sent successfully via WhatsApp',
-                'message_sid' => $message->sid,
-            ];
+            // FALLBACK: Send via WhatsApp Messaging API
+            return $this->sendViaWhatsApp($formattedNumber, $otp);
 
         } catch (\Exception $e) {
-            Log::error("Failed to send WhatsApp OTP: " . $e->getMessage());
-
+            Log::error("Failed to send OTP: " . $e->getMessage());
             return [
                 'success' => false,
                 'message' => 'Failed to send OTP: ' . $e->getMessage(),
@@ -67,19 +59,99 @@ class TwilioWhatsAppService
     }
 
     /**
+     * Send OTP via Twilio Verify API (Production - SMS to any number)
+     * Twilio generates and sends the code automatically
+     */
+    protected function sendViaVerifyAPI(string $phoneNumber): array
+    {
+        $verification = $this->client->verify->v2
+            ->services($this->verifySid)
+            ->verifications
+            ->create($phoneNumber, 'sms');
+
+        Log::info("Verify OTP sent to {$phoneNumber}, Status: {$verification->status}");
+
+        return [
+            'success' => true,
+            'message' => 'OTP sent via SMS',
+            'verify_sid' => $verification->sid,
+            'use_verify' => true,
+        ];
+    }
+
+    /**
+     * Verify OTP code via Twilio Verify API
+     */
+    public function verifyOTPCode(string $phoneNumber, string $code): array
+    {
+        try {
+            if (!$this->client || !$this->verifySid) {
+                return ['success' => false, 'message' => 'Verify service not configured'];
+            }
+
+            $formattedNumber = $this->formatPhoneNumber($phoneNumber);
+
+            $check = $this->client->verify->v2
+                ->services($this->verifySid)
+                ->verificationChecks
+                ->create([
+                    'to' => $formattedNumber,
+                    'code' => $code,
+                ]);
+
+            if ($check->status === 'approved') {
+                return ['success' => true, 'message' => 'Code verified'];
+            }
+
+            return ['success' => false, 'message' => 'Invalid code'];
+
+        } catch (\Exception $e) {
+            Log::error("Verify check failed: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Verification failed'];
+        }
+    }
+
+    /**
+     * Check if Verify API is being used
+     */
+    public function isUsingVerifyAPI(): bool
+    {
+        return $this->client && $this->verifySid;
+    }
+
+    /**
+     * Send OTP via WhatsApp Messaging API (Fallback/sandbox)
+     */
+    protected function sendViaWhatsApp(string $phoneNumber, string $otp): array
+    {
+        $message = $this->client->messages->create(
+            "whatsapp:{$phoneNumber}",
+            [
+                'from' => "whatsapp:{$this->fromNumber}",
+                'body' => $this->getOTPMessage($otp),
+            ]
+        );
+
+        Log::info("WhatsApp OTP sent to {$phoneNumber}, SID: {$message->sid}");
+
+        return [
+            'success' => true,
+            'message' => 'OTP sent via WhatsApp',
+            'message_sid' => $message->sid,
+        ];
+    }
+
+    /**
      * Format phone number for Pakistan
      */
     protected function formatPhoneNumber(string $phone): string
     {
-        // Remove any spaces, dashes, or special characters
         $phone = preg_replace('/[^0-9]/', '', $phone);
 
-        // If starts with 0, replace with +92
         if (str_starts_with($phone, '0')) {
             $phone = '+92' . substr($phone, 1);
         }
 
-        // If doesn't start with +, add +92
         if (!str_starts_with($phone, '+')) {
             if (str_starts_with($phone, '92')) {
                 $phone = '+' . $phone;
@@ -92,7 +164,7 @@ class TwilioWhatsAppService
     }
 
     /**
-     * Get OTP message template
+     * Get OTP message template (for WhatsApp fallback)
      */
     protected function getOTPMessage(string $otp): string
     {

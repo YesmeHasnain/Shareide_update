@@ -6,24 +6,18 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
-  Image,
   StatusBar,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { defaultMaleAvatar, defaultFemaleAvatar } from '../utils/avatars';
 import Avatar from './Avatar';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.78;
-const PRIMARY = '#FCC014';
-const DARK = '#0F0F1E';
-const DARK2 = '#1A1A2E';
 
 const menuItems = [
   { id: 'home', icon: 'home-outline', label: 'Home', screen: null },
@@ -51,7 +45,6 @@ const SideDrawer = ({ visible, onClose, navigation }) => {
 
   useEffect(() => {
     if (visible) {
-      // Open
       Animated.parallel([
         Animated.spring(slideAnim, {
           toValue: 0,
@@ -66,7 +59,6 @@ const SideDrawer = ({ visible, onClose, navigation }) => {
         }),
       ]).start();
 
-      // Stagger menu items
       itemAnims.forEach((anim) => anim.setValue(0));
       Animated.stagger(
         40,
@@ -79,7 +71,6 @@ const SideDrawer = ({ visible, onClose, navigation }) => {
         )
       ).start();
     } else {
-      // Close
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: -DRAWER_WIDTH,
@@ -106,7 +97,6 @@ const SideDrawer = ({ visible, onClose, navigation }) => {
     }
 
     if (item.screen === null) {
-      // Home - already on dashboard
       onClose();
       return;
     }
@@ -149,6 +139,7 @@ const SideDrawer = ({ visible, onClose, navigation }) => {
           styles.drawer,
           {
             width: DRAWER_WIDTH,
+            backgroundColor: colors.drawerBackground || '#1A1A2E',
             paddingTop: insets.top,
             paddingBottom: insets.bottom + 16,
             transform: [{ translateX: slideAnim }],
@@ -157,7 +148,7 @@ const SideDrawer = ({ visible, onClose, navigation }) => {
       >
         {/* Profile Header */}
         <TouchableOpacity
-          style={styles.profileSection}
+          style={[styles.profileSection, { borderBottomColor: colors.drawerBorder || 'rgba(255,255,255,0.08)' }]}
           onPress={() => {
             onClose();
             setTimeout(() => navigation.navigate('Profile'), 300);
@@ -172,30 +163,49 @@ const SideDrawer = ({ visible, onClose, navigation }) => {
               size="medium"
               showBadge={true}
               badgeType="online"
-              style={{ borderWidth: 2, borderColor: PRIMARY, borderRadius: 28 }}
+              style={{ borderWidth: 2, borderColor: colors.primary, borderRadius: 28 }}
             />
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName} numberOfLines={1}>{getUserName()}</Text>
-              <Text style={styles.profilePhone}>{user?.phone || ''}</Text>
+              <Text style={[styles.profileName, { color: colors.drawerText || '#FFFFFF' }]} numberOfLines={1}>
+                {getUserName()}
+              </Text>
+              <Text style={[styles.profilePhone, { color: colors.drawerTextMuted || 'rgba(255,255,255,0.5)' }]}>
+                {user?.phone || ''}
+              </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.4)" />
+            <Ionicons name="chevron-forward" size={18} color={colors.drawerTextMuted || 'rgba(255,255,255,0.4)'} />
           </View>
 
-          {/* Stats */}
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{user?.driver?.rating?.toFixed(1) || '5.0'}</Text>
-              <Text style={styles.statLabel}>Rating</Text>
+          {/* Earnings Widget - Yango Pro style */}
+          <View style={[styles.earningsWidget, { backgroundColor: colors.drawerSurface || 'rgba(255,255,255,0.06)' }]}>
+            <View style={styles.earningsMain}>
+              <Text style={[styles.earningsLabel, { color: colors.drawerTextMuted || 'rgba(255,255,255,0.4)' }]}>
+                Today's Earnings
+              </Text>
+              <Text style={[styles.earningsValue, { color: colors.primary }]}>
+                Rs {user?.driver?.today_earnings || '0'}
+              </Text>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{user?.driver?.total_rides || 0}</Text>
-              <Text style={styles.statLabel}>Rides</Text>
+            <View style={[styles.earningsDivider, { backgroundColor: colors.drawerBorder || 'rgba(255,255,255,0.08)' }]} />
+            <View style={styles.earningsStats}>
+              <View style={styles.earningsStat}>
+                <Text style={[styles.earningsStatValue, { color: colors.drawerText || '#FFFFFF' }]}>
+                  {user?.driver?.rating?.toFixed(1) || '5.0'}
+                </Text>
+                <Ionicons name="star" size={10} color={colors.primary} style={{ marginLeft: 2 }} />
+              </View>
+              <Text style={[styles.earningsStatLabel, { color: colors.drawerTextMuted || 'rgba(255,255,255,0.4)' }]}>
+                Rating
+              </Text>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{user?.driver?.vehicle_type || 'Car'}</Text>
-              <Text style={styles.statLabel}>Vehicle</Text>
+            <View style={[styles.earningsDivider, { backgroundColor: colors.drawerBorder || 'rgba(255,255,255,0.08)' }]} />
+            <View style={styles.earningsStats}>
+              <Text style={[styles.earningsStatValue, { color: colors.drawerText || '#FFFFFF' }]}>
+                {user?.driver?.total_rides || 0}
+              </Text>
+              <Text style={[styles.earningsStatLabel, { color: colors.drawerTextMuted || 'rgba(255,255,255,0.4)' }]}>
+                Rides
+              </Text>
             </View>
           </View>
         </TouchableOpacity>
@@ -208,7 +218,12 @@ const SideDrawer = ({ visible, onClose, navigation }) => {
         >
           {menuItems.map((item, index) => {
             if (item.divider) {
-              return <View key={item.id} style={styles.divider} />;
+              return (
+                <View
+                  key={item.id}
+                  style={[styles.divider, { backgroundColor: colors.drawerBorder || 'rgba(255,255,255,0.06)' }]}
+                />
+              );
             }
 
             return (
@@ -231,17 +246,17 @@ const SideDrawer = ({ visible, onClose, navigation }) => {
                 >
                   <View style={[
                     styles.menuIconBg,
-                    item.danger && { backgroundColor: 'rgba(239,68,68,0.15)' },
+                    { backgroundColor: item.danger ? 'rgba(239,68,68,0.15)' : (colors.primaryMuted || 'rgba(252,192,20,0.12)') },
                   ]}>
                     <Ionicons
                       name={item.icon}
                       size={20}
-                      color={item.danger ? '#EF4444' : PRIMARY}
+                      color={item.danger ? colors.error || '#EF4444' : colors.primary}
                     />
                   </View>
                   <Text style={[
                     styles.menuLabel,
-                    item.danger && { color: '#EF4444' },
+                    { color: item.danger ? (colors.error || '#EF4444') : (colors.drawerText || 'rgba(255,255,255,0.85)') },
                   ]}>
                     {item.label}
                   </Text>
@@ -253,7 +268,7 @@ const SideDrawer = ({ visible, onClose, navigation }) => {
         </ScrollView>
 
         {/* Dark Mode Toggle at bottom */}
-        <View style={styles.bottomSection}>
+        <View style={[styles.bottomSection, { borderTopColor: colors.drawerBorder || 'rgba(255,255,255,0.08)' }]}>
           <TouchableOpacity
             style={styles.darkModeRow}
             onPress={() => {
@@ -265,17 +280,26 @@ const SideDrawer = ({ visible, onClose, navigation }) => {
             <Ionicons
               name={isDark ? 'moon' : 'sunny-outline'}
               size={18}
-              color={PRIMARY}
+              color={colors.primary}
             />
-            <Text style={styles.darkModeText}>
+            <Text style={[styles.darkModeText, { color: colors.drawerText || 'rgba(255,255,255,0.7)' }]}>
               {isDark ? 'Dark Mode' : 'Light Mode'}
             </Text>
-            <View style={[styles.toggleTrack, isDark && styles.toggleTrackOn]}>
-              <View style={[styles.toggleThumb, isDark && styles.toggleThumbOn]} />
+            <View style={[
+              styles.toggleTrack,
+              { backgroundColor: colors.drawerSurface || 'rgba(255,255,255,0.15)' },
+              isDark && { backgroundColor: (colors.primary || '#FCC014') + '40' },
+            ]}>
+              <View style={[
+                styles.toggleThumb,
+                isDark && { alignSelf: 'flex-end', backgroundColor: colors.primary },
+              ]} />
             </View>
           </TouchableOpacity>
 
-          <Text style={styles.version}>Shareide Fleet v1.0.0</Text>
+          <Text style={[styles.version, { color: colors.drawerTextMuted || 'rgba(255,255,255,0.25)' }]}>
+            Shareide Fleet v1.0.0
+          </Text>
         </View>
       </Animated.View>
     </View>
@@ -293,7 +317,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     bottom: 0,
-    backgroundColor: DARK2,
     zIndex: 101,
     shadowColor: '#000',
     shadowOffset: { width: 8, height: 0 },
@@ -308,36 +331,11 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   avatarRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
-  },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: PRIMARY,
-    position: 'relative',
-  },
-  avatarImg: {
-    width: '100%',
-    height: '100%',
-  },
-  onlineDot: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#10B981',
-    borderWidth: 2,
-    borderColor: DARK2,
   },
   profileInfo: {
     flex: 1,
@@ -346,45 +344,57 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
   profilePhone: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.5)',
     marginTop: 2,
   },
 
-  // Stats
-  statsRow: {
+  // Earnings Widget - Yango Pro inspired
+  earningsWidget: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
   },
-  statItem: {
-    flex: 1,
+  earningsMain: {
+    flex: 1.2,
+  },
+  earningsLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  earningsValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+  earningsDivider: {
+    width: 1,
+    height: 30,
+    marginHorizontal: 10,
+  },
+  earningsStats: {
+    alignItems: 'center',
+    flex: 0.6,
+  },
+  earningsStat: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  statValue: {
+  earningsStatValue: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#FFFFFF',
-    textTransform: 'capitalize',
   },
-  statLabel: {
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.4)',
+  earningsStatLabel: {
+    fontSize: 9,
     fontWeight: '600',
     marginTop: 2,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-  },
-  statDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: 'rgba(255,255,255,0.1)',
   },
 
   // Menu
@@ -404,7 +414,6 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: 'rgba(252,192,20,0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
@@ -412,11 +421,9 @@ const styles = StyleSheet.create({
   menuLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.85)',
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
     marginVertical: 8,
     marginHorizontal: 8,
   },
@@ -426,7 +433,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
   },
   darkModeRow: {
     flexDirection: 'row',
@@ -437,19 +443,14 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.7)',
     marginLeft: 12,
   },
   toggleTrack: {
     width: 42,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     paddingHorizontal: 2,
-  },
-  toggleTrackOn: {
-    backgroundColor: PRIMARY + '40',
   },
   toggleThumb: {
     width: 20,
@@ -457,13 +458,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: 'rgba(255,255,255,0.5)',
   },
-  toggleThumbOn: {
-    alignSelf: 'flex-end',
-    backgroundColor: PRIMARY,
-  },
   version: {
     fontSize: 11,
-    color: 'rgba(255,255,255,0.25)',
     textAlign: 'center',
     marginTop: 8,
   },

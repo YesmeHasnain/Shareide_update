@@ -41,9 +41,10 @@ const PhoneScreen = ({ navigation }) => {
   };
 
   const handleContinue = async () => {
-    if (phone.length < 10) {
+    const cleaned = phone.replace(/[^0-9]/g, '');
+    if (cleaned.length < 10 || cleaned.length > 11) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Invalid Number', 'Please enter a valid phone number');
+      Alert.alert('Invalid Number', 'Please enter a valid phone number (e.g. 03303733184)');
       return;
     }
 
@@ -69,7 +70,8 @@ const PhoneScreen = ({ navigation }) => {
     }
   };
 
-  const isValidPhone = phone.length >= 10;
+  const cleanedPhone = phone.replace(/[^0-9]/g, '');
+  const isValidPhone = cleanedPhone.length >= 10 && cleanedPhone.length <= 11;
 
   return (
     <View style={styles.container}>

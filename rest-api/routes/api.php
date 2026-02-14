@@ -35,6 +35,22 @@ Route::get('/ping', function () {
     ]);
 });
 
+// Pusher config (public - key is safe to expose)
+Route::get('/pusher/config', function () {
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'key' => config('broadcasting.connections.pusher.key'),
+            'cluster' => config('broadcasting.connections.pusher.options.cluster', 'ap2'),
+        ],
+    ]);
+});
+
+// Broadcasting auth for private channels (Sanctum token auth)
+Route::post('/broadcasting/auth', function (\Illuminate\Http\Request $request) {
+    return \Illuminate\Support\Facades\Broadcast::auth($request);
+})->middleware('auth:sanctum');
+
 // Public routes (no authentication required)
 Route::prefix('auth')->group(function () {
     Route::post('/send-code', [AuthController::class, 'sendCode']);
@@ -66,6 +82,9 @@ Route::post('/contact', [ContactController::class, 'submit']);
 // ============================================
 Route::get('/support/ticket/{token}', [ContactController::class, 'viewTicket']);
 Route::post('/support/ticket/{token}/reply', [ContactController::class, 'replyToTicket']);
+Route::post('/support/ticket/{token}/activity', [ContactController::class, 'updateActivity']);
+Route::post('/support/ticket/{token}/typing', [ContactController::class, 'typing']);
+Route::get('/support/ticket/{token}/messages', [ContactController::class, 'getNewMessages']);
 
 // Protected routes (authentication required)
 Route::middleware('auth:sanctum')->group(function () {

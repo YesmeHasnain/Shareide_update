@@ -67,4 +67,14 @@ export const rideAPI = {
     const response = await client.get('/driver/profile');
     return response.data;
   },
+
+  // Rate a rider after completing a ride
+  rateRider: async (rideId, rating, comment = '', tags = [], negativeReason = undefined) => {
+    const body = { rating, comment, tags };
+    if (negativeReason) {
+      body.negative_reason = negativeReason;
+    }
+    const response = await client.post(`/ratings/rides/${rideId}/rate-rider`, body);
+    return response.data;
+  },
 };

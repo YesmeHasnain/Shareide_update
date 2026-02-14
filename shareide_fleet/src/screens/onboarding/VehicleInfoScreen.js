@@ -15,6 +15,13 @@ import { useTheme } from '../../context/ThemeContext';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import { onboardingAPI } from '../../api/onboarding';
+import { spacing, typography, borderRadius } from '../../theme/colors';
+
+const VEHICLE_TYPE_ICONS = {
+  bike: { name: 'bicycle', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.12)' },
+  car: { name: 'car', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' },
+  rickshaw: { name: 'bus', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)' },
+};
 
 const VehicleInfoScreen = ({ navigation }) => {
   const { colors } = useTheme();
@@ -38,9 +45,9 @@ const VehicleInfoScreen = ({ navigation }) => {
   const [errors, setErrors] = useState({});
 
   const vehicleTypes = [
-    { id: 'bike', name: 'Bike', icon: '🏍️' },
-    { id: 'car', name: 'Car', icon: '🚗' },
-    { id: 'rickshaw', name: 'Rickshaw', icon: '🛺' },
+    { id: 'bike', name: 'Bike' },
+    { id: 'car', name: 'Car' },
+    { id: 'rickshaw', name: 'Rickshaw' },
   ];
 
   const imageTypes = [
@@ -155,7 +162,6 @@ const VehicleInfoScreen = ({ navigation }) => {
       newErrors.color = 'Vehicle color is required';
     }
 
-    // Check at least front photo is provided
     if (!vehicleImages.vehicle_front) {
       newErrors.images = 'At least front view photo is required';
     }
@@ -169,7 +175,6 @@ const VehicleInfoScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      // Build FormData with text fields + images
       const submitData = new FormData();
       submitData.append('type', formData.type);
       submitData.append('registration_number', formData.registration_number);
@@ -178,7 +183,6 @@ const VehicleInfoScreen = ({ navigation }) => {
       submitData.append('year', formData.year);
       submitData.append('color', formData.color);
 
-      // Append vehicle images
       Object.keys(vehicleImages).forEach((key) => {
         const img = vehicleImages[key];
         if (img) {
@@ -235,25 +239,30 @@ const VehicleInfoScreen = ({ navigation }) => {
             Select Vehicle Type *
           </Text>
           <View style={styles.typeContainer}>
-            {vehicleTypes.map((type) => (
-              <TouchableOpacity
-                key={type.id}
-                style={[
-                  styles.typeCard,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: selectedType === type.id ? colors.primary : colors.border,
-                    borderWidth: 2,
-                  },
-                ]}
-                onPress={() => handleTypeSelect(type.id)}
-              >
-                <Text style={styles.typeIcon}>{type.icon}</Text>
-                <Text style={[styles.typeName, { color: colors.text }]}>
-                  {type.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {vehicleTypes.map((type) => {
+              const iconConfig = VEHICLE_TYPE_ICONS[type.id];
+              return (
+                <TouchableOpacity
+                  key={type.id}
+                  style={[
+                    styles.typeCard,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: selectedType === type.id ? colors.primary : colors.border,
+                      borderWidth: 2,
+                    },
+                  ]}
+                  onPress={() => handleTypeSelect(type.id)}
+                >
+                  <View style={[styles.typeIconBg, { backgroundColor: selectedType === type.id ? colors.primary + '20' : iconConfig.bg }]}>
+                    <Ionicons name={iconConfig.name} size={32} color={selectedType === type.id ? colors.primary : iconConfig.color} />
+                  </View>
+                  <Text style={[styles.typeName, { color: colors.text }]}>
+                    {type.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
           {errors.type && (
             <Text style={[styles.error, { color: colors.error }]}>{errors.type}</Text>
@@ -359,7 +368,7 @@ const VehicleInfoScreen = ({ navigation }) => {
           </View>
 
           {errors.images && (
-            <Text style={[styles.error, { color: colors.error, marginTop: 8 }]}>
+            <Text style={[styles.error, { color: colors.error, marginTop: spacing.sm }]}>
               {errors.images}
             </Text>
           )}
@@ -404,72 +413,76 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.xxl,
   },
   header: {
-    marginTop: 20,
-    marginBottom: 24,
+    marginTop: spacing.xl,
+    marginBottom: spacing.xxl,
   },
   progressBar: {
     height: 4,
     backgroundColor: '#E0E0E0',
     borderRadius: 2,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   progressFill: {
     height: '100%',
     borderRadius: 2,
   },
   stepText: {
-    fontSize: 14,
-    marginBottom: 8,
+    fontSize: typography.bodySmall,
+    marginBottom: spacing.sm,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: typography.h3,
+    fontWeight: '700',
+    marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: typography.h6,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: spacing.xxl,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: typography.h6,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   sectionSubtitle: {
-    fontSize: 13,
-    marginBottom: 12,
+    fontSize: typography.bodySmall - 1,
+    marginBottom: spacing.md,
   },
   typeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   typeCard: {
     flex: 1,
-    marginHorizontal: 4,
-    padding: 16,
-    borderRadius: 12,
+    marginHorizontal: spacing.xs,
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
   },
-  typeIcon: {
-    fontSize: 40,
-    marginBottom: 8,
+  typeIconBg: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
   },
   typeName: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     fontWeight: '600',
   },
   error: {
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: typography.caption,
+    marginTop: spacing.xs,
   },
   form: {
-    marginBottom: 24,
+    marginBottom: spacing.xxl,
   },
   imagesGrid: {
     flexDirection: 'row',
@@ -479,10 +492,10 @@ const styles = StyleSheet.create({
   imageCard: {
     width: '48%',
     height: 140,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
     borderWidth: 2,
     borderStyle: 'dashed',
-    marginBottom: 12,
+    marginBottom: spacing.md,
     overflow: 'hidden',
   },
   imagePreviewContainer: {
@@ -496,8 +509,8 @@ const styles = StyleSheet.create({
   },
   imageCheckBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: spacing.sm,
+    right: spacing.sm,
     width: 24,
     height: 24,
     borderRadius: 12,
@@ -510,12 +523,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
   imageLabelOverlayText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: typography.caption,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -523,7 +536,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 8,
+    padding: spacing.sm,
   },
   iconCircle: {
     width: 44,
@@ -531,42 +544,42 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   imageLabel: {
-    fontSize: 13,
+    fontSize: typography.bodySmall - 1,
     fontWeight: '600',
     textAlign: 'center',
   },
   imageTap: {
-    fontSize: 11,
+    fontSize: typography.tiny + 1,
     marginTop: 2,
   },
   tipsCard: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.xxl,
   },
   tipsTitle: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   tipsText: {
-    fontSize: 13,
+    fontSize: typography.bodySmall - 1,
     lineHeight: 20,
   },
   buttons: {
     flexDirection: 'row',
-    marginBottom: 24,
+    marginBottom: spacing.xxl,
   },
   backButton: {
     flex: 1,
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   continueButton: {
     flex: 1,
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
 });
 

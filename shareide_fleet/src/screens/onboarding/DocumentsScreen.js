@@ -9,14 +9,24 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../context/ThemeContext';
 import Button from '../../components/Button';
 import { onboardingAPI } from '../../api/onboarding';
+import { spacing, typography, borderRadius } from '../../theme/colors';
+
+const DOC_ICONS = {
+  nic_front: { name: 'card', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' },
+  nic_back: { name: 'card', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' },
+  license_front: { name: 'document', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.12)' },
+  license_back: { name: 'document', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.12)' },
+  vehicle_registration: { name: 'document-text', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)' },
+};
 
 const DocumentsScreen = ({ navigation }) => {
   const { colors } = useTheme();
-  
+
   const [loading, setLoading] = useState(false);
   const [documents, setDocuments] = useState({
     nic_front: null,
@@ -27,18 +37,18 @@ const DocumentsScreen = ({ navigation }) => {
   });
 
   const documentTypes = [
-    { key: 'nic_front', label: 'NIC Front', icon: '🪪' },
-    { key: 'nic_back', label: 'NIC Back', icon: '🪪' },
-    { key: 'license_front', label: 'License Front', icon: '📄' },
-    { key: 'license_back', label: 'License Back', icon: '📄' },
-    { key: 'vehicle_registration', label: 'Vehicle Registration', icon: '📋' },
+    { key: 'nic_front', label: 'NIC Front' },
+    { key: 'nic_back', label: 'NIC Back' },
+    { key: 'license_front', label: 'License Front' },
+    { key: 'license_back', label: 'License Back' },
+    { key: 'vehicle_registration', label: 'Vehicle Registration' },
   ];
 
   const pickImage = async (key) => {
     try {
       // Request permissions
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
+
       if (status !== 'granted') {
         Alert.alert('Permission Denied', 'Please allow access to photos');
         return;
@@ -68,7 +78,7 @@ const DocumentsScreen = ({ navigation }) => {
     try {
       // Request permissions
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      
+
       if (status !== 'granted') {
         Alert.alert('Permission Denied', 'Please allow camera access');
         return;
@@ -159,15 +169,18 @@ const DocumentsScreen = ({ navigation }) => {
       <ScrollView showsVerticalScrollIndicator={false} style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.progressBar}>
+          <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
             <View style={[styles.progressFill, { backgroundColor: colors.primary, width: '60%' }]} />
           </View>
           <Text style={[styles.stepText, { color: colors.textSecondary }]}>
             Step 3 of 5
           </Text>
-          <Text style={[styles.title, { color: colors.text }]}>
-            Upload Documents 📄
-          </Text>
+          <View style={styles.titleRow}>
+            <Text style={[styles.title, { color: colors.text }]}>Upload Documents</Text>
+            <View style={[styles.titleIconBg, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
+              <Ionicons name="document-text" size={20} color="#8B5CF6" />
+            </View>
+          </View>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Please upload clear photos of your documents
           </Text>
@@ -175,55 +188,76 @@ const DocumentsScreen = ({ navigation }) => {
 
         {/* Documents */}
         <View style={styles.documentsContainer}>
-          {documentTypes.map((doc) => (
-            <View key={doc.key} style={styles.documentCard}>
-              <View style={styles.documentHeader}>
-                <Text style={styles.documentIcon}>{doc.icon}</Text>
-                <Text style={[styles.documentLabel, { color: colors.text }]}>
-                  {doc.label}
-                </Text>
-              </View>
-
-              {documents[doc.key] ? (
-                <View style={styles.imageContainer}>
-                  <Image
-                    source={{ uri: documents[doc.key].uri }}
-                    style={styles.image}
-                  />
-                  <View style={styles.imageOverlay}>
-                    <TouchableOpacity
-                      style={[styles.overlayButton, { backgroundColor: colors.primary }]}
-                      onPress={() => showImageOptions(doc.key)}
-                    >
-                      <Text style={styles.overlayButtonText}>Change</Text>
-                    </TouchableOpacity>
+          {documentTypes.map((doc) => {
+            const iconConfig = DOC_ICONS[doc.key];
+            return (
+              <View key={doc.key} style={styles.documentCard}>
+                <View style={styles.documentHeader}>
+                  <View style={[styles.documentIconBg, { backgroundColor: iconConfig.bg }]}>
+                    <Ionicons name={iconConfig.name} size={20} color={iconConfig.color} />
                   </View>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.uploadButton, { backgroundColor: colors.surface }]}
-                  onPress={() => showImageOptions(doc.key)}
-                >
-                  <Text style={styles.uploadIcon}>📸</Text>
-                  <Text style={[styles.uploadText, { color: colors.text }]}>
-                    Upload {doc.label}
+                  <Text style={[styles.documentLabel, { color: colors.text }]}>
+                    {doc.label}
                   </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          ))}
+                  {documents[doc.key] && (
+                    <View style={[styles.checkBadge, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
+                      <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                    </View>
+                  )}
+                </View>
+
+                {documents[doc.key] ? (
+                  <View style={styles.imageContainer}>
+                    <Image
+                      source={{ uri: documents[doc.key].uri }}
+                      style={styles.image}
+                    />
+                    <View style={styles.imageOverlay}>
+                      <TouchableOpacity
+                        style={[styles.overlayButton, { backgroundColor: colors.primary }]}
+                        onPress={() => showImageOptions(doc.key)}
+                      >
+                        <Ionicons name="camera" size={16} color="#000" style={{ marginRight: 4 }} />
+                        <Text style={styles.overlayButtonText}>Change</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={[styles.uploadButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                    onPress={() => showImageOptions(doc.key)}
+                  >
+                    <View style={[styles.uploadIconBg, { backgroundColor: 'rgba(107, 114, 128, 0.08)' }]}>
+                      <Ionicons name="camera" size={28} color={colors.textSecondary} />
+                    </View>
+                    <Text style={[styles.uploadText, { color: colors.text }]}>
+                      Upload {doc.label}
+                    </Text>
+                    <Text style={[styles.uploadHint, { color: colors.textSecondary }]}>
+                      Tap to take photo or choose from gallery
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            );
+          })}
         </View>
 
         {/* Important Notes */}
         <View style={[styles.notesCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.notesTitle, { color: colors.text }]}>
-            📌 Important Notes
-          </Text>
+          <View style={styles.notesHeader}>
+            <View style={[styles.notesIconBg, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
+              <Ionicons name="alert-circle" size={20} color="#F59E0B" />
+            </View>
+            <Text style={[styles.notesTitle, { color: colors.text }]}>
+              Important Notes
+            </Text>
+          </View>
           <Text style={[styles.notesText, { color: colors.textSecondary }]}>
-            • Make sure all documents are clearly visible{'\n'}
-            • Photos should be well-lit and not blurry{'\n'}
-            • All text should be readable{'\n'}
-            • Documents must be valid and not expired
+            {'\u2022'} Make sure all documents are clearly visible{'\n'}
+            {'\u2022'} Photos should be well-lit and not blurry{'\n'}
+            {'\u2022'} All text should be readable{'\n'}
+            {'\u2022'} Documents must be valid and not expired
           </Text>
         </View>
 
@@ -253,72 +287,103 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.xl,
   },
   header: {
-    marginTop: 20,
-    marginBottom: 24,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xl,
   },
   progressBar: {
     height: 4,
-    backgroundColor: '#E0E0E0',
     borderRadius: 2,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   progressFill: {
     height: '100%',
     borderRadius: 2,
   },
   stepText: {
-    fontSize: 14,
-    marginBottom: 8,
+    fontSize: typography.bodySmall,
+    marginBottom: spacing.sm,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
   },
   title: {
-    fontSize: 24,
+    fontSize: typography.h3,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginRight: spacing.sm,
+  },
+  titleIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: typography.body,
   },
   documentsContainer: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   documentCard: {
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   documentHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
-  documentIcon: {
-    fontSize: 24,
-    marginRight: 8,
+  documentIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
   },
   documentLabel: {
-    fontSize: 16,
+    fontSize: typography.body,
     fontWeight: '600',
+    flex: 1,
+  },
+  checkBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   uploadButton: {
     height: 150,
-    borderRadius: 12,
+    borderRadius: borderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: '#E0E0E0',
   },
-  uploadIcon: {
-    fontSize: 40,
-    marginBottom: 8,
+  uploadIconBg: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
   },
   uploadText: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
+    fontWeight: '500',
+  },
+  uploadHint: {
+    fontSize: typography.caption,
+    marginTop: spacing.xs,
   },
   imageContainer: {
     height: 150,
-    borderRadius: 12,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -332,45 +397,60 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 8,
+    padding: spacing.sm,
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },
   overlayButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
   },
   overlayButtonText: {
     color: '#000',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: typography.bodySmall,
   },
   notesCard: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.xl,
+  },
+  notesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  notesIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
   },
   notesTitle: {
-    fontSize: 16,
+    fontSize: typography.body,
     fontWeight: '600',
-    marginBottom: 8,
   },
   notesText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: typography.bodySmall,
+    lineHeight: 22,
+    marginLeft: spacing.xs,
   },
   buttons: {
     flexDirection: 'row',
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   backButton: {
     flex: 1,
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   continueButton: {
     flex: 1,
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
 });
 

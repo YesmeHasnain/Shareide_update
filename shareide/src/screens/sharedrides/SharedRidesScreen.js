@@ -238,15 +238,6 @@ const SharedRidesScreen = ({ navigation, route }) => {
         }
       />
 
-      <TouchableOpacity
-        style={[styles.fab, { shadowColor: colors.primary }]}
-        onPress={() => navigation.navigate('CreateSharedRide')}
-        activeOpacity={0.8}
-      >
-        <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.fabGradient}>
-          <Ionicons name="add" size={28} color="#fff" />
-        </LinearGradient>
-      </TouchableOpacity>
     </View>
   );
 };

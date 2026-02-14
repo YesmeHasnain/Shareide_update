@@ -23,21 +23,36 @@ const PhoneScreen = ({ navigation }) => {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Normalize phone: accept 03303733184 or 3303733184, send as +923303733184
+  const normalizePhone = (num) => {
+    let cleaned = num.replace(/[^0-9]/g, '');
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1); // 03303733184 -> 3303733184
+    }
+    if (cleaned.startsWith('92') && cleaned.length === 12) {
+      return '+' + cleaned;
+    }
+    return '+92' + cleaned; // -> +923303733184
+  };
+
   const handleContinue = async () => {
-    if (phone.length < 10) {
+    const cleaned = phone.replace(/[^0-9]/g, '');
+    // Accept: 03xxxxxxxxx (11 digits) or 3xxxxxxxxx (10 digits)
+    if (cleaned.length < 10 || cleaned.length > 11) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Invalid Number', 'Please enter a valid phone number');
+      Alert.alert('Invalid Number', 'Please enter a valid phone number (e.g. 03303733184)');
       return;
     }
 
     try {
       setLoading(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const response = await authAPI.sendCode(phone);
+      const formattedPhone = normalizePhone(cleaned);
+      const response = await authAPI.sendCode(formattedPhone);
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.navigate('OTP', {
-        phone,
+        phone: formattedPhone,
         isExistingUser: response.is_existing_user || false,
       });
 
@@ -53,7 +68,8 @@ const PhoneScreen = ({ navigation }) => {
     }
   };
 
-  const isValidPhone = phone.length >= 10;
+  const cleanedPhone = phone.replace(/[^0-9]/g, '');
+  const isValidPhone = cleanedPhone.length >= 10 && cleanedPhone.length <= 11;
 
   return (
     <View style={styles.container}>

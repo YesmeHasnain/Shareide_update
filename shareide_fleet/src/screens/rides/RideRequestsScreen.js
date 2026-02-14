@@ -202,7 +202,7 @@ const RideRequestsScreen = ({ navigation }) => {
         {/* Notes */}
         {item.notes && (
           <Text style={[styles.notes, { color: colors.textSecondary }]} numberOfLines={1}>
-            💬 {item.notes}
+            <Ionicons name="chatbubble-outline" size={13} color={colors.textSecondary} /> {item.notes}
           </Text>
         )}
 

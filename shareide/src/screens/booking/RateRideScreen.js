@@ -93,10 +93,13 @@ const RateRideScreen = ({ route, navigation }) => {
   const { ride, driver, fare } = params;
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
+  const [negativeReason, setNegativeReason] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const tags = [
+  const isNegative = rating <= 2;
+
+  const positiveTags = [
     { id: 1, label: 'Clean Car', icon: 'sparkles' },
     { id: 2, label: 'On Time', icon: 'time' },
     { id: 3, label: 'Friendly', icon: 'happy' },
@@ -104,6 +107,17 @@ const RateRideScreen = ({ route, navigation }) => {
     { id: 5, label: 'Good Route', icon: 'navigate' },
     { id: 6, label: 'Great Music', icon: 'musical-notes' },
   ];
+
+  const negativeTags = [
+    { id: 101, label: 'Late Arrival', icon: 'time-outline' },
+    { id: 102, label: 'Rude Behavior', icon: 'sad-outline' },
+    { id: 103, label: 'Unsafe Driving', icon: 'warning-outline' },
+    { id: 104, label: 'Dirty Car', icon: 'trash-outline' },
+    { id: 105, label: 'Wrong Route', icon: 'map-outline' },
+    { id: 106, label: 'Overcharging', icon: 'cash-outline' },
+  ];
+
+  const tags = isNegative ? negativeTags : positiveTags;
 
   const getRatingText = () => {
     switch (rating) {
@@ -122,6 +136,16 @@ const RateRideScreen = ({ route, navigation }) => {
     }
   };
 
+  const handleSetRating = (newRating) => {
+    const wasNegative = rating <= 2;
+    const willBeNegative = newRating <= 2;
+    if (wasNegative !== willBeNegative) {
+      setSelectedTags([]);
+      setNegativeReason('');
+    }
+    setRating(newRating);
+  };
+
   const toggleTag = (tagId) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedTags((prev) =>
@@ -132,6 +156,14 @@ const RateRideScreen = ({ route, navigation }) => {
   };
 
   const handleSubmit = async () => {
+    if (isNegative && !negativeReason.trim()) {
+      Alert.alert(
+        'Reason Required',
+        'Please provide a reason for your low rating.',
+      );
+      return;
+    }
+
     try {
       setLoading(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -140,7 +172,13 @@ const RateRideScreen = ({ route, navigation }) => {
         .filter((tag) => selectedTags.includes(tag.id))
         .map((tag) => tag.label);
 
-      await ridesAPI.rateRide(ride.id, rating, comment, selectedTagLabels);
+      await ridesAPI.rateRide(
+        ride.id,
+        rating,
+        comment,
+        selectedTagLabels,
+        isNegative ? negativeReason : undefined,
+      );
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Thank You!', 'Your feedback helps improve our service.', [
@@ -156,7 +194,7 @@ const RateRideScreen = ({ route, navigation }) => {
       ]);
     } catch (error) {
       // For demo, show success anyway
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       Alert.alert('Thank You!', 'Your feedback has been recorded.', [
         {
           text: 'OK',
@@ -199,7 +237,7 @@ const RateRideScreen = ({ route, navigation }) => {
             colors={colors.gradients?.gold || ['#FFD700', '#FFA500']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={[styles.successCard, shadows.goldLg]}
+            style={[styles.successCard, shadows.lg]}
           >
             <View style={styles.successIconContainer}>
               <Ionicons name="checkmark-circle" size={60} color="#000" />
@@ -243,7 +281,7 @@ const RateRideScreen = ({ route, navigation }) => {
               <Star
                 key={star}
                 filled={star <= rating}
-                onPress={setRating}
+                onPress={handleSetRating}
                 index={star - 1}
               />
             ))}
@@ -253,10 +291,40 @@ const RateRideScreen = ({ route, navigation }) => {
           </Text>
         </View>
 
+        {/* Negative Reason Section */}
+        {isNegative && (
+          <View style={styles.negativeReasonSection}>
+            <Text style={[styles.negativeReasonLabel, { color: colors.error || '#EF4444' }]}>
+              Why did you give a low rating? *
+            </Text>
+            <View
+              style={[
+                styles.negativeReasonInputContainer,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.error || '#EF4444',
+                },
+              ]}
+            >
+              <TextInput
+                style={[styles.negativeReasonInput, { color: colors.text }]}
+                value={negativeReason}
+                onChangeText={setNegativeReason}
+                placeholder="Please explain what went wrong..."
+                placeholderTextColor={colors.textSecondary}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+                maxLength={500}
+              />
+            </View>
+          </View>
+        )}
+
         {/* Tags Section */}
         <View style={styles.tagsSection}>
-          <Text style={[styles.tagsLabel, { color: colors.text }]}>
-            What did you like?
+          <Text style={[styles.tagsLabel, { color: isNegative ? (colors.error || '#EF4444') : colors.text }]}>
+            {isNegative ? 'What went wrong?' : 'What did you like?'}
           </Text>
           <View style={styles.tagsGrid}>
             {tags.map((tag) => (
@@ -393,6 +461,25 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: typography.body,
     fontWeight: '600',
+  },
+  negativeReasonSection: {
+    marginBottom: spacing.xl,
+  },
+  negativeReasonLabel: {
+    fontSize: typography.body,
+    fontWeight: '700',
+    marginBottom: spacing.md,
+  },
+  negativeReasonInputContainer: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    borderWidth: 1.5,
+    ...shadows.sm,
+  },
+  negativeReasonInput: {
+    fontSize: typography.body,
+    minHeight: 80,
+    textAlignVertical: 'top',
   },
   tagsSection: {
     marginBottom: spacing.xl,

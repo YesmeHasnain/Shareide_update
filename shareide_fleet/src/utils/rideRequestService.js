@@ -1,9 +1,11 @@
 import { AppState } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import notificationService from './notificationService';
+import { pusherService } from './pusherService';
 import client from '../api/client';
 
-const POLL_INTERVAL = 5000; // 5 seconds
+const POLL_INTERVAL = 10000; // 10 seconds (reduced from 5s since we have real-time)
 
 class RideRequestService {
   constructor() {
@@ -13,6 +15,8 @@ class RideRequestService {
     this.onRideUpdate = null;
     this.activeRideId = null;
     this.appState = AppState.currentState;
+    this.userChannel = null;
+    this.rideChannel = null;
   }
 
   // Start polling for ride requests
@@ -40,10 +44,52 @@ class RideRequestService {
     // Check immediately
     this.checkForRideRequests();
 
+    // Setup real-time Pusher subscription
+    this.setupRealTime();
+
     console.log('Ride request service started');
   }
 
-  // Stop polling
+  // Setup real-time Pusher subscription for ride updates
+  async setupRealTime() {
+    try {
+      const userData = await AsyncStorage.getItem('userData');
+      const user = userData ? JSON.parse(userData) : null;
+      if (!user?.id) return;
+
+      // Subscribe to user's personal channel for ride notifications
+      this.userChannel = await pusherService.subscribe(`user.${user.id}`);
+      if (this.userChannel) {
+        this.userChannel.bind('ride.status.changed', (data) => {
+          console.log('Real-time ride update:', data.status);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          if (this.onRideUpdate) {
+            this.onRideUpdate(data);
+          }
+          // Also refresh ride requests
+          this.checkForRideRequests();
+        });
+      }
+    } catch (error) {
+      console.log('Real-time setup failed, using polling:', error.message);
+    }
+  }
+
+  // Subscribe to a specific ride channel (call when accepting a ride)
+  async subscribeToRide(rideId) {
+    try {
+      this.rideChannel = await pusherService.subscribe(`ride.${rideId}`);
+      if (this.rideChannel) {
+        this.rideChannel.bind('ride.status.changed', (data) => {
+          if (this.onRideUpdate) this.onRideUpdate(data);
+        });
+      }
+    } catch (error) {
+      console.log('Failed to subscribe to ride channel:', error.message);
+    }
+  }
+
+  // Stop polling and real-time
   stop() {
     if (this.pollInterval) {
       clearInterval(this.pollInterval);
@@ -53,6 +99,16 @@ class RideRequestService {
     if (this.appStateSubscription) {
       this.appStateSubscription.remove();
       this.appStateSubscription = null;
+    }
+
+    // Clean up Pusher subscriptions
+    if (this.userChannel) {
+      this.userChannel.unbind_all();
+      this.userChannel = null;
+    }
+    if (this.rideChannel) {
+      this.rideChannel.unbind_all();
+      this.rideChannel = null;
     }
 
     this.isPolling = false;
@@ -113,6 +169,7 @@ class RideRequestService {
 
       if (response.data.success) {
         this.activeRideId = rideId;
+        this.subscribeToRide(rideId);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         return response.data;
       }

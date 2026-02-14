@@ -21,7 +21,10 @@
         "NSLocationWhenInUseUsageDescription": "Shareide Fleet needs your location to show your position on the map and match you with nearby ride requests.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Shareide Fleet needs your location to track your position while you are online and accepting rides.",
         "NSLocationAlwaysUsageDescription": "Shareide Fleet needs your location to track your position in the background while on a ride.",
-        "UIBackgroundModes": ["location", "fetch"]
+        "UIBackgroundModes": [
+          "location",
+          "fetch"
+        ]
       }
     },
     "android": {
@@ -52,7 +55,9 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Shareide Fleet to use your location to match you with nearby rides."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-font"
     ],
     "extra": {
       "eas": {

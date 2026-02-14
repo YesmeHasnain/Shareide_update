@@ -46,18 +46,70 @@ class BankAlfalahService
 
     public function __construct()
     {
-        $this->merchantId = env('BANKALFALAH_MERCHANT_ID');
-        $this->storeId = env('BANKALFALAH_MERCHANT_STOREID');
-        $this->merchantHash = env('BANKALFALAH_MERCHANT_HASH');
-        $this->merchantUsername = env('BANKALFALAH_SANDBOX_USER') ?: env('BANKALFALAH_USERNAME');
-        $this->merchantPassword = env('BANKALFALAH_SANDBOX_PASSWORD') ?: env('BANKALFALAH_PASSWORD');
-        $this->returnUrl = env('BANKALFALAH_RETURN_URL');
-        $this->listenerUrl = env('BANKALFALAH_LISTENER_URL');
-        $this->key1 = env('BANKALFALAH_KEY1');
-        $this->key2 = env('BANKALFALAH_KEY2');
+        $this->merchantId = config('services.bank_alfalah.merchant_id', env('BANKALFALAH_MERCHANT_ID'));
+        $this->storeId = config('services.bank_alfalah.merchant_storeid', env('BANKALFALAH_MERCHANT_STOREID'));
+        $this->merchantHash = config('services.bank_alfalah.merchant_hash', env('BANKALFALAH_MERCHANT_HASH'));
+        $this->merchantUsername = config('services.bank_alfalah.username', env('BANKALFALAH_USERNAME', ''));
+        $this->merchantPassword = config('services.bank_alfalah.password', env('BANKALFALAH_PASSWORD', ''));
+        $this->returnUrl = config('services.bank_alfalah.return_url', env('BANKALFALAH_RETURN_URL'));
+        $this->listenerUrl = config('services.bank_alfalah.listener_url', env('BANKALFALAH_LISTENER_URL'));
+        $this->key1 = config('services.bank_alfalah.key1', env('BANKALFALAH_KEY1'));
+        $this->key2 = config('services.bank_alfalah.key2', env('BANKALFALAH_KEY2'));
         $this->sandboxUrl = 'https://sandbox.bankalfalah.com';
-        $this->productionUrl = 'https://payments.bankalfalah.com';
-        $this->isProduction = env('BANKALFALAH_PRODUCTION', false);
+        $this->productionUrl = env('BANKALFALAH_SANDBOX_URL', 'https://payments.bankalfalah.com');
+
+        // Determine environment: BANKALFALAH_TEST_MODE=true means use sandbox/test
+        $testMode = env('BANKALFALAH_TEST_MODE', true);
+        $this->isProduction = ($testMode === false || $testMode === 'false') ? true : false;
+
+        Log::info('BankAlfalahService initialized', [
+            'is_production' => $this->isProduction,
+            'base_url' => $this->getBaseUrl(),
+            'merchant_id' => $this->merchantId,
+            'store_id' => $this->storeId,
+            'return_url' => $this->returnUrl,
+            'key1_set' => !empty($this->key1),
+            'key2_set' => !empty($this->key2),
+        ]);
+    }
+
+    /**
+     * Parse Bank Alfalah response which may return double-encoded JSON
+     * (JSON string wrapped in quotes instead of a proper JSON object)
+     */
+    private function parseResponse($response)
+    {
+        $data = $response->json();
+
+        // Bank Alfalah sometimes returns double-encoded JSON (string instead of array)
+        if (is_string($data)) {
+            $data = json_decode($data, true);
+        }
+
+        if (!is_array($data)) {
+            Log::error('Bank Alfalah returned unparseable response', [
+                'status' => $response->status(),
+                'body' => substr($response->body(), 0, 500),
+            ]);
+            return null;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Build params array - Username/Password MUST always be included
+     * (even if empty) as they are part of the RequestHash computation
+     */
+    private function buildAuthParams($prefix = '')
+    {
+        return [
+            $prefix . 'MerchantId' => $this->merchantId,
+            $prefix . 'StoreId' => $this->storeId,
+            $prefix . 'MerchantHash' => $this->merchantHash,
+            $prefix . 'MerchantUsername' => $this->merchantUsername ?? '',
+            $prefix . 'MerchantPassword' => $this->merchantPassword ?? '',
+        ];
     }
 
     /**
@@ -76,6 +128,23 @@ class BankAlfalahService
      */
     private function generateRequestHash(array $params)
     {
+        // Validate encryption keys
+        if (empty($this->key1) || empty($this->key2)) {
+            Log::error('Bank Alfalah encryption keys are missing', [
+                'key1_set' => !empty($this->key1),
+                'key2_set' => !empty($this->key2),
+            ]);
+            throw new \Exception('Bank Alfalah encryption keys are not configured');
+        }
+
+        if (strlen($this->key1) !== 16 || strlen($this->key2) !== 16) {
+            Log::error('Bank Alfalah encryption keys have invalid length', [
+                'key1_length' => strlen($this->key1),
+                'key2_length' => strlen($this->key2),
+            ]);
+            throw new \Exception('Bank Alfalah encryption keys must be exactly 16 bytes');
+        }
+
         // Create the map string: key1=value1&key2=value2&...
         $mapString = '';
         foreach ($params as $key => $value) {
@@ -95,6 +164,13 @@ class BankAlfalahService
             $this->key2
         );
 
+        if ($encrypted === false) {
+            Log::error('Bank Alfalah RequestHash encryption failed', [
+                'openssl_error' => openssl_error_string(),
+            ]);
+            throw new \Exception('Failed to generate payment RequestHash');
+        }
+
         // Base64 encode the result
         return base64_encode($encrypted);
     }
@@ -109,22 +185,21 @@ class BankAlfalahService
 
         // Step 1: Handshake - POST to /HS/HS/HS
         // ChannelId = 1001 for Page Redirection
-        $handshakeParams = [
-            'HS_RequestHash' => '', // Will be set after generating
+        // Parameter order matches Bank Alfalah APG Integration Guide
+        $paramsForHash = [
+            'HS_ChannelId' => self::CHANNEL_REDIRECT,
             'HS_IsRedirectionRequest' => '1',
-            'HS_ChannelId' => '1001', // Page Redirection
-            'HS_ReturnURL' => $this->returnUrl,
             'HS_MerchantId' => $this->merchantId,
             'HS_StoreId' => $this->storeId,
+            'HS_ReturnURL' => $this->returnUrl,
             'HS_MerchantHash' => $this->merchantHash,
-            'HS_MerchantUsername' => $this->merchantUsername,
-            'HS_MerchantPassword' => $this->merchantPassword,
+            'HS_MerchantUsername' => $this->merchantUsername ?? '',
+            'HS_MerchantPassword' => $this->merchantPassword ?? '',
             'HS_TransactionReferenceNumber' => $orderId,
         ];
 
-        // Generate RequestHash for handshake (without the hash itself)
-        $paramsForHash = $handshakeParams;
-        unset($paramsForHash['HS_RequestHash']);
+        // Generate RequestHash and add it to params
+        $handshakeParams = $paramsForHash;
         $handshakeParams['HS_RequestHash'] = $this->generateRequestHash($paramsForHash);
 
         Log::info('Bank Alfalah Handshake Request', [
@@ -150,19 +225,17 @@ class BankAlfalahService
             'amount' => $amount,
             'method' => 'POST',
             // Additional data needed for Step 2 (SSO)
-            'sso_params' => [
-                'ChannelId' => '1001',
-                'MerchantId' => $this->merchantId,
-                'StoreId' => $this->storeId,
-                'MerchantHash' => $this->merchantHash,
-                'MerchantUsername' => $this->merchantUsername,
-                'MerchantPassword' => $this->merchantPassword,
-                'ReturnURL' => $this->returnUrl,
-                'Currency' => 'PKR',
-                'TransactionTypeId' => '3', // 3 = Credit/Debit Card
-                'TransactionReferenceNumber' => $orderId,
-                'TransactionAmount' => $amount,
-            ]
+            'sso_params' => array_merge(
+                ['ChannelId' => '1001'],
+                $this->buildAuthParams(),
+                [
+                    'ReturnURL' => $this->returnUrl,
+                    'Currency' => 'PKR',
+                    'TransactionTypeId' => '3',
+                    'TransactionReferenceNumber' => $orderId,
+                    'TransactionAmount' => $amount,
+                ]
+            )
         ];
     }
 
@@ -171,21 +244,21 @@ class BankAlfalahService
      */
     public function generateSSOFormData($authToken, $orderId, $amount)
     {
-        $ssoParams = [
-            'AuthToken' => $authToken,
-            'RequestHash' => '', // Will be set after generating
-            'ChannelId' => '1001',
-            'Currency' => 'PKR',
-            'ReturnURL' => $this->returnUrl,
-            'MerchantId' => $this->merchantId,
-            'StoreId' => $this->storeId,
-            'MerchantHash' => $this->merchantHash,
-            'MerchantUsername' => $this->merchantUsername,
-            'MerchantPassword' => $this->merchantPassword,
-            'TransactionTypeId' => '3', // Credit/Debit Card
-            'TransactionReferenceNumber' => $orderId,
-            'TransactionAmount' => $amount,
-        ];
+        $ssoParams = array_merge(
+            [
+                'AuthToken' => $authToken,
+                'RequestHash' => '',
+                'ChannelId' => '1001',
+                'Currency' => 'PKR',
+                'ReturnURL' => $this->returnUrl,
+            ],
+            $this->buildAuthParams(),
+            [
+                'TransactionTypeId' => '3',
+                'TransactionReferenceNumber' => $orderId,
+                'TransactionAmount' => $amount,
+            ]
+        );
 
         // Generate RequestHash
         $paramsForHash = $ssoParams;
@@ -312,18 +385,20 @@ class BankAlfalahService
      */
     public function initiateHandshake($orderId)
     {
+        // Parameter order matches Bank Alfalah APG Integration Guide
         $params = [
             'HS_ChannelId' => self::CHANNEL_API,
+            'HS_IsRedirectionRequest' => '0',
             'HS_MerchantId' => $this->merchantId,
             'HS_StoreId' => $this->storeId,
             'HS_ReturnURL' => $this->returnUrl,
             'HS_MerchantHash' => $this->merchantHash,
-            'HS_MerchantUsername' => $this->merchantUsername,
-            'HS_MerchantPassword' => $this->merchantPassword,
+            'HS_MerchantUsername' => $this->merchantUsername ?? '',
+            'HS_MerchantPassword' => $this->merchantPassword ?? '',
             'HS_TransactionReferenceNumber' => $orderId,
         ];
 
-        // Generate RequestHash
+        // Generate RequestHash from all params
         $params['HS_RequestHash'] = $this->generateRequestHash($params);
 
         $url = $this->getBaseUrl() . '/HS/api/HSAPI/HSAPI';
@@ -334,18 +409,26 @@ class BankAlfalahService
         ]);
 
         try {
+            // Bank Alfalah requires application/x-www-form-urlencoded (NOT JSON)
             $response = Http::timeout(30)
-                ->withHeaders(['Content-Type' => 'application/json'])
+                ->asForm()
                 ->post($url, $params);
 
-            $data = $response->json();
+            $data = $this->parseResponse($response);
 
             Log::info('Bank Alfalah Handshake Response', [
-                'success' => $data['success'] ?? 'N/A',
-                'has_token' => !empty($data['AuthToken']),
+                'status' => $response->status(),
+                'data' => $data,
             ]);
 
-            if (isset($data['success']) && $data['success'] === 'true') {
+            if (!$data) {
+                return [
+                    'success' => false,
+                    'error' => 'Invalid response from Bank Alfalah (HTTP ' . $response->status() . ')',
+                ];
+            }
+
+            if (isset($data['success']) && ($data['success'] === 'true' || $data['success'] === true)) {
                 return [
                     'success' => true,
                     'auth_token' => $data['AuthToken'],
@@ -383,23 +466,24 @@ class BankAlfalahService
      */
     public function initiateTransaction($authToken, $orderId, $amount, $accountNumber, $transactionType, $email, $mobile)
     {
+        // Parameter order matches Bank Alfalah APG Integration Guide
         $params = [
             'ChannelId' => self::CHANNEL_API,
             'MerchantId' => $this->merchantId,
             'StoreId' => $this->storeId,
-            'MerchantHash' => $this->merchantHash,
-            'MerchantUsername' => $this->merchantUsername,
-            'MerchantPassword' => $this->merchantPassword,
             'ReturnURL' => $this->returnUrl,
-            'Currency' => 'PKR',
-            'AuthToken' => $authToken,
-            'TransactionTypeId' => $transactionType, // 1=Alfa Wallet, 2=Bank Account
+            'MerchantHash' => $this->merchantHash,
+            'MerchantUsername' => $this->merchantUsername ?? '',
+            'MerchantPassword' => $this->merchantPassword ?? '',
             'TransactionReferenceNumber' => $orderId,
+            'AuthToken' => $authToken,
+            'TransactionTypeId' => $transactionType,
+            'Currency' => 'PKR',
             'TransactionAmount' => number_format($amount, 2, '.', ''),
-            'AccountNumber' => $accountNumber,
-            'Country' => '164', // Pakistan
-            'EmailAddress' => $email,
             'MobileNumber' => $mobile,
+            'AccountNumber' => $accountNumber,
+            'Country' => '164',
+            'EmailAddress' => $email,
         ];
 
         // Generate RequestHash
@@ -415,18 +499,26 @@ class BankAlfalahService
         ]);
 
         try {
+            // Bank Alfalah requires application/x-www-form-urlencoded (NOT JSON)
             $response = Http::timeout(30)
-                ->withHeaders(['Content-Type' => 'application/json'])
+                ->asForm()
                 ->post($url, $params);
 
-            $data = $response->json();
+            $data = $this->parseResponse($response);
 
             Log::info('Bank Alfalah Initiate Transaction Response', [
-                'success' => $data['success'] ?? 'N/A',
-                'is_otp' => $data['IsOTP'] ?? 'N/A',
+                'status' => $response->status(),
+                'data' => $data,
             ]);
 
-            if (isset($data['success']) && $data['success'] === 'true') {
+            if (!$data) {
+                return [
+                    'success' => false,
+                    'error' => 'Invalid response from Bank Alfalah',
+                ];
+            }
+
+            if (isset($data['success']) && ($data['success'] === 'true' || $data['success'] === true)) {
                 return [
                     'success' => true,
                     'auth_token' => $data['AuthToken'],
@@ -469,32 +561,31 @@ class BankAlfalahService
      */
     public function processTransaction($authToken, $orderId, $hashKey, $otp, $isOTP, $transactionType)
     {
+        // Parameter order matches Bank Alfalah APG Integration Guide
         $params = [
             'ChannelId' => self::CHANNEL_API,
             'MerchantId' => $this->merchantId,
             'StoreId' => $this->storeId,
-            'MerchantHash' => $this->merchantHash,
-            'MerchantUsername' => $this->merchantUsername,
-            'MerchantPassword' => $this->merchantPassword,
             'ReturnURL' => $this->returnUrl,
-            'Currency' => 'PKR',
+            'MerchantHash' => $this->merchantHash,
+            'MerchantUsername' => $this->merchantUsername ?? '',
+            'MerchantPassword' => $this->merchantPassword ?? '',
+            'TransactionReferenceNumber' => $orderId,
             'AuthToken' => $authToken,
             'TransactionTypeId' => $transactionType,
-            'TransactionReferenceNumber' => $orderId,
+            'Currency' => 'PKR',
             'HashKey' => $hashKey,
         ];
 
         // Set OTP fields based on IsOTP flag
         if ($isOTP) {
-            // Alfa Wallet uses SMSOTP (8 digits)
             $params['SMSOTP'] = $otp;
             $params['SMSOTAC'] = '';
             $params['EmailOTAC'] = '';
         } else {
-            // Bank Account uses SMSOTAC and EmailOTAC (4 digits each)
             $params['SMSOTP'] = '';
-            $params['SMSOTAC'] = $otp; // SMS OTAC
-            $params['EmailOTAC'] = ''; // Email OTAC (optional)
+            $params['SMSOTAC'] = $otp;
+            $params['EmailOTAC'] = '';
         }
 
         // Generate RequestHash
@@ -509,13 +600,21 @@ class BankAlfalahService
         ]);
 
         try {
+            // Bank Alfalah requires application/x-www-form-urlencoded (NOT JSON)
             $response = Http::timeout(30)
-                ->withHeaders(['Content-Type' => 'application/json'])
+                ->asForm()
                 ->post($url, $params);
 
-            $data = $response->json();
+            $data = $this->parseResponse($response);
 
-            Log::info('Bank Alfalah Process Transaction Response', $data);
+            Log::info('Bank Alfalah Process Transaction Response', $data ?? ['raw' => substr($response->body(), 0, 500)]);
+
+            if (!$data) {
+                return [
+                    'success' => false,
+                    'error' => 'Invalid response from Bank Alfalah',
+                ];
+            }
 
             // Check for success (response_code = '00' means success)
             if (isset($data['response_code']) && $data['response_code'] === '00') {

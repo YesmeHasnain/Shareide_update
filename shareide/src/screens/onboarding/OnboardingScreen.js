@@ -55,9 +55,9 @@ const OnboardingScreen = ({ navigation }) => {
         </View>
 
         {/* Title */}
-        <Text style={styles.title}>How will you use Shareide?</Text>
+        <Text style={styles.title}>Your ride, your way</Text>
         <Text style={styles.subtitle}>
-          Let us know how you intend to use Shareide, this helps us personalise your experience.
+          Book affordable rides across Pakistan. Safe, reliable, and always at your fingertips.
         </Text>
       </View>
 
@@ -68,15 +68,7 @@ const OnboardingScreen = ({ navigation }) => {
           onPress={() => navigation.replace('Phone')}
           activeOpacity={0.8}
         >
-          <Text style={styles.primaryButtonText}>Passenger</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => navigation.replace('Phone')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.secondaryButtonText}>Driver</Text>
+          <Text style={styles.primaryButtonText}>Get Started</Text>
         </TouchableOpacity>
 
         <Text style={styles.termsText}>
@@ -231,19 +223,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-  },
-  secondaryButton: {
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: '#FEF3C7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  secondaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#000',

@@ -66,12 +66,12 @@ export const ridesAPI = {
   },
 
   // Rate a completed ride
-  rateRide: async (rideId, rating, comment = '', tags = []) => {
-    const response = await apiClient.post(`/ratings/rides/${rideId}/rate-driver`, {
-      rating,
-      comment,
-      tags,
-    });
+  rateRide: async (rideId, rating, comment = '', tags = [], negativeReason = undefined) => {
+    const body = { rating, comment, tags };
+    if (negativeReason) {
+      body.negative_reason = negativeReason;
+    }
+    const response = await apiClient.post(`/ratings/rides/${rideId}/rate-driver`, body);
     return response.data;
   },
 

@@ -3,16 +3,32 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import Header from '../../components/Header';
+import Card from '../../components/Card';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import client from '../../api/client';
+import { spacing, typography, borderRadius } from '../../theme/colors';
+
+const VEHICLE_ICONS = {
+  bike: { name: 'bicycle', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.12)' },
+  rickshaw: { name: 'bus', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)' },
+  car: { name: 'car', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' },
+  ac_car: { name: 'snow', color: '#06B6D4', bg: 'rgba(6, 182, 212, 0.12)' },
+};
+
+const DOC_ICONS = {
+  registration: { name: 'document', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' },
+  license: { name: 'card', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.12)' },
+  insurance: { name: 'document-text', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)' },
+};
 
 const VehicleDetailsScreen = ({ navigation }) => {
   const { colors } = useTheme();
@@ -30,10 +46,10 @@ const VehicleDetailsScreen = ({ navigation }) => {
   });
 
   const vehicleTypes = [
-    { key: 'bike', label: 'Bike', icon: '🏍️' },
-    { key: 'rickshaw', label: 'Rickshaw', icon: '🛺' },
-    { key: 'car', label: 'Car', icon: '🚗' },
-    { key: 'ac_car', label: 'AC Car', icon: '❄️' },
+    { key: 'bike', label: 'Bike' },
+    { key: 'rickshaw', label: 'Rickshaw' },
+    { key: 'car', label: 'Car' },
+    { key: 'ac_car', label: 'AC Car' },
   ];
 
   const handleChange = (field, value) => {
@@ -63,60 +79,63 @@ const VehicleDetailsScreen = ({ navigation }) => {
     }
   };
 
+  const currentVehicle = VEHICLE_ICONS[formData.vehicle_type] || VEHICLE_ICONS.car;
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Vehicle Details</Text>
-        <View style={{ width: 28 }} />
-      </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Header title="Vehicle Details" onLeftPress={() => navigation.goBack()} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Vehicle Icon */}
-        <View style={[styles.vehicleDisplay, { backgroundColor: colors.surface }]}>
-          <Text style={styles.vehicleIcon}>
-            {vehicleTypes.find(v => v.key === formData.vehicle_type)?.icon || '🚗'}
-          </Text>
+        <Card style={styles.vehicleDisplay}>
+          <View style={[styles.vehicleIconBg, { backgroundColor: currentVehicle.bg }]}>
+            <Ionicons name={currentVehicle.name} size={48} color={currentVehicle.color} />
+          </View>
           <Text style={[styles.vehicleName, { color: colors.text }]}>
             {formData.vehicle_make} {formData.vehicle_model}
           </Text>
           <Text style={[styles.vehiclePlate, { color: colors.textSecondary }]}>
             {formData.license_plate || 'License Plate'}
           </Text>
-        </View>
+        </Card>
 
         {/* Vehicle Type */}
-        <View style={[styles.formCard, { backgroundColor: colors.surface }]}>
+        <Card style={styles.formCard}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Vehicle Type</Text>
           <View style={styles.typeGrid}>
-            {vehicleTypes.map((type) => (
-              <TouchableOpacity
-                key={type.key}
-                style={[
-                  styles.typeButton,
-                  {
-                    backgroundColor: formData.vehicle_type === type.key ? colors.primary : colors.background,
-                    borderColor: formData.vehicle_type === type.key ? colors.primary : colors.border,
-                  },
-                ]}
-                onPress={() => handleChange('vehicle_type', type.key)}
-              >
-                <Text style={styles.typeIcon}>{type.icon}</Text>
-                <Text style={[
-                  styles.typeLabel,
-                  { color: formData.vehicle_type === type.key ? '#000' : colors.text }
-                ]}>
-                  {type.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {vehicleTypes.map((type) => {
+              const icon = VEHICLE_ICONS[type.key];
+              return (
+                <TouchableOpacity
+                  key={type.key}
+                  style={[
+                    styles.typeButton,
+                    {
+                      backgroundColor: formData.vehicle_type === type.key ? colors.primary : colors.background,
+                      borderColor: formData.vehicle_type === type.key ? colors.primary : colors.border,
+                    },
+                  ]}
+                  onPress={() => handleChange('vehicle_type', type.key)}
+                >
+                  <Ionicons
+                    name={icon.name}
+                    size={28}
+                    color={formData.vehicle_type === type.key ? '#000' : icon.color}
+                  />
+                  <Text style={[
+                    styles.typeLabel,
+                    { color: formData.vehicle_type === type.key ? '#000' : colors.text }
+                  ]}>
+                    {type.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        </View>
+        </Card>
 
         {/* Vehicle Information */}
-        <View style={[styles.formCard, { backgroundColor: colors.surface }]}>
+        <Card style={styles.formCard}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Vehicle Information</Text>
 
           <Input
@@ -156,15 +175,17 @@ const VehicleDetailsScreen = ({ navigation }) => {
             placeholder="e.g., ABC-1234"
             autoCapitalize="characters"
           />
-        </View>
+        </Card>
 
         {/* Documents Status */}
-        <View style={[styles.formCard, { backgroundColor: colors.surface }]}>
+        <Card style={styles.formCard}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Documents</Text>
 
-          <View style={styles.docRow}>
+          <View style={[styles.docRow, { borderBottomColor: colors.border }]}>
             <View style={styles.docInfo}>
-              <Text style={styles.docIcon}>📄</Text>
+              <View style={[styles.docIconBg, { backgroundColor: DOC_ICONS.registration.bg }]}>
+                <Ionicons name={DOC_ICONS.registration.name} size={18} color={DOC_ICONS.registration.color} />
+              </View>
               <Text style={[styles.docLabel, { color: colors.text }]}>Registration</Text>
             </View>
             <View style={[styles.docStatus, { backgroundColor: '#22c55e20' }]}>
@@ -172,9 +193,11 @@ const VehicleDetailsScreen = ({ navigation }) => {
             </View>
           </View>
 
-          <View style={styles.docRow}>
+          <View style={[styles.docRow, { borderBottomColor: colors.border }]}>
             <View style={styles.docInfo}>
-              <Text style={styles.docIcon}>🪪</Text>
+              <View style={[styles.docIconBg, { backgroundColor: DOC_ICONS.license.bg }]}>
+                <Ionicons name={DOC_ICONS.license.name} size={18} color={DOC_ICONS.license.color} />
+              </View>
               <Text style={[styles.docLabel, { color: colors.text }]}>Driving License</Text>
             </View>
             <View style={[styles.docStatus, { backgroundColor: '#22c55e20' }]}>
@@ -184,14 +207,16 @@ const VehicleDetailsScreen = ({ navigation }) => {
 
           <View style={styles.docRow}>
             <View style={styles.docInfo}>
-              <Text style={styles.docIcon}>📋</Text>
+              <View style={[styles.docIconBg, { backgroundColor: DOC_ICONS.insurance.bg }]}>
+                <Ionicons name={DOC_ICONS.insurance.name} size={18} color={DOC_ICONS.insurance.color} />
+              </View>
               <Text style={[styles.docLabel, { color: colors.text }]}>Insurance</Text>
             </View>
             <TouchableOpacity style={[styles.docStatus, { backgroundColor: colors.primary }]}>
               <Text style={[styles.docStatusText, { color: '#000' }]}>Upload</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Card>
 
         <Button
           title={loading ? 'Saving...' : 'Save Changes'}
@@ -200,9 +225,9 @@ const VehicleDetailsScreen = ({ navigation }) => {
           style={styles.saveButton}
         />
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: spacing.xxxl + spacing.sm }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -210,105 +235,89 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
-  },
-  backIcon: {
-    fontSize: 28,
-    color: '#000',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-  },
   content: {
     flex: 1,
-    padding: 16,
+    padding: spacing.lg,
   },
   vehicleDisplay: {
     alignItems: 'center',
-    padding: 24,
-    borderRadius: 16,
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
-  vehicleIcon: {
-    fontSize: 60,
-    marginBottom: 12,
+  vehicleIconBg: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
   vehicleName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: typography.h4,
+    fontWeight: '700',
+    marginBottom: spacing.xs,
   },
   vehiclePlate: {
-    fontSize: 16,
+    fontSize: typography.h6,
   },
   formCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 16,
+    fontSize: typography.h6,
+    fontWeight: '700',
+    marginBottom: spacing.lg,
   },
   typeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: spacing.sm,
   },
   typeButton: {
     width: '48%',
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: spacing.lg,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     alignItems: 'center',
-  },
-  typeIcon: {
-    fontSize: 28,
-    marginBottom: 4,
+    gap: spacing.xs,
   },
   typeLabel: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     fontWeight: '600',
   },
   docRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e5e5',
   },
   docInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.md,
   },
-  docIcon: {
-    fontSize: 20,
-    marginRight: 12,
+  docIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   docLabel: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
   },
   docStatus: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: borderRadius.sm,
   },
   docStatusText: {
-    fontSize: 12,
+    fontSize: typography.caption,
     fontWeight: '600',
   },
   saveButton: {
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
 });
 

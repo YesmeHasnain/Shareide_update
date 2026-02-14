@@ -100,7 +100,7 @@ const Loading = () => {
 
   return (
     <LinearGradient
-      colors={['#000000', '#1a1a1a', '#000000']}
+      colors={['#0F0F1A', '#1A1A2E', '#0F0F1A']}
       style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
@@ -178,10 +178,11 @@ const styles = StyleSheet.create({
   tagline: {
     position: 'absolute',
     bottom: 60,
-    fontSize: 14,
-    color: '#888',
-    letterSpacing: 2,
-    fontWeight: '500',
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.4)',
+    letterSpacing: 3,
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
 });
 

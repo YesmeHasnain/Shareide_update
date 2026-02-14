@@ -385,16 +385,18 @@ const BookingsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F9FAFB',
   },
   header: {
     paddingHorizontal: 24,
     paddingBottom: 16,
+    backgroundColor: '#FFFFFF',
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: '700',
-    color: '#000',
+    fontWeight: '800',
+    color: '#1A1A2E',
+    letterSpacing: -0.5,
   },
   loadingContainer: {
     flex: 1,
@@ -406,6 +408,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
   },
   tab: {
     flexDirection: 'row',
@@ -451,6 +454,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     gap: 8,
+    backgroundColor: '#FFFFFF',
   },
   subTab: {
     paddingHorizontal: 16,
@@ -475,16 +479,14 @@ const styles = StyleSheet.create({
   },
   tripCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    marginBottom: 14,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
   },
   statusBadge: {
     flexDirection: 'row',

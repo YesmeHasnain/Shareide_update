@@ -13,6 +13,7 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
+import { pusherService } from '../../utils/pusherService';
 
 const PRIMARY_COLOR = '#FCC014';
 
@@ -44,9 +45,44 @@ const SharedRideChatScreen = ({ navigation, route }) => {
 
   useEffect(() => {
     fetchMessages();
-    const interval = setInterval(fetchMessages, 5000);
+    // Fallback polling (15s instead of 5s since we have real-time)
+    const interval = setInterval(fetchMessages, 15000);
     return () => clearInterval(interval);
   }, []);
+
+  // Real-time: subscribe to chat channel for instant messages
+  useEffect(() => {
+    let channel = null;
+    const setupRealTime = async () => {
+      try {
+        const res = await client.get(`/shared-rides/${rideId}/chat`);
+        const chatId = res.data.chat_id || res.data.id;
+        if (chatId) {
+          channel = await pusherService.subscribe(`chat.${chatId}`);
+          if (channel) {
+            channel.bind('message.sent', (data) => {
+              if (data.sender_id !== user?.id) {
+                setMessages((prev) => {
+                  const exists = prev.some((m) => m.id === data.id);
+                  if (exists) return prev;
+                  return [...prev, data];
+                });
+                setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+              }
+            });
+          }
+        }
+      } catch (error) {
+        console.log('Real-time setup failed, using polling:', error.message);
+      }
+    };
+    setupRealTime();
+    return () => {
+      if (channel) {
+        channel.unbind_all();
+      }
+    };
+  }, [rideId]);
 
   const fetchMessages = async () => {
     try {

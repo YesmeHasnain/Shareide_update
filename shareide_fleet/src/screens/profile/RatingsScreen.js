@@ -3,13 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   FlatList,
-  TouchableOpacity,
   RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { spacing, typography, borderRadius } from '../../theme/colors';
+import Header from '../../components/Header';
 import client from '../../api/client';
 
 const RatingsScreen = ({ navigation }) => {
@@ -50,15 +51,27 @@ const RatingsScreen = ({ navigation }) => {
     fetchRatings();
   };
 
-  const renderStars = (count) => {
-    return '⭐'.repeat(count) + '☆'.repeat(5 - count);
-  };
+  const renderStars = (count) => (
+    <View style={{ flexDirection: 'row' }}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Ionicons
+          key={i}
+          name={i <= count ? 'star' : 'star-outline'}
+          size={14}
+          color={i <= count ? (colors.star || colors.primary) : (colors.starEmpty || colors.border)}
+        />
+      ))}
+    </View>
+  );
 
   const renderRatingBar = (star, count) => {
     const percentage = ratingStats.total > 0 ? (count / ratingStats.total) * 100 : 0;
     return (
       <View key={star} style={styles.ratingBarRow}>
-        <Text style={[styles.ratingBarLabel, { color: colors.textSecondary }]}>{star} ⭐</Text>
+        <View style={styles.ratingBarLabelRow}>
+          <Text style={[styles.ratingBarLabel, { color: colors.textSecondary }]}>{star}</Text>
+          <Ionicons name="star" size={11} color={colors.star || colors.primary} />
+        </View>
         <View style={[styles.ratingBarTrack, { backgroundColor: colors.border }]}>
           <View
             style={[
@@ -89,7 +102,7 @@ const RatingsScreen = ({ navigation }) => {
           </Text>
         </View>
         <View style={styles.reviewRating}>
-          <Text style={styles.reviewStars}>{renderStars(item.rating)}</Text>
+          {renderStars(item.rating)}
         </View>
       </View>
 
@@ -110,14 +123,8 @@ const RatingsScreen = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Ratings & Reviews</Text>
-        <View style={{ width: 28 }} />
-      </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Header title="Ratings & Reviews" onLeftPress={() => navigation.goBack()} />
 
       <FlatList
         data={reviews}
@@ -135,7 +142,7 @@ const RatingsScreen = ({ navigation }) => {
                 <Text style={[styles.overallRating, { color: colors.text }]}>
                   {ratingStats.average.toFixed(1)}
                 </Text>
-                <Text style={styles.overallStars}>{renderStars(Math.round(ratingStats.average))}</Text>
+                <View style={styles.overallStars}>{renderStars(Math.round(ratingStats.average))}</View>
                 <Text style={[styles.overallCount, { color: colors.textSecondary }]}>
                   {ratingStats.total} ratings
                 </Text>
@@ -150,19 +157,27 @@ const RatingsScreen = ({ navigation }) => {
               <Text style={[styles.badgesTitle, { color: colors.text }]}>Your Badges</Text>
               <View style={styles.badgesGrid}>
                 <View style={styles.badge}>
-                  <Text style={styles.badgeIcon}>⭐</Text>
+                  <View style={[styles.badgeIconCircle, { backgroundColor: 'rgba(252,192,20,0.12)' }]}>
+                    <Ionicons name="star" size={24} color="#FCC014" />
+                  </View>
                   <Text style={[styles.badgeLabel, { color: colors.text }]}>Top Rated</Text>
                 </View>
                 <View style={styles.badge}>
-                  <Text style={styles.badgeIcon}>🎯</Text>
+                  <View style={[styles.badgeIconCircle, { backgroundColor: 'rgba(239,68,68,0.12)' }]}>
+                    <Ionicons name="flag" size={24} color="#EF4444" />
+                  </View>
                   <Text style={[styles.badgeLabel, { color: colors.text }]}>100 Rides</Text>
                 </View>
                 <View style={styles.badge}>
-                  <Text style={styles.badgeIcon}>💎</Text>
+                  <View style={[styles.badgeIconCircle, { backgroundColor: 'rgba(139,92,246,0.12)' }]}>
+                    <Ionicons name="diamond" size={24} color="#8B5CF6" />
+                  </View>
                   <Text style={[styles.badgeLabel, { color: colors.text }]}>Premium</Text>
                 </View>
                 <View style={styles.badge}>
-                  <Text style={styles.badgeIcon}>🛡️</Text>
+                  <View style={[styles.badgeIconCircle, { backgroundColor: 'rgba(16,185,129,0.12)' }]}>
+                    <Ionicons name="shield-checkmark" size={24} color="#10B981" />
+                  </View>
                   <Text style={[styles.badgeLabel, { color: colors.text }]}>Safe Driver</Text>
                 </View>
               </View>
@@ -173,7 +188,9 @@ const RatingsScreen = ({ navigation }) => {
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>⭐</Text>
+            <View style={[styles.emptyIconCircle, { backgroundColor: (colors.star || colors.primary) + '15' }]}>
+              <Ionicons name="star-outline" size={48} color={colors.star || colors.primary} />
+            </View>
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
               No reviews yet
             </Text>
@@ -183,7 +200,7 @@ const RatingsScreen = ({ navigation }) => {
           </View>
         }
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -191,52 +208,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
-  },
-  backIcon: {
-    fontSize: 28,
-    color: '#000',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-  },
   listContent: {
-    padding: 16,
+    padding: spacing.lg,
   },
   overallCard: {
     flexDirection: 'row',
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 16,
+    padding: spacing.xl,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.lg,
   },
   overallLeft: {
     alignItems: 'center',
-    paddingRight: 20,
+    paddingRight: spacing.xl,
     borderRightWidth: 1,
     borderRightColor: '#e5e5e5',
   },
   overallRating: {
     fontSize: 48,
-    fontWeight: 'bold',
+    fontWeight: typography.bold,
   },
   overallStars: {
-    fontSize: 12,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   overallCount: {
-    fontSize: 12,
+    fontSize: typography.caption,
   },
   overallRight: {
     flex: 1,
-    paddingLeft: 20,
+    paddingLeft: spacing.xl,
     justifyContent: 'center',
   },
   ratingBarRow: {
@@ -244,19 +243,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 6,
   },
+  ratingBarLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: 30,
+    gap: 2,
+  },
   ratingBarLabel: {
     fontSize: 11,
-    width: 30,
   },
   ratingBarTrack: {
     flex: 1,
     height: 8,
-    borderRadius: 4,
-    marginHorizontal: 8,
+    borderRadius: borderRadius.xs,
+    marginHorizontal: spacing.sm,
   },
   ratingBarFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: borderRadius.xs,
   },
   ratingBarCount: {
     fontSize: 11,
@@ -264,46 +268,50 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   badgesCard: {
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 16,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.lg,
   },
   badgesTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 16,
+    fontSize: typography.h6,
+    fontWeight: typography.semiBold,
+    marginBottom: spacing.lg,
   },
   badgesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: spacing.md,
   },
   badge: {
     width: '22%',
     alignItems: 'center',
   },
-  badgeIcon: {
-    fontSize: 32,
-    marginBottom: 4,
+  badgeIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
   },
   badgeLabel: {
-    fontSize: 10,
+    fontSize: typography.tiny,
     textAlign: 'center',
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
+    fontSize: typography.h5,
+    fontWeight: typography.bold,
+    marginBottom: spacing.md,
   },
   reviewCard: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
   },
   reviewHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   avatar: {
     width: 40,
@@ -313,60 +321,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatarText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: typography.h5,
+    fontWeight: typography.bold,
     color: '#000',
   },
   reviewInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: spacing.md,
   },
   passengerName: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: typography.bodySmall,
+    fontWeight: typography.semiBold,
   },
   reviewDate: {
-    fontSize: 12,
+    fontSize: typography.caption,
     marginTop: 2,
   },
   reviewRating: {},
-  reviewStars: {
-    fontSize: 12,
-  },
   reviewComment: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     lineHeight: 20,
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: spacing.sm,
   },
   tag: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
   },
   tagText: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: typography.caption,
+    fontWeight: typography.medium,
   },
   emptyState: {
     alignItems: 'center',
     paddingVertical: 40,
   },
-  emptyIcon: {
-    fontSize: 60,
-    marginBottom: 16,
+  emptyIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
   emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
+    fontSize: typography.h5,
+    fontWeight: typography.semiBold,
+    marginBottom: spacing.sm,
   },
   emptyHint: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     textAlign: 'center',
   },
 });

@@ -137,7 +137,14 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4">
-                                <p class="text-gray-900 dark:text-white max-w-xs truncate">{{ $ticket->subject }}</p>
+                                <div class="flex items-center gap-2">
+                                    <p class="text-gray-900 dark:text-white max-w-xs truncate">{{ $ticket->subject }}</p>
+                                    @if($ticket->source === 'chatbot')
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 whitespace-nowrap">
+                                            <i class="fas fa-robot mr-1" style="font-size:9px;"></i>Bot
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
                             <td class="px-6 py-4">
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">

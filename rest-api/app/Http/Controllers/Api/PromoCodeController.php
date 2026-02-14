@@ -131,7 +131,7 @@ class PromoCodeController extends Controller
             $ride = \App\Models\RideRequest::findOrFail($request->ride_id);
 
             // Check ownership
-            if ($ride->user_id !== $user->id) {
+            if ($ride->rider_id !== $user->id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized'

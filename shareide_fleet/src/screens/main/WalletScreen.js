@@ -212,7 +212,7 @@ const WalletScreen = () => {
 
       if (withdrawForm.method === 'jazzcash' || withdrawForm.method === 'easypaisa') {
         payload.account_details = {
-          mobile_number: withdrawForm.mobile_number,
+          mobile: withdrawForm.mobile_number,
         };
       } else {
         payload.account_details = {

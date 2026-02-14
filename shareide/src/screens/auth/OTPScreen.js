@@ -91,7 +91,7 @@ const OTPScreen = ({ route, navigation }) => {
 
         if (!response.is_new_user && !response.needs_profile_setup && login) {
           await login(response.user, response.token);
-          navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+          // Navigator auto-switches to MainTabs via conditional rendering
           return;
         }
 
@@ -170,7 +170,7 @@ const OTPScreen = ({ route, navigation }) => {
           {/* Title */}
           <Text style={styles.title}>We sent you an WhatsApp</Text>
           <Text style={styles.subtitle}>
-            Please enter the code we just{'\n'}sent to +92 {phone}
+            Please enter the code we just{'\n'}sent to {phone}
           </Text>
 
           {/* OTP Inputs */}

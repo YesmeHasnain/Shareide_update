@@ -17,8 +17,14 @@ import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/Button';
 import { onboardingAPI } from '../../api/onboarding';
 import client from '../../api/client';
+import { spacing, typography, borderRadius } from '../../theme/colors';
 
 const PRIMARY_COLOR = '#FCC014';
+
+const SELFIE_ICONS = {
+  selfie_with_nic: { name: 'card', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' },
+  live_selfie: { name: 'camera', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.12)' },
+};
 
 const SelfieScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
@@ -39,7 +45,6 @@ const SelfieScreen = ({ navigation, route }) => {
       key: 'selfie_with_nic',
       title: 'Selfie with NIC',
       subtitle: 'Hold your NIC next to your face',
-      icon: '🪪',
       instructions: [
         'Hold your NIC card next to your face',
         'Make sure your face is clearly visible',
@@ -51,7 +56,6 @@ const SelfieScreen = ({ navigation, route }) => {
       key: 'live_selfie',
       title: 'Live Selfie',
       subtitle: 'Take a clear photo of your face',
-      icon: '🤳',
       instructions: [
         'Look directly at the camera',
         'Face should be clearly visible',
@@ -65,7 +69,7 @@ const SelfieScreen = ({ navigation, route }) => {
     try {
       // Request camera permission
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      
+
       if (status !== 'granted') {
         Alert.alert('Permission Denied', 'Please allow camera access');
         return;
@@ -172,7 +176,7 @@ const SelfieScreen = ({ navigation, route }) => {
         await onboardingAPI.submitForApproval();
 
         Alert.alert(
-          'Success! 🎉',
+          'Success!',
           'Your application has been submitted for review. We will notify you within 24-48 hours.',
           [{ text: 'OK', onPress: () => navigation.navigate('Pending') }]
         );
@@ -193,108 +197,122 @@ const SelfieScreen = ({ navigation, route }) => {
       <ScrollView showsVerticalScrollIndicator={false} style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.progressBar}>
+          <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
             <View style={[styles.progressFill, { backgroundColor: colors.primary, width: '80%' }]} />
           </View>
           <Text style={[styles.stepText, { color: colors.textSecondary }]}>
             Step 4 of 5
           </Text>
-          <Text style={[styles.title, { color: colors.text }]}>
-            Selfie Verification 🤳
-          </Text>
+          <View style={styles.titleRow}>
+            <Text style={[styles.title, { color: colors.text }]}>Selfie Verification</Text>
+            <View style={[styles.titleIconBg, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
+              <Ionicons name="camera" size={20} color="#8B5CF6" />
+            </View>
+          </View>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Help us verify your identity
           </Text>
         </View>
 
         {/* Selfies */}
-        {selfieTypes.map((selfie) => (
-          <View key={selfie.key} style={styles.selfieCard}>
-            <View style={styles.selfieHeader}>
-              <Text style={styles.selfieIcon}>{selfie.icon}</Text>
-              <View style={styles.selfieHeaderText}>
-                <Text style={[styles.selfieTitle, { color: colors.text }]}>
-                  {selfie.title}
-                </Text>
-                <Text style={[styles.selfieSubtitle, { color: colors.textSecondary }]}>
-                  {selfie.subtitle}
-                </Text>
-              </View>
-            </View>
-
-            {/* Preview or Upload */}
-            {selfies[selfie.key] ? (
-              <View>
-                <View style={styles.previewContainer}>
-                  <Image
-                    source={{ uri: selfies[selfie.key].uri }}
-                    style={styles.preview}
-                  />
-                  <TouchableOpacity
-                    style={[styles.retakeButton, { backgroundColor: colors.primary }]}
-                    onPress={() => takeSelfie(selfie.key)}
-                  >
-                    <Text style={styles.retakeButtonText}>Retake</Text>
-                  </TouchableOpacity>
+        {selfieTypes.map((selfie) => {
+          const iconConfig = SELFIE_ICONS[selfie.key];
+          return (
+            <View key={selfie.key} style={styles.selfieCard}>
+              <View style={styles.selfieHeader}>
+                <View style={[styles.selfieIconBg, { backgroundColor: iconConfig.bg }]}>
+                  <Ionicons name={iconConfig.name} size={24} color={iconConfig.color} />
                 </View>
-                {/* CNIC Verification Status */}
-                {selfie.key === 'selfie_with_nic' && (
-                  <View style={styles.verifyStatusRow}>
-                    {verifying ? (
-                      <View style={styles.verifyBadge}>
-                        <ActivityIndicator size="small" color={PRIMARY_COLOR} />
-                        <Text style={[styles.verifyText, { color: colors.textSecondary }]}>Verifying CNIC...</Text>
-                      </View>
-                    ) : cnicVerified ? (
-                      <View style={[styles.verifyBadge, { backgroundColor: '#10B98120' }]}>
-                        <Ionicons name="checkmark-circle" size={18} color="#10B981" />
-                        <Text style={[styles.verifyText, { color: '#10B981' }]}>CNIC Verified</Text>
-                      </View>
-                    ) : verificationResult && verificationResult.match === false ? (
-                      <View style={[styles.verifyBadge, { backgroundColor: '#EF444420' }]}>
-                        <Ionicons name="close-circle" size={18} color="#EF4444" />
-                        <Text style={[styles.verifyText, { color: '#EF4444' }]}>CNIC Mismatch - Please retake</Text>
-                      </View>
-                    ) : verificationResult && verificationResult.match === null ? (
-                      <View style={[styles.verifyBadge, { backgroundColor: '#F59E0B20' }]}>
-                        <Ionicons name="alert-circle" size={18} color="#F59E0B" />
-                        <Text style={[styles.verifyText, { color: '#F59E0B' }]}>Manual review required</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                )}
-              </View>
-            ) : (
-              <>
-                {/* Instructions */}
-                <View style={[styles.instructionsCard, { backgroundColor: colors.surface }]}>
-                  <Text style={[styles.instructionsTitle, { color: colors.text }]}>
-                    Instructions:
+                <View style={styles.selfieHeaderText}>
+                  <Text style={[styles.selfieTitle, { color: colors.text }]}>
+                    {selfie.title}
                   </Text>
-                  {selfie.instructions.map((instruction, index) => (
-                    <Text
-                      key={index}
-                      style={[styles.instructionText, { color: colors.textSecondary }]}
-                    >
-                      • {instruction}
-                    </Text>
-                  ))}
+                  <Text style={[styles.selfieSubtitle, { color: colors.textSecondary }]}>
+                    {selfie.subtitle}
+                  </Text>
                 </View>
+              </View>
 
-                {/* Camera Button */}
-                <Button
-                  title={`Take ${selfie.title}`}
-                  onPress={() => takeSelfie(selfie.key)}
-                  style={styles.cameraButton}
-                />
-              </>
-            )}
-          </View>
-        ))}
+              {/* Preview or Upload */}
+              {selfies[selfie.key] ? (
+                <View>
+                  <View style={styles.previewContainer}>
+                    <Image
+                      source={{ uri: selfies[selfie.key].uri }}
+                      style={styles.preview}
+                    />
+                    <TouchableOpacity
+                      style={[styles.retakeButton, { backgroundColor: colors.primary }]}
+                      onPress={() => takeSelfie(selfie.key)}
+                    >
+                      <Ionicons name="camera" size={16} color="#000" style={{ marginRight: 4 }} />
+                      <Text style={styles.retakeButtonText}>Retake</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {/* CNIC Verification Status */}
+                  {selfie.key === 'selfie_with_nic' && (
+                    <View style={styles.verifyStatusRow}>
+                      {verifying ? (
+                        <View style={styles.verifyBadge}>
+                          <ActivityIndicator size="small" color={PRIMARY_COLOR} />
+                          <Text style={[styles.verifyText, { color: colors.textSecondary }]}>Verifying CNIC...</Text>
+                        </View>
+                      ) : cnicVerified ? (
+                        <View style={[styles.verifyBadge, { backgroundColor: '#10B98120' }]}>
+                          <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                          <Text style={[styles.verifyText, { color: '#10B981' }]}>CNIC Verified</Text>
+                        </View>
+                      ) : verificationResult && verificationResult.match === false ? (
+                        <View style={[styles.verifyBadge, { backgroundColor: '#EF444420' }]}>
+                          <Ionicons name="close-circle" size={18} color="#EF4444" />
+                          <Text style={[styles.verifyText, { color: '#EF4444' }]}>CNIC Mismatch - Please retake</Text>
+                        </View>
+                      ) : verificationResult && verificationResult.match === null ? (
+                        <View style={[styles.verifyBadge, { backgroundColor: '#F59E0B20' }]}>
+                          <Ionicons name="alert-circle" size={18} color="#F59E0B" />
+                          <Text style={[styles.verifyText, { color: '#F59E0B' }]}>Manual review required</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <>
+                  {/* Instructions */}
+                  <View style={[styles.instructionsCard, { backgroundColor: colors.surface }]}>
+                    <View style={styles.instructionsHeader}>
+                      <Ionicons name="list" size={16} color={colors.textSecondary} />
+                      <Text style={[styles.instructionsTitle, { color: colors.text }]}>
+                        Instructions
+                      </Text>
+                    </View>
+                    {selfie.instructions.map((instruction, index) => (
+                      <View key={index} style={styles.instructionRow}>
+                        <Ionicons name="checkmark" size={14} color={colors.primary} style={{ marginTop: 2 }} />
+                        <Text style={[styles.instructionText, { color: colors.textSecondary }]}>
+                          {instruction}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  {/* Camera Button */}
+                  <Button
+                    title={`Take ${selfie.title}`}
+                    onPress={() => takeSelfie(selfie.key)}
+                    style={styles.cameraButton}
+                  />
+                </>
+              )}
+            </View>
+          );
+        })}
 
         {/* Security Note */}
         <View style={[styles.securityCard, { backgroundColor: colors.surface }]}>
-          <Text style={styles.securityIcon}>🔒</Text>
+          <View style={[styles.securityIconBg, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
+            <Ionicons name="lock-closed" size={20} color="#10B981" />
+          </View>
           <Text style={[styles.securityText, { color: colors.textSecondary }]}>
             Your photos are encrypted and securely stored. They will only be used for
             verification purposes.
@@ -327,81 +345,107 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.xl,
   },
   header: {
-    marginTop: 20,
-    marginBottom: 24,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xl,
   },
   progressBar: {
     height: 4,
-    backgroundColor: '#E0E0E0',
     borderRadius: 2,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   progressFill: {
     height: '100%',
     borderRadius: 2,
   },
   stepText: {
-    fontSize: 14,
-    marginBottom: 8,
+    fontSize: typography.bodySmall,
+    marginBottom: spacing.sm,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
   },
   title: {
-    fontSize: 24,
+    fontSize: typography.h3,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginRight: spacing.sm,
+  },
+  titleIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: typography.body,
   },
   selfieCard: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   selfieHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
-  selfieIcon: {
-    fontSize: 40,
-    marginRight: 12,
+  selfieIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
   },
   selfieHeaderText: {
     flex: 1,
   },
   selfieTitle: {
-    fontSize: 18,
+    fontSize: typography.h5,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   selfieSubtitle: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
   },
   instructionsCard: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.lg,
+  },
+  instructionsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   instructionsTitle: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     fontWeight: '600',
-    marginBottom: 8,
+  },
+  instructionRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
   instructionText: {
-    fontSize: 13,
+    fontSize: typography.caption + 1,
     lineHeight: 20,
-    marginBottom: 4,
+    flex: 1,
   },
   cameraButton: {
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   previewContainer: {
     position: 'relative',
     height: 300,
-    borderRadius: 12,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   preview: {
     width: '100%',
@@ -410,58 +454,65 @@ const styles = StyleSheet.create({
   },
   retakeButton: {
     position: 'absolute',
-    bottom: 16,
-    right: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    bottom: spacing.lg,
+    right: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
   },
   retakeButtonText: {
     color: '#000',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: typography.bodySmall,
   },
   securityCard: {
     flexDirection: 'row',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
+    alignItems: 'flex-start',
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.xl,
+    gap: spacing.md,
   },
-  securityIcon: {
-    fontSize: 20,
-    marginRight: 12,
+  securityIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   securityText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: typography.caption + 1,
     lineHeight: 18,
   },
   buttons: {
     flexDirection: 'row',
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   backButton: {
     flex: 1,
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   submitButton: {
     flex: 2,
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
   verifyStatusRow: {
-    marginTop: -8,
-    marginBottom: 12,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.md,
   },
   verifyBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
   },
   verifyText: {
-    fontSize: 13,
+    fontSize: typography.caption + 1,
     fontWeight: '600',
   },
 });

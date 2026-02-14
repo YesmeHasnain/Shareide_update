@@ -117,7 +117,7 @@ const ProfileSetupScreen = ({ route, navigation }) => {
         await login(user, token);
         await apiClient.put('/profile', { name: name.trim(), gender });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+        // Navigator auto-switches to MainTabs via conditional rendering
       } else {
         if (!verificationToken) {
           Alert.alert('Error', 'Please go back and verify OTP again.');
@@ -133,7 +133,7 @@ const ProfileSetupScreen = ({ route, navigation }) => {
         if (response.success) {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           await login(response.user, response.token);
-          navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+          // Navigator auto-switches to MainTabs via conditional rendering
         }
       }
     } catch (error) {

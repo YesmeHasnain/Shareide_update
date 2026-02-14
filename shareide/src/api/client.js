@@ -11,8 +11,8 @@ const USE_MOCK_DATA = false;
 const DEV_API_URL = 'https://calm-coins-lie.loca.lt/api';
 const PROD_API_URL = 'https://api.shareide.com/api';
 
-// Dev mode - using local network IP for testing
-const API_BASE_URL = DEV_API_URL;
+// Production mode - using live server
+const API_BASE_URL = PROD_API_URL;
 
 // Mock data for testing UI
 const MOCK_RESPONSES = {

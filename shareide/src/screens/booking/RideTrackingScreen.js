@@ -15,6 +15,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { ridesAPI } from '../../api/rides';
 import { Header, Card, Avatar, Button, IconButton } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
+import { pusherService } from '../../utils/pusherService';
 
 // Default colors fallback
 const defaultColors = {
@@ -94,7 +95,7 @@ const RideTrackingScreen = ({ route, navigation }) => {
   const [eta, setEta] = useState(driver?.eta || 5);
 
   useEffect(() => {
-    // Simulate ride status updates
+    // Fallback: simulate ride status updates
     const interval = setInterval(() => {
       if (status === 'arriving' && eta > 1) {
         setEta((prev) => prev - 1);
@@ -106,6 +107,41 @@ const RideTrackingScreen = ({ route, navigation }) => {
 
     return () => clearInterval(interval);
   }, [status, eta]);
+
+  // Real-time: subscribe to ride channel for live status updates
+  useEffect(() => {
+    let rideChannel = null;
+    const setupRealTime = async () => {
+      if (!ride?.id) return;
+      try {
+        rideChannel = await pusherService.subscribe(`ride.${ride.id}`);
+        if (rideChannel) {
+          rideChannel.bind('ride.status.changed', (data) => {
+            if (data.status) {
+              setStatus(data.status);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              if (data.status === 'completed') {
+                setTimeout(() => handleCompleteRide(), 1000);
+              }
+            }
+          });
+          rideChannel.bind('driver.location.updated', (data) => {
+            if (data.lat && data.lng) {
+              // Driver location update available for map integration
+              console.log('Driver location:', data.lat, data.lng);
+            }
+          });
+        }
+      } catch (error) {
+        console.log('Real-time ride tracking setup failed:', error.message);
+      }
+    };
+    setupRealTime();
+    return () => {
+      if (rideChannel) rideChannel.unbind_all();
+      if (ride?.id) pusherService.unsubscribe(`ride.${ride.id}`);
+    };
+  }, [ride?.id]);
 
   const getStatusConfig = () => {
     switch (status) {
@@ -151,12 +187,16 @@ const RideTrackingScreen = ({ route, navigation }) => {
 
   const handleCall = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Linking.openURL(`tel:03001234567`);
+    Linking.openURL(`tel:${driver?.phone || '03001234567'}`);
   };
 
   const handleChat = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Alert.alert('Chat', 'Chat feature coming soon!');
+    if (ride?.id) {
+      navigation.navigate('Chat', { rideId: ride.id });
+    } else {
+      Alert.alert('Chat', 'Chat is not available for this ride');
+    }
   };
 
   const handleShare = () => {

@@ -276,14 +276,30 @@ class RiderWalletController extends Controller
                 }
 
                 // PRODUCTION MODE: Use Bank Alfalah
-                $bankAlfalah = new BankAlfalahService();
-                $paymentResult = $bankAlfalah->createPayment(
-                    $orderId,
-                    $request->amount,
-                    'SHAREIDE Wallet Top-up'
-                );
+                try {
+                    $bankAlfalah = new BankAlfalahService();
+                    $paymentResult = $bankAlfalah->createPayment(
+                        $orderId,
+                        $request->amount,
+                        'SHAREIDE Wallet Top-up'
+                    );
+                } catch (\Exception $e) {
+                    Log::error('Bank Alfalah createPayment failed', [
+                        'error' => $e->getMessage(),
+                        'order_id' => $orderId,
+                        'amount' => $request->amount,
+                    ]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Payment gateway error: ' . $e->getMessage(),
+                    ], 500);
+                }
 
                 if (!$paymentResult['success']) {
+                    Log::error('Bank Alfalah payment initiation failed', [
+                        'result' => $paymentResult,
+                        'order_id' => $orderId,
+                    ]);
                     return response()->json([
                         'success' => false,
                         'message' => 'Failed to initiate payment',
@@ -347,10 +363,15 @@ class RiderWalletController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Wallet topUp failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'method' => $request->method ?? 'unknown',
+                'amount' => $request->amount ?? 0,
+            ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to process top-up',
-                'error' => $e->getMessage()
+                'message' => 'Failed to process top-up: ' . $e->getMessage(),
             ], 500);
         }
     }

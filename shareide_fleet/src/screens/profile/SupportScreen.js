@@ -3,14 +3,30 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   TextInput,
   Alert,
   Linking,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import Header from '../../components/Header';
+import Card from '../../components/Card';
+import { spacing, typography, borderRadius } from '../../theme/colors';
+
+const CONTACT_ICONS = {
+  call: { name: 'call', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)' },
+  whatsapp: { name: 'chatbubble', color: '#25D366', bg: 'rgba(37, 211, 102, 0.12)' },
+  email: { name: 'mail', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' },
+};
+
+const LINK_ICONS = {
+  terms: { name: 'document-text', color: '#6B7280', bg: 'rgba(107, 114, 128, 0.12)' },
+  privacy: { name: 'lock-closed', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.12)' },
+  about: { name: 'information-circle', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' },
+  updates: { name: 'refresh', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)' },
+};
 
 const SupportScreen = ({ navigation }) => {
   const { colors } = useTheme();
@@ -51,16 +67,16 @@ const SupportScreen = ({ navigation }) => {
   ];
 
   const contactOptions = [
-    { icon: '📞', label: 'Call Support', action: () => Linking.openURL('tel:+923001234567') },
-    { icon: '💬', label: 'WhatsApp', action: () => Linking.openURL('https://wa.me/923001234567') },
-    { icon: '📧', label: 'Email Us', action: () => Linking.openURL('mailto:support@shareide.com') },
+    { key: 'call', label: 'Call Support', action: () => Linking.openURL('tel:+923001234567') },
+    { key: 'whatsapp', label: 'WhatsApp', action: () => Linking.openURL('https://wa.me/923001234567') },
+    { key: 'email', label: 'Email Us', action: () => Linking.openURL('mailto:support@shareide.com') },
   ];
 
   const quickLinks = [
-    { icon: '📋', label: 'Terms & Conditions', screen: 'Terms' },
-    { icon: '🔒', label: 'Privacy Policy', screen: 'Privacy' },
-    { icon: 'ℹ️', label: 'About Shareide', screen: 'About' },
-    { icon: '🔄', label: 'App Updates', screen: 'Updates' },
+    { key: 'terms', label: 'Terms & Conditions', screen: 'Terms' },
+    { key: 'privacy', label: 'Privacy Policy', screen: 'Privacy' },
+    { key: 'about', label: 'About Shareide', screen: 'About' },
+    { key: 'updates', label: 'App Updates', screen: 'Updates' },
   ];
 
   const handleSubmitQuery = () => {
@@ -77,32 +93,32 @@ const SupportScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Help & Support</Text>
-        <View style={{ width: 28 }} />
-      </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Header title="Help & Support" onLeftPress={() => navigation.goBack()} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Contact Options */}
-        <View style={[styles.contactCard, { backgroundColor: colors.surface }]}>
+        <Card style={styles.contactCard}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Us</Text>
           <View style={styles.contactGrid}>
-            {contactOptions.map((option, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[styles.contactButton, { backgroundColor: colors.background }]}
-                onPress={option.action}
-              >
-                <Text style={styles.contactIcon}>{option.icon}</Text>
-                <Text style={[styles.contactLabel, { color: colors.text }]}>{option.label}</Text>
-              </TouchableOpacity>
-            ))}
+            {contactOptions.map((option) => {
+              const icon = CONTACT_ICONS[option.key];
+              return (
+                <TouchableOpacity
+                  key={option.key}
+                  style={[styles.contactButton, { backgroundColor: colors.background }]}
+                  onPress={option.action}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.contactIconBg, { backgroundColor: icon.bg }]}>
+                    <Ionicons name={icon.name} size={24} color={icon.color} />
+                  </View>
+                  <Text style={[styles.contactLabel, { color: colors.text }]}>{option.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        </View>
+        </Card>
 
         {/* FAQs */}
         <View style={styles.faqSection}>
@@ -112,18 +128,20 @@ const SupportScreen = ({ navigation }) => {
           {faqs.map((faq) => (
             <TouchableOpacity
               key={faq.id}
-              style={[styles.faqCard, { backgroundColor: colors.surface }]}
+              style={[styles.faqCard, { backgroundColor: colors.card || colors.surface }]}
               onPress={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
               activeOpacity={0.7}
             >
               <View style={styles.faqHeader}>
                 <Text style={[styles.faqQuestion, { color: colors.text }]}>{faq.question}</Text>
-                <Text style={[styles.faqArrow, { color: colors.textSecondary }]}>
-                  {expandedFaq === faq.id ? '▲' : '▼'}
-                </Text>
+                <Ionicons
+                  name={expandedFaq === faq.id ? 'chevron-up' : 'chevron-down'}
+                  size={18}
+                  color={colors.textSecondary}
+                />
               </View>
               {expandedFaq === faq.id && (
-                <Text style={[styles.faqAnswer, { color: colors.textSecondary }]}>
+                <Text style={[styles.faqAnswer, { color: colors.textSecondary, borderTopColor: colors.border }]}>
                   {faq.answer}
                 </Text>
               )}
@@ -132,10 +150,10 @@ const SupportScreen = ({ navigation }) => {
         </View>
 
         {/* Submit Query */}
-        <View style={[styles.queryCard, { backgroundColor: colors.surface }]}>
+        <Card style={styles.queryCard}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Send a Message</Text>
           <TextInput
-            style={[styles.queryInput, { backgroundColor: colors.background, color: colors.text }]}
+            style={[styles.queryInput, { backgroundColor: colors.inputBackground || colors.background, color: colors.text }]}
             value={message}
             onChangeText={setMessage}
             placeholder="Describe your issue or question..."
@@ -147,49 +165,59 @@ const SupportScreen = ({ navigation }) => {
           <TouchableOpacity
             style={[styles.submitButton, { backgroundColor: colors.primary }]}
             onPress={handleSubmitQuery}
+            activeOpacity={0.7}
           >
             <Text style={styles.submitText}>Submit</Text>
           </TouchableOpacity>
-        </View>
+        </Card>
 
         {/* Quick Links */}
-        <View style={[styles.linksCard, { backgroundColor: colors.surface }]}>
-          {quickLinks.map((link, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.linkRow,
-                index !== quickLinks.length - 1 && {
-                  borderBottomWidth: 1,
-                  borderBottomColor: colors.border,
-                },
-              ]}
-              onPress={() => Alert.alert(link.label, 'This feature is coming soon!')}
-            >
-              <View style={styles.linkLeft}>
-                <Text style={styles.linkIcon}>{link.icon}</Text>
-                <Text style={[styles.linkLabel, { color: colors.text }]}>{link.label}</Text>
-              </View>
-              <Text style={[styles.linkArrow, { color: colors.textSecondary }]}>›</Text>
-            </TouchableOpacity>
-          ))}
+        <View style={[styles.linksCard, { backgroundColor: colors.card || colors.surface }]}>
+          {quickLinks.map((link, index) => {
+            const icon = LINK_ICONS[link.key];
+            return (
+              <TouchableOpacity
+                key={link.key}
+                style={[
+                  styles.linkRow,
+                  index !== quickLinks.length - 1 && {
+                    borderBottomWidth: 1,
+                    borderBottomColor: colors.border,
+                  },
+                ]}
+                onPress={() => Alert.alert(link.label, 'This feature is coming soon!')}
+                activeOpacity={0.7}
+              >
+                <View style={styles.linkLeft}>
+                  <View style={[styles.linkIconBg, { backgroundColor: icon.bg }]}>
+                    <Ionicons name={icon.name} size={18} color={icon.color} />
+                  </View>
+                  <Text style={[styles.linkLabel, { color: colors.text }]}>{link.label}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* Emergency */}
         <TouchableOpacity
           style={[styles.emergencyCard, { backgroundColor: '#ef4444' }]}
           onPress={() => Linking.openURL('tel:15')}
+          activeOpacity={0.8}
         >
-          <Text style={styles.emergencyIcon}>🚨</Text>
+          <View style={styles.emergencyIconBg}>
+            <Ionicons name="warning" size={28} color="#fff" />
+          </View>
           <View style={styles.emergencyInfo}>
             <Text style={styles.emergencyTitle}>Emergency?</Text>
             <Text style={styles.emergencyText}>Tap here to call emergency services (15)</Text>
           </View>
         </TouchableOpacity>
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: spacing.xxxl + spacing.sm }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -197,36 +225,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
-  },
-  backIcon: {
-    fontSize: 28,
-    color: '#000',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-  },
   content: {
     flex: 1,
-    padding: 16,
+    padding: spacing.lg,
   },
   contactCard: {
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 16,
+    fontSize: typography.h6,
+    fontWeight: '700',
+    marginBottom: spacing.lg,
   },
   contactGrid: {
     flexDirection: 'row',
@@ -235,25 +244,29 @@ const styles = StyleSheet.create({
   contactButton: {
     flex: 1,
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginHorizontal: 4,
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
+    marginHorizontal: spacing.xs,
   },
-  contactIcon: {
-    fontSize: 28,
-    marginBottom: 8,
+  contactIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
   },
   contactLabel: {
-    fontSize: 12,
+    fontSize: typography.caption,
     fontWeight: '600',
   },
   faqSection: {
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   faqCard: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
   },
   faqHeader: {
     flexDirection: 'row',
@@ -261,90 +274,90 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   faqQuestion: {
-    fontSize: 14,
+    fontSize: typography.bodySmall,
     fontWeight: '600',
     flex: 1,
-    paddingRight: 12,
-  },
-  faqArrow: {
-    fontSize: 12,
+    paddingRight: spacing.md,
   },
   faqAnswer: {
-    fontSize: 13,
+    fontSize: typography.bodySmall - 1,
     lineHeight: 20,
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: '#e5e5e5',
   },
   queryCard: {
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   queryInput: {
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 14,
+    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    fontSize: typography.bodySmall,
     minHeight: 100,
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   submitButton: {
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: spacing.md + 2,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
   },
   submitText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: typography.h6,
+    fontWeight: '700',
     color: '#000',
   },
   linksCard: {
-    borderRadius: 16,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   linkRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: spacing.lg,
   },
   linkLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.md,
   },
-  linkIcon: {
-    fontSize: 20,
-    marginRight: 14,
+  linkIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   linkLabel: {
-    fontSize: 15,
-  },
-  linkArrow: {
-    fontSize: 22,
+    fontSize: typography.bodySmall + 1,
   },
   emergencyCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
   },
-  emergencyIcon: {
-    fontSize: 32,
-    marginRight: 16,
+  emergencyIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.lg,
   },
   emergencyInfo: {
     flex: 1,
   },
   emergencyTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: typography.h6,
+    fontWeight: '700',
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   emergencyText: {
-    fontSize: 13,
+    fontSize: typography.bodySmall - 1,
     color: '#fff',
     opacity: 0.9,
   },

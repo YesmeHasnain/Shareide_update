@@ -2,10 +2,10 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration - Change this to your server IP
-const DEV_API_URL = 'https://calm-coins-lie.loca.lt/api';
+const DEV_API_URL = 'https://freida-biconical-continually.ngrok-free.dev/api';
 const PROD_API_URL = 'https://api.shareide.com/api';
-// Dev mode - using local network IP for testing
-const API_BASE_URL = DEV_API_URL;
+// Production mode - using live server
+const API_BASE_URL = PROD_API_URL;
 
 const client = axios.create({
   baseURL: API_BASE_URL,

@@ -25,8 +25,10 @@ class SupportTicket extends Model
         'status',
         'assigned_to',
         'resolved_at',
+        'resolved_by',
         'resolution_note',
         'last_reply_at',
+        'source',
     ];
 
     protected $casts = [

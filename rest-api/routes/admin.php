@@ -200,6 +200,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::post('/{id}/status', [SupportTicketController::class, 'updateStatus'])->name('status');
         Route::post('/{id}/priority', [SupportTicketController::class, 'updatePriority'])->name('priority');
         Route::post('/{id}/assign', [SupportTicketController::class, 'assign'])->name('assign');
+        Route::get('/{id}/guest-activity', [SupportTicketController::class, 'guestActivity'])->name('guest-activity');
+        Route::post('/{id}/typing', [SupportTicketController::class, 'typing'])->name('typing');
+        Route::get('/{id}/messages', [SupportTicketController::class, 'getMessages'])->name('messages');
     });
 
     // Audit Logs

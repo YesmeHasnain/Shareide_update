@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -24,7 +25,10 @@ class ContactController extends Controller
             'email' => 'required|email|max:100',
             'phone' => 'nullable|string|max:20',
             'subject' => 'required|string|max:200',
-            'message' => 'required|string|max:2000',
+            'message' => 'required|string|max:5000',
+            'category' => 'nullable|string|in:website_contact,ride_issue,payment,driver_behavior,app_bug,account,other',
+            'priority' => 'nullable|string|in:low,medium,high,urgent',
+            'source' => 'nullable|string|in:contact_form,chatbot',
         ]);
 
         if ($validator->fails()) {
@@ -47,10 +51,11 @@ class ContactController extends Controller
                 'guest_phone' => $request->phone,
                 'reply_token' => $replyToken,
                 'subject' => $request->subject,
-                'category' => 'website_contact',
-                'priority' => 'medium',
+                'category' => $request->input('category', 'website_contact'),
+                'priority' => $request->input('priority', 'medium'),
                 'status' => 'open',
                 'description' => $request->message,
+                'source' => $request->input('source', 'contact_form'),
             ]);
 
             // Create first message
@@ -94,8 +99,8 @@ class ContactController extends Controller
     {
         $ticket = SupportTicket::where('reply_token', $token)
             ->with(['messages' => function($q) {
-                $q->where('is_internal', false)->orderBy('created_at', 'asc');
-            }])
+                $q->where('is_internal', false)->with('user')->orderBy('created_at', 'asc');
+            }, 'assignedAdmin'])
             ->first();
 
         if (!$ticket) {
@@ -105,6 +110,9 @@ class ContactController extends Controller
             ], 404);
         }
 
+        $hasAdminReply = $ticket->messages->where('sender_type', 'admin')->count() > 0;
+        $agentName = $ticket->assignedAdmin?->name ?? null;
+
         return response()->json([
             'success' => true,
             'ticket' => [
@@ -112,11 +120,19 @@ class ContactController extends Controller
                 'subject' => $ticket->subject,
                 'status' => $ticket->status,
                 'created_at' => $ticket->created_at->format('M d, Y h:i A'),
+                'has_admin_reply' => $hasAdminReply,
+                'assigned_to_name' => $agentName,
+                'agent' => $agentName ? [
+                    'name' => $agentName,
+                    'initial' => strtoupper(substr($agentName, 0, 1)),
+                ] : null,
                 'messages' => $ticket->messages->map(function($msg) {
                     return [
-                        'sender' => $msg->sender_type === 'admin' ? 'Support Team' : 'You',
+                        'id' => $msg->id,
+                        'sender' => $msg->sender_type === 'admin' ? ($msg->user?->name ?? 'Support Team') : 'You',
+                        'sender_initial' => $msg->sender_type === 'admin' ? strtoupper(substr($msg->user?->name ?? 'S', 0, 1)) : null,
                         'message' => $msg->message,
-                        'created_at' => $msg->created_at->format('M d, Y h:i A'),
+                        'created_at' => $msg->created_at->format('h:i A'),
                         'is_admin' => $msg->sender_type === 'admin',
                     ];
                 }),
@@ -158,13 +174,16 @@ class ContactController extends Controller
         }
 
         // Create reply message
-        TicketMessage::create([
+        $message = TicketMessage::create([
             'support_ticket_id' => $ticket->id,
             'user_id' => null,
             'sender_type' => 'guest',
             'message' => $request->message,
             'is_internal' => false,
         ]);
+
+        // Clear guest typing indicator on send
+        Cache::forget("ticket_typing_guest_{$ticket->id}");
 
         // Update ticket status and last reply
         $ticket->update([
@@ -182,7 +201,89 @@ class ContactController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Reply sent successfully!'
+            'message' => 'Reply sent successfully!',
+            'message_id' => $message->id,
+        ]);
+    }
+
+    /**
+     * Guest typing indicator - POST sets cache, returns admin typing status
+     */
+    public function typing($token)
+    {
+        $ticket = SupportTicket::where('reply_token', $token)->first();
+
+        if (!$ticket) {
+            return response()->json(['success' => false, 'message' => 'Ticket not found'], 404);
+        }
+
+        Cache::put("ticket_typing_guest_{$ticket->id}", true, now()->addSeconds(3));
+
+        return response()->json([
+            'success' => true,
+            'admin_typing' => (bool) Cache::get("ticket_typing_admin_{$ticket->id}", false),
+        ]);
+    }
+
+    /**
+     * Get new messages since a given message ID (incremental polling)
+     */
+    public function getNewMessages(Request $request, $token)
+    {
+        $ticket = SupportTicket::where('reply_token', $token)->first();
+
+        if (!$ticket) {
+            return response()->json(['success' => false, 'message' => 'Ticket not found'], 404);
+        }
+
+        $afterId = (int) $request->query('after', 0);
+
+        $query = $ticket->messages()
+            ->where('is_internal', false)
+            ->with('user')
+            ->orderBy('created_at', 'asc');
+
+        if ($afterId > 0) {
+            $query->where('id', '>', $afterId);
+        }
+
+        $messages = $query->get()->map(function ($msg) {
+            return [
+                'id' => $msg->id,
+                'sender' => $msg->sender_type === 'admin' ? ($msg->user?->name ?? 'Support Team') : 'You',
+                'sender_initial' => $msg->sender_type === 'admin' ? strtoupper(substr($msg->user?->name ?? 'S', 0, 1)) : null,
+                'message' => $msg->message,
+                'created_at' => $msg->created_at->format('h:i A'),
+                'is_admin' => $msg->sender_type === 'admin',
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'messages' => $messages,
+            'admin_typing' => (bool) Cache::get("ticket_typing_admin_{$ticket->id}", false),
+            'ticket_status' => $ticket->status,
+        ]);
+    }
+
+    /**
+     * Update guest activity (ping endpoint for online status)
+     */
+    public function updateActivity($token)
+    {
+        $ticket = SupportTicket::where('reply_token', $token)->first();
+
+        if (!$ticket) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ticket not found'
+            ], 404);
+        }
+
+        Cache::put("ticket_online_{$ticket->id}", true, now()->addMinutes(2));
+
+        return response()->json([
+            'success' => true,
         ]);
     }
 }

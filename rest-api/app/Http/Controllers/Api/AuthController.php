@@ -27,7 +27,7 @@ class AuthController extends Controller
     public function sendCode(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'phone' => ['required', 'string', 'regex:/^(\+92|0)?3[0-9]{9}$/'],
+            'phone' => ['required', 'string', 'regex:/^(\+?92|0)?3[0-9]{9}$/'],
         ]);
 
         if ($validator->fails()) {
@@ -58,7 +58,7 @@ class AuthController extends Controller
             'verified_at' => null,
         ]);
 
-        // Send OTP via WhatsApp
+        // Send OTP via Twilio (Verify API for SMS, or WhatsApp fallback)
         $result = $this->whatsappService->sendOTP($phone, $code);
 
         if (!$result['success'] && !isset($result['dev_otp'])) {
@@ -70,7 +70,7 @@ class AuthController extends Controller
 
         $response = [
             'success' => true,
-            'message' => 'Verification code sent via WhatsApp',
+            'message' => isset($result['use_verify']) ? 'Verification code sent via SMS' : 'Verification code sent via WhatsApp',
             'is_existing_user' => $existingUser !== null,
         ];
 
@@ -127,38 +127,49 @@ class AuthController extends Controller
         // DEV MODE: Accept 123456 as universal code for testing
         $isDevBypass = $code === '123456' && config('app.debug');
 
-        // Find verification
-        $verification = PhoneVerification::where('phone', $phone)->first();
-
-        if (!$verification && !$isDevBypass) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid verification code',
-            ], 401);
-        }
-
-        // If not dev bypass, check actual code
-        if (!$isDevBypass && $verification->code !== $code) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid verification code',
-            ], 401);
-        }
-
-        // Skip expiry/verified checks for dev bypass
-        if (!$isDevBypass) {
-            if ($verification->isExpired()) {
+        // If using Twilio Verify API, let Twilio check the code
+        if (!$isDevBypass && $this->whatsappService->isUsingVerifyAPI()) {
+            $verifyResult = $this->whatsappService->verifyOTPCode($phone, $code);
+            if (!$verifyResult['success']) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Verification code has expired',
+                    'message' => 'Invalid verification code',
+                ], 401);
+            }
+            // Twilio verified - DON'T mark local record yet (completeRegistration will do it for new users)
+            $verification = PhoneVerification::where('phone', $phone)->first();
+        } else {
+            // Local verification (WhatsApp/dev mode)
+            $verification = PhoneVerification::where('phone', $phone)->first();
+
+            if (!$verification && !$isDevBypass) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid verification code',
                 ], 401);
             }
 
-            if ($verification->isVerified()) {
+            if (!$isDevBypass && $verification->code !== $code) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Code already used',
+                    'message' => 'Invalid verification code',
                 ], 401);
+            }
+
+            if (!$isDevBypass) {
+                if ($verification->isExpired()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Verification code has expired',
+                    ], 401);
+                }
+
+                if ($verification->isVerified()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Code already used',
+                    ], 401);
+                }
             }
         }
 
@@ -265,12 +276,20 @@ class AuthController extends Controller
         $phone = $parts[0];
         $code = $parts[1];
 
-        // Find verification (must be un-used)
+        // Find verification by phone (Twilio Verify uses its own codes, so we match by phone only)
         $verification = PhoneVerification::where('phone', $phone)
-            ->where('code', $code)
+            ->latest()
             ->first();
 
         if (!$verification) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid verification code',
+            ], 401);
+        }
+
+        // For non-Verify API flow, also check the code matches
+        if (!$this->whatsappService->isUsingVerifyAPI() && $verification->code !== $code) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid verification code',

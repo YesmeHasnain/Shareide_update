@@ -68,7 +68,7 @@ class RideController extends Controller
     // Get single ride
     public function show($id)
     {
-        $ride = RideRequest::with(['driver.user'])->findOrFail($id);
+        $ride = RideRequest::with(['driver', 'driverDetails'])->findOrFail($id);
 
         return response()->json([
             'success' => true,
@@ -305,7 +305,7 @@ class RideController extends Controller
 
             $activeRide = RideRequest::where('rider_id', $user->id)
                 ->whereIn('status', ['pending', 'accepted', 'arrived', 'started'])
-                ->with(['driver.user'])
+                ->with(['driver', 'driverDetails'])
                 ->latest()
                 ->first();
 
@@ -348,7 +348,7 @@ class RideController extends Controller
                 ->when($status, function ($query, $status) {
                     return $query->where('status', $status);
                 })
-                ->with(['driver.user'])
+                ->with(['driver', 'driverDetails'])
                 ->orderBy('created_at', 'desc')
                 ->paginate($perPage);
 

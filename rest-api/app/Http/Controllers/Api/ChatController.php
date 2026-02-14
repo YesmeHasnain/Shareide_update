@@ -24,8 +24,8 @@ class ChatController extends Controller
             $ride = RideRequest::findOrFail($rideId);
 
             // Check if user is part of this ride
-            $isRider = $ride->user_id === $user->id;
-            $isDriver = $user->driver && $ride->driver_id === $user->driver->id;
+            $isRider = $ride->rider_id === $user->id;
+            $isDriver = $ride->driver_id === $user->id;
 
             if (!$isRider && !$isDriver) {
                 return response()->json([
@@ -38,14 +38,14 @@ class ChatController extends Controller
             $chat = Chat::firstOrCreate(
                 ['ride_request_id' => $ride->id],
                 [
-                    'rider_id' => $ride->user_id,
+                    'rider_id' => $ride->rider_id,
                     'driver_id' => $ride->driver_id,
                     'status' => 'active',
                 ]
             );
 
             // Load relationships
-            $chat->load(['rider', 'driver.user', 'rideRequest']);
+            $chat->load(['rider', 'driver', 'rideRequest']);
 
             // Reset unread count for current user
             if ($isRider) {
@@ -60,8 +60,8 @@ class ChatController extends Controller
                 'data' => [
                     'chat' => $chat,
                     'other_user' => $isRider ? [
-                        'id' => $chat->driver->user->id,
-                        'name' => $chat->driver->user->name,
+                        'id' => $chat->driver->id,
+                        'name' => $chat->driver->name,
                         'role' => 'driver',
                     ] : [
                         'id' => $chat->rider->id,
@@ -92,7 +92,7 @@ class ChatController extends Controller
 
             // Check if user is part of this chat
             $isRider = $chat->rider_id === $user->id;
-            $isDriver = $user->driver && $chat->driver_id === $user->driver->id;
+            $isDriver = $chat->driver_id === $user->id;
 
             if (!$isRider && !$isDriver) {
                 return response()->json([
@@ -170,7 +170,7 @@ class ChatController extends Controller
 
             // Check if user is part of this chat
             $isRider = $chat->rider_id === $user->id;
-            $isDriver = $user->driver && $chat->driver_id === $user->driver->id;
+            $isDriver = $chat->driver_id === $user->id;
 
             if (!$isRider && !$isDriver) {
                 return response()->json([
@@ -255,7 +255,7 @@ class ChatController extends Controller
 
             // Check if user is part of this chat
             $isRider = $chat->rider_id === $user->id;
-            $isDriver = $user->driver && $chat->driver_id === $user->driver->id;
+            $isDriver = $chat->driver_id === $user->id;
 
             if (!$isRider && !$isDriver) {
                 return response()->json([
@@ -345,7 +345,7 @@ class ChatController extends Controller
 
             // Check if user is part of this chat
             $isRider = $chat->rider_id === $user->id;
-            $isDriver = $user->driver && $chat->driver_id === $user->driver->id;
+            $isDriver = $chat->driver_id === $user->id;
 
             if (!$isRider && !$isDriver) {
                 return response()->json([
@@ -416,7 +416,7 @@ class ChatController extends Controller
 
             // Check if user is part of this chat
             $isRider = $chat->rider_id === $user->id;
-            $isDriver = $user->driver && $chat->driver_id === $user->driver->id;
+            $isDriver = $chat->driver_id === $user->id;
 
             if (!$isRider && !$isDriver) {
                 return response()->json([
@@ -468,11 +468,9 @@ class ChatController extends Controller
             $chats = Chat::where(function($query) use ($user) {
                 $query->where('rider_id', $user->id);
                 
-                if ($user->driver) {
-                    $query->orWhere('driver_id', $user->driver->id);
-                }
+                $query->orWhere('driver_id', $user->id);
             })
-            ->with(['rider', 'driver.user', 'rideRequest'])
+            ->with(['rider', 'driver', 'rideRequest'])
             ->orderBy('last_message_at', 'desc')
             ->get();
 

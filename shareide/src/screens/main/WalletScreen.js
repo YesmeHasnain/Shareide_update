@@ -245,27 +245,28 @@ const WalletScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F9FAFB',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingBottom: 16,
+    backgroundColor: '#FFFFFF',
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
+    fontWeight: '700',
+    color: '#1A1A2E',
   },
   placeholder: {
     width: 40,
@@ -276,13 +277,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
   },
   balanceCard: {
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 24,
     marginBottom: 24,
     backgroundColor: PRIMARY_COLOR,
+    shadowColor: '#FCC014',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
   balanceHeader: {
     flexDirection: 'row',
@@ -350,9 +356,14 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   methodsCard: {
-    borderRadius: 16,
-    backgroundColor: '#F9FAFB',
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   paymentMethod: {
     flexDirection: 'row',
@@ -415,15 +426,15 @@ const styles = StyleSheet.create({
     color: PRIMARY_COLOR,
   },
   historyButton: {
-    backgroundColor: PRIMARY_COLOR,
-    borderRadius: 27,
+    backgroundColor: '#1A1A2E',
+    borderRadius: 26,
     paddingVertical: 16,
     alignItems: 'center',
   },
   historyButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
 

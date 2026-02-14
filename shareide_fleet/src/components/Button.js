@@ -8,14 +8,14 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useTheme } from '../context/ThemeContext';
-import { borderRadius } from '../theme/colors';
+import { borderRadius, hitSlop } from '../theme/colors';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 const Button = ({
   title,
   onPress,
-  variant = 'primary', // primary, secondary, outline, ghost, danger, text, dark
+  variant = 'primary', // primary, secondary, outline, ghost, danger, success, text, dark
   size = 'medium', // small, medium, large
   icon,
   iconPosition = 'left',
@@ -85,6 +85,12 @@ const Button = ({
           textColor: '#FFFFFF',
           borderColor: 'transparent',
         };
+      case 'success':
+        return {
+          background: colors.success,
+          textColor: '#FFFFFF',
+          borderColor: 'transparent',
+        };
       case 'text':
         return {
           background: 'transparent',
@@ -110,10 +116,10 @@ const Button = ({
     switch (size) {
       case 'small':
         return {
-          height: 40,
-          paddingHorizontal: 16,
+          height: 44,
+          paddingHorizontal: 18,
           fontSize: 14,
-          iconSize: 16,
+          iconSize: 18,
         };
       case 'medium':
         return {
@@ -214,7 +220,7 @@ const Button = ({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 27,
+    borderRadius: borderRadius.pill,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',

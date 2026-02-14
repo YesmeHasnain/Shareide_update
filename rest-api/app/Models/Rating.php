@@ -15,8 +15,10 @@ class Rating extends Model
         'rider_id',
         'driver_rating',
         'driver_comment',
+        'driver_negative_reason',
         'rider_rating',
         'rider_comment',
+        'rider_negative_reason',
     ];
 
     protected $casts = [
@@ -32,7 +34,7 @@ class Rating extends Model
 
     public function driver()
     {
-        return $this->belongsTo(Driver::class);
+        return $this->belongsTo(Driver::class, 'driver_id', 'user_id');
     }
 
     public function rider()

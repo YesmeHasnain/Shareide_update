@@ -18,9 +18,9 @@ Broadcast::channel('chat.{chatId}', function ($user, $chatId) {
         return false;
     }
 
-    // Check if user is part of this chat
+    // Check if user is part of this chat (driver_id stores user_id)
     $isRider = $chat->rider_id === $user->id;
-    $isDriver = $user->driver && $chat->driver_id === $user->driver->id;
+    $isDriver = $chat->driver_id === $user->id;
 
     return $isRider || $isDriver;
 });

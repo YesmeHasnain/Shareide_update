@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../context/ThemeContext';
-import { spacing, typography } from '../theme/colors';
+import { spacing, typography, hitSlop } from '../theme/colors';
 
 const HeaderButton = ({ icon, onPress, badge, style, colors }) => {
   const handlePress = () => {
@@ -15,6 +15,7 @@ const HeaderButton = ({ icon, onPress, badge, style, colors }) => {
   return (
     <TouchableOpacity
       onPress={handlePress}
+      hitSlop={hitSlop.small}
       style={[
         styles.headerButton,
         { backgroundColor: colors.inputBackground || '#F5F5F5' },
@@ -24,7 +25,7 @@ const HeaderButton = ({ icon, onPress, badge, style, colors }) => {
     >
       <Ionicons name={icon} size={22} color={colors.text} />
       {badge > 0 && (
-        <View style={styles.badge}>
+        <View style={[styles.badge, { borderColor: colors.background }]}>
           <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
         </View>
       )}
@@ -47,7 +48,7 @@ const Header = ({
   transparent = false,
   variant = 'default', // default, centered-uppercase
 }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
   const isUppercase = variant === 'centered-uppercase';
@@ -124,7 +125,7 @@ const Header = ({
 
   return (
     <>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <View style={headerStyle}>
         {headerContent}
       </View>
@@ -150,7 +151,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   rightContainer: {
-    width: 48,
+    minWidth: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
@@ -172,19 +173,19 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
   placeholder: {
-    width: 40,
+    width: 44,
   },
   badge: {
     position: 'absolute',
-    top: 0,
-    right: 0,
+    top: -2,
+    right: -2,
     backgroundColor: '#EF4444',
     borderRadius: 10,
     minWidth: 18,
@@ -192,6 +193,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 4,
+    borderWidth: 2,
   },
   badgeText: {
     color: '#FFFFFF',

@@ -7,13 +7,17 @@ import {
   TouchableOpacity,
   Alert,
   StatusBar,
+  Animated,
+  Platform,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 
-const PRIMARY_COLOR = '#FCC014';
+const PRIMARY = '#FCC014';
+const DARK = '#1A1A2E';
 
 const ProfileScreen = ({ navigation }) => {
   const auth = useAuth();
@@ -39,32 +43,6 @@ const ProfileScreen = ({ navigation }) => {
     );
   };
 
-  const MenuItem = ({ icon, label, screen, iconColor }) => (
-    <TouchableOpacity
-      style={styles.menuItem}
-      onPress={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        navigation.navigate(screen);
-      }}
-      activeOpacity={0.7}
-    >
-      <View style={[styles.menuIcon, { backgroundColor: (iconColor || PRIMARY_COLOR) + '15' }]}>
-        <Ionicons name={icon} size={20} color={iconColor || PRIMARY_COLOR} />
-      </View>
-      <Text style={styles.menuLabel}>{label}</Text>
-      <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-    </TouchableOpacity>
-  );
-
-  const VerifiedItem = ({ label }) => (
-    <View style={styles.verifiedRow}>
-      <View style={styles.verifiedIcon}>
-        <Ionicons name="checkmark-circle" size={20} color={PRIMARY_COLOR} />
-      </View>
-      <Text style={styles.verifiedText}>{label}</Text>
-    </View>
-  );
-
   const getInitials = () => {
     if (!user?.name) return 'U';
     const words = user.name.trim().split(' ');
@@ -72,104 +50,161 @@ const ProfileScreen = ({ navigation }) => {
     return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
   };
 
+  const MenuItem = ({ icon, label, screen, iconBg, iconColor, badge }) => (
+    <TouchableOpacity
+      style={styles.menuItem}
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        navigation.navigate(screen);
+      }}
+      activeOpacity={0.6}
+    >
+      <View style={[styles.menuIconBox, { backgroundColor: iconBg || '#FEF3C7' }]}>
+        <Ionicons name={icon} size={18} color={iconColor || PRIMARY} />
+      </View>
+      <Text style={styles.menuLabel}>{label}</Text>
+      {badge ? (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{badge}</Text>
+        </View>
+      ) : (
+        <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
+      )}
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top + 16 },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 16 }]}
       >
-        {/* Header */}
-        <Text style={styles.headerTitle}>PROFILE</Text>
-
-        {/* Profile Avatar Section */}
+        {/* Profile Header */}
         <TouchableOpacity
-          style={styles.avatarSection}
+          style={styles.profileHeader}
           onPress={() => navigation.navigate('EditProfile')}
           activeOpacity={0.8}
         >
-          <View style={styles.avatarWrapper}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{getInitials()}</Text>
-            </View>
-            <View style={styles.verifiedBadge}>
-              <Ionicons name="checkmark" size={14} color="#FFF" />
+          <View style={styles.avatarLarge}>
+            <Text style={styles.avatarLargeText}>{getInitials()}</Text>
+            <View style={styles.editBadge}>
+              <Ionicons name="pencil" size={10} color="#FFF" />
             </View>
           </View>
-          <Text style={styles.userName}>{user?.name || 'Guest User'}</Text>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{user?.name || 'Guest User'}</Text>
+            <Text style={styles.profilePhone}>{user?.phone || '+92 xxx xxxxxxx'}</Text>
+            <View style={styles.verifiedTag}>
+              <Ionicons name="shield-checkmark" size={12} color="#10B981" />
+              <Text style={styles.verifiedTagText}>Verified</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
         </TouchableOpacity>
 
-        {/* Stats */}
+        {/* Stats Row */}
         <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <View style={styles.statValue}>
-              <Text style={styles.statNumber}>{user?.rating?.toFixed(1) || '4.9'}</Text>
-              <Ionicons name="star" size={16} color={PRIMARY_COLOR} />
+          <View style={styles.statBox}>
+            <Text style={styles.statNum}>{user?.rating?.toFixed(1) || '5.0'}</Text>
+            <View style={styles.statStars}>
+              <Ionicons name="star" size={12} color={PRIMARY} />
             </View>
             <Text style={styles.statLabel}>Rating</Text>
           </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{user?.total_rides || 0}</Text>
+          <View style={styles.statDivider} />
+          <View style={styles.statBox}>
+            <Text style={styles.statNum}>{user?.total_rides || 0}</Text>
             <Text style={styles.statLabel}>Rides</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statBox}>
+            <Text style={styles.statNum}>{user?.loyalty_points || 0}</Text>
+            <Text style={styles.statLabel}>Points</Text>
           </View>
         </View>
 
-        {/* Profile Details Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Profile Details</Text>
-          <VerifiedItem label="Verified passenger" />
-          <VerifiedItem label="Verified phone number" />
-          <VerifiedItem label="Verified Identity" />
-          <VerifiedItem label="Member since 2025" />
+        {/* Payments Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>PAYMENTS</Text>
+          <View style={styles.sectionCard}>
+            <MenuItem icon="wallet" label="Wallet" screen="Wallet" iconBg="#FEF3C7" iconColor={PRIMARY} />
+            <View style={styles.separator} />
+            <MenuItem icon="card" label="Payment Methods" screen="PaymentMethods" iconBg="#EFF6FF" iconColor="#3B82F6" />
+            <View style={styles.separator} />
+            <MenuItem icon="pricetag" label="Promo Codes" screen="PromoCodes" iconBg="#F0FDF4" iconColor="#10B981" />
+          </View>
         </View>
 
-        {/* Account Section */}
-        <View style={styles.menuCard}>
-          <Text style={styles.sectionTitle}>ACCOUNT</Text>
-          <MenuItem icon="wallet-outline" label="Wallet" screen="Wallet" />
-          <MenuItem icon="card-outline" label="Payment Methods" screen="PaymentMethods" />
-          <MenuItem icon="star-outline" label="Loyalty Rewards" screen="Loyalty" />
-          <MenuItem icon="pricetag-outline" label="Promo Codes" screen="PromoCodes" />
-          <MenuItem icon="bookmark-outline" label="Saved Places" screen="SavedPlaces" />
+        {/* Activity Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>ACTIVITY</Text>
+          <View style={styles.sectionCard}>
+            <MenuItem icon="star" label="Loyalty Rewards" screen="Loyalty" iconBg="#FFFBEB" iconColor={PRIMARY} />
+            <View style={styles.separator} />
+            <MenuItem icon="bookmark" label="Saved Places" screen="SavedPlaces" iconBg="#FEF3C7" iconColor="#F59E0B" />
+            <View style={styles.separator} />
+            <MenuItem icon="time" label="Scheduled Rides" screen="ScheduledRides" iconBg="#F0FDF4" iconColor="#10B981" />
+          </View>
         </View>
 
         {/* Settings Section */}
-        <View style={styles.menuCard}>
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>SETTINGS</Text>
-          <MenuItem icon="notifications-outline" label="Notifications" screen="Notifications" />
-          <MenuItem icon="shield-checkmark-outline" label="Emergency Contacts" screen="Emergency" iconColor="#10B981" />
-          <MenuItem icon="settings-outline" label="App Settings" screen="Settings" />
+          <View style={styles.sectionCard}>
+            <MenuItem icon="notifications" label="Notifications" screen="Notifications" iconBg="#FEF2F2" iconColor="#EF4444" badge="3" />
+            <View style={styles.separator} />
+            <MenuItem icon="shield-checkmark" label="Emergency Contacts" screen="Emergency" iconBg="#F0FDF4" iconColor="#10B981" />
+            <View style={styles.separator} />
+            <MenuItem icon="settings" label="App Settings" screen="Settings" iconBg="#F3F4F6" iconColor="#6B7280" />
+          </View>
         </View>
 
         {/* Support Section */}
-        <View style={styles.menuCard}>
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>SUPPORT</Text>
-          <MenuItem icon="help-circle-outline" label="Help Center" screen="Support" />
-          <MenuItem icon="chatbubble-outline" label="Contact Us" screen="Support" />
+          <View style={styles.sectionCard}>
+            <MenuItem icon="help-circle" label="Help Center" screen="Support" iconBg="#EFF6FF" iconColor="#3B82F6" />
+            <View style={styles.separator} />
+            <MenuItem icon="chatbubble" label="Contact Us" screen="Support" iconBg="#F5F3FF" iconColor="#8B5CF6" />
+          </View>
         </View>
 
-        {/* Report Issue */}
-        <TouchableOpacity style={styles.reportButton} activeOpacity={0.8}>
-          <Text style={styles.reportText}>Report an issue</Text>
+        {/* Become a Driver */}
+        <TouchableOpacity
+          style={styles.driverBanner}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            const url = Platform.select({
+              android: 'https://play.google.com/store/apps/details?id=com.shareide.fleet',
+              ios: 'https://apps.apple.com/app/shareide-fleet/id000000000',
+            });
+            Linking.openURL(url);
+          }}
+          activeOpacity={0.8}
+        >
+          <View style={styles.driverBannerIcon}>
+            <Ionicons name="car-sport" size={24} color="#FFF" />
+          </View>
+          <View style={styles.driverBannerText}>
+            <Text style={styles.driverBannerTitle}>Become a Driver</Text>
+            <Text style={styles.driverBannerSub}>Earn money with ShareIDE Fleet</Text>
+          </View>
+          <Ionicons name="arrow-forward-circle" size={28} color="#FFF" />
         </TouchableOpacity>
 
-        {/* Logout */}
+        {/* Logout Button */}
         <TouchableOpacity
-          style={styles.logoutButton}
+          style={styles.logoutBtn}
           onPress={handleLogout}
           activeOpacity={0.7}
         >
           <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
 
-        {/* Version */}
-        <Text style={styles.versionText}>SHAREIDE v1.0.0</Text>
-
+        <Text style={styles.version}>ShareIDE v1.0.0</Text>
         <View style={{ height: 100 }} />
       </ScrollView>
     </View>
@@ -179,131 +214,147 @@ const ProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F9FAFB',
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
   },
-  headerTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
-    textAlign: 'center',
-    letterSpacing: 1,
-    marginBottom: 24,
-  },
-  avatarSection: {
+
+  // Profile Header
+  profileHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
-  },
-  avatarWrapper: {
-    position: 'relative',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#F3F4F6',
+  avatarLarge: {
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    backgroundColor: '#FEF3C7',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 14,
   },
-  avatarText: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#6B7280',
+  avatarLargeText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: DARK,
   },
-  verifiedBadge: {
+  editBadge: {
     position: 'absolute',
-    bottom: 4,
-    right: 4,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: PRIMARY_COLOR,
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: DARK,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#FFF',
   },
-  userName: {
-    fontSize: 24,
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: 18,
     fontWeight: '700',
-    color: '#000',
+    color: DARK,
   },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 48,
-    marginBottom: 32,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#000',
-  },
-  statLabel: {
+  profilePhone: {
     fontSize: 13,
     color: '#6B7280',
     marginTop: 2,
   },
-  card: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 16,
-  },
-  verifiedRow: {
+  verifiedTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginTop: 4,
+    gap: 4,
   },
-  verifiedIcon: {
-    marginRight: 12,
+  verifiedTagText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#10B981',
   },
-  verifiedText: {
-    fontSize: 14,
-    color: '#374151',
-  },
-  menuCard: {
-    backgroundColor: '#F9FAFB',
+
+  // Stats
+  statsRow: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    marginBottom: 16,
-    overflow: 'hidden',
+    padding: 16,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  statBox: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statNum: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: DARK,
+  },
+  statStars: {
+    marginTop: 2,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: '#F3F4F6',
+  },
+
+  // Sections
+  section: {
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#9CA3AF',
-    letterSpacing: 0.5,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+    letterSpacing: 1,
+    marginBottom: 8,
+    marginLeft: 4,
   },
+  sectionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+
+  // Menu Item
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
   },
-  menuIcon: {
-    width: 36,
-    height: 36,
+  menuIconBox: {
+    width: 34,
+    height: 34,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
@@ -311,29 +362,70 @@ const styles = StyleSheet.create({
   },
   menuLabel: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
-    color: '#000',
+    color: DARK,
   },
-  reportButton: {
-    backgroundColor: PRIMARY_COLOR,
-    borderRadius: 27,
-    paddingVertical: 16,
+  badge: {
+    backgroundColor: '#EF4444',
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#F9FAFB',
+    marginLeft: 62,
+  },
+
+  // Driver Banner
+  driverBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: DARK,
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 16,
   },
-  reportText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
+  driverBannerIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: PRIMARY,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
   },
-  logoutButton: {
+  driverBannerText: {
+    flex: 1,
+  },
+  driverBannerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  driverBannerSub: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginTop: 2,
+  },
+
+  // Logout
+  logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FEE2E2',
     paddingVertical: 14,
     borderRadius: 14,
+    backgroundColor: '#FEF2F2',
     gap: 8,
     marginBottom: 16,
   },
@@ -342,11 +434,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#EF4444',
   },
-  versionText: {
-    fontSize: 12,
-    color: '#9CA3AF',
+  version: {
+    fontSize: 11,
+    color: '#D1D5DB',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
 });
 

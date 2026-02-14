@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import Loading from '../components/Loading';
-import { spacing } from '../theme/colors';
+import { spacing, hitSlop } from '../theme/colors';
 
 // Navigation guard for unapproved drivers
 const withApprovalGuard = (ScreenComponent, screenName) => {
@@ -93,12 +93,13 @@ import LiveMapScreen from '../screens/map/LiveMapScreen';
 // Rides
 import PostRideScreen from '../screens/rides/PostRideScreen';
 import RideRequestsScreen from '../screens/rides/RideRequestsScreen';
+import RateRiderScreen from '../screens/rides/RateRiderScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Custom Tab Bar Icon - Matching ShareIDE design
-const TabIcon = ({ focused, icon, iconFocused, color, label }) => {
+// Custom Tab Bar Icon - Uber/Bolt style with active indicator
+const TabIcon = ({ focused, icon, iconFocused, color, label, colors }) => {
   return (
     <View style={styles.tabIconContainer}>
       <Ionicons
@@ -106,7 +107,14 @@ const TabIcon = ({ focused, icon, iconFocused, color, label }) => {
         size={24}
         color={color}
       />
-      <Text style={[styles.tabLabel, { color }]}>{label}</Text>
+      <Text style={[
+        styles.tabLabel,
+        { color },
+        focused && styles.tabLabelActive,
+      ]}>{label}</Text>
+      {focused && (
+        <View style={[styles.tabIndicator, { backgroundColor: colors.tabBarIndicator || colors.primary }]} />
+      )}
     </View>
   );
 };
@@ -130,19 +138,21 @@ const MainTabs = () => {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarActiveTintColor: colors.tabBarActive || colors.primary,
+        tabBarInactiveTintColor: colors.tabBarInactive || colors.textSecondary,
         tabBarStyle: {
-          backgroundColor: colors.card,
+          backgroundColor: colors.tabBarBackground || colors.card,
           borderTopWidth: 0,
+          borderTopColor: colors.tabBarBorder || 'transparent',
           height: Platform.OS === 'ios' ? 88 : 70,
           paddingBottom: Platform.OS === 'ios' ? 28 : 12,
-          paddingTop: 12,
+          paddingTop: 10,
+          // Uber-style subtle upward shadow
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 12,
-          elevation: 15,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+          elevation: 10,
         },
         tabBarShowLabel: false,
       }}
@@ -158,6 +168,7 @@ const MainTabs = () => {
               iconFocused="home"
               color={color}
               label="Home"
+              colors={colors}
             />
           ),
         }}
@@ -174,6 +185,7 @@ const MainTabs = () => {
               iconFocused="calendar"
               color={color}
               label="Schedule"
+              colors={colors}
             />
           ),
         }}
@@ -190,6 +202,7 @@ const MainTabs = () => {
               iconFocused="wallet"
               color={color}
               label="Wallet"
+              colors={colors}
             />
           ),
         }}
@@ -206,6 +219,7 @@ const MainTabs = () => {
               iconFocused="person"
               color={color}
               label="Account"
+              colors={colors}
             />
           ),
         }}
@@ -294,6 +308,7 @@ const AppNavigator = () => {
         {/* Rides - Guarded */}
         <Stack.Screen name="PostRide" component={withApprovalGuard(PostRideScreen, 'Post Ride')} />
         <Stack.Screen name="RideRequests" component={withApprovalGuard(RideRequestsScreen, 'Ride Requests')} />
+        <Stack.Screen name="RateRider" component={RateRiderScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -303,11 +318,20 @@ const styles = StyleSheet.create({
   tabIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 50,
+    minWidth: 56,
   },
   tabLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
+    marginTop: 4,
+  },
+  tabLabelActive: {
+    fontWeight: '700',
+  },
+  tabIndicator: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     marginTop: 4,
   },
 });

@@ -52,6 +52,31 @@ class LoyaltyPoint extends Model
         return $loyaltyPoint;
     }
 
+    public static function deductPoints(User $user, int $points, string $source, ?int $sourceId = null, ?string $reason = null): self
+    {
+        $loyaltyPoint = self::create([
+            'user_id' => $user->id,
+            'points' => -$points,
+            'type' => 'deducted',
+            'source' => $source,
+            'source_id' => $sourceId,
+            'description' => $reason ?? "Deducted {$points} points from {$source}",
+        ]);
+
+        // Decrement points (floor at 0) - single DB update
+        $newAvailable = max(0, $user->available_loyalty_points - $points);
+        $newTotal = max(0, $user->total_loyalty_points - $points);
+        $user->update([
+            'available_loyalty_points' => $newAvailable,
+            'total_loyalty_points' => $newTotal,
+        ]);
+
+        // Check for tier downgrade
+        $user->updateLoyaltyTier();
+
+        return $loyaltyPoint;
+    }
+
     public static function redeemPoints(User $user, int $points, string $description): ?self
     {
         if ($user->available_loyalty_points < $points) {

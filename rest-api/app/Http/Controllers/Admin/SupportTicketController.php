@@ -7,6 +7,7 @@ use App\Models\SupportTicket;
 use App\Models\TicketMessage;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TicketReplyMail;
 
@@ -109,13 +110,21 @@ class SupportTicketController extends Controller
 
         AuditLog::log('ticket_reply', "Reply added to ticket #{$ticket->ticket_number}", $ticket);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Reply sent successfully.',
+                'message_id' => $message->id,
+            ]);
+        }
+
         return back()->with('success', 'Reply sent successfully.' . (!$request->boolean('is_internal') && ($ticket->guest_email || $ticket->user?->email) ? ' Email notification sent.' : ''));
     }
 
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:open,in_progress,resolved,closed',
+            'status' => 'required|in:open,in_progress,waiting_response,resolved,closed',
             'resolution_note' => 'nullable|string|max:1000',
         ]);
 
@@ -136,6 +145,10 @@ class SupportTicketController extends Controller
 
         AuditLog::log('ticket_status_changed', "Ticket #{$ticket->ticket_number} status changed from {$oldStatus} to {$request->status}", $ticket);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Ticket status updated.']);
+        }
+
         return back()->with('success', 'Ticket status updated.');
     }
 
@@ -150,7 +163,80 @@ class SupportTicketController extends Controller
 
         AuditLog::log('ticket_assigned', "Ticket #{$ticket->ticket_number} assigned", $ticket);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Ticket assigned successfully.']);
+        }
+
         return back()->with('success', 'Ticket assigned successfully.');
+    }
+
+    public function guestActivity($id)
+    {
+        $isOnline = Cache::get("ticket_online_{$id}", false);
+        $ticket = SupportTicket::find($id);
+        $messageCount = $ticket ? $ticket->messages()->where('is_internal', false)->count() : 0;
+
+        return response()->json([
+            'is_online' => (bool) $isOnline,
+            'message_count' => $messageCount,
+            'status' => $ticket->status ?? 'unknown',
+        ]);
+    }
+
+    /**
+     * Admin typing indicator - sets cache, returns guest typing status
+     */
+    public function typing($id)
+    {
+        $ticket = SupportTicket::find($id);
+        if (!$ticket) {
+            return response()->json(['success' => false, 'message' => 'Ticket not found'], 404);
+        }
+
+        Cache::put("ticket_typing_admin_{$id}", true, now()->addSeconds(3));
+
+        return response()->json([
+            'success' => true,
+            'guest_typing' => (bool) Cache::get("ticket_typing_guest_{$id}", false),
+        ]);
+    }
+
+    /**
+     * Get new messages since a given message ID (incremental polling for admin)
+     */
+    public function getMessages(Request $request, $id)
+    {
+        $ticket = SupportTicket::find($id);
+        if (!$ticket) {
+            return response()->json(['success' => false, 'message' => 'Ticket not found'], 404);
+        }
+
+        $afterId = (int) $request->query('after', 0);
+
+        $query = $ticket->messages()->with('user')->orderBy('created_at', 'asc');
+
+        if ($afterId > 0) {
+            $query->where('id', '>', $afterId);
+        }
+
+        $messages = $query->get()->map(function ($msg) {
+            return [
+                'id' => $msg->id,
+                'sender_type' => $msg->sender_type,
+                'sender_name' => $msg->sender_type === 'admin' ? ($msg->user->name ?? 'Admin') : null,
+                'message' => $msg->message,
+                'is_internal' => (bool) $msg->is_internal,
+                'created_at' => $msg->created_at->format('M d \a\t h:i A'),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'messages' => $messages,
+            'guest_typing' => (bool) Cache::get("ticket_typing_guest_{$id}", false),
+            'guest_online' => (bool) Cache::get("ticket_online_{$id}", false),
+            'ticket_status' => $ticket->status,
+        ]);
     }
 
     public function updatePriority(Request $request, $id)
@@ -164,6 +250,10 @@ class SupportTicketController extends Controller
         $ticket->update(['priority' => $request->priority]);
 
         AuditLog::log('ticket_priority_changed', "Ticket #{$ticket->ticket_number} priority changed from {$oldPriority} to {$request->priority}", $ticket);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Priority updated.']);
+        }
 
         return back()->with('success', 'Priority updated.');
     }

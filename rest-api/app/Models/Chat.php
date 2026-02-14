@@ -40,7 +40,12 @@ class Chat extends Model
 
     public function driver()
     {
-        return $this->belongsTo(Driver::class);
+        return $this->belongsTo(User::class, 'driver_id');
+    }
+
+    public function driverProfile()
+    {
+        return $this->belongsTo(Driver::class, 'driver_id', 'user_id');
     }
 
     public function messages()
