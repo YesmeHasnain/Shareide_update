@@ -244,7 +244,7 @@ const ScheduleRideScreen = ({ navigation, route }) => {
             },
             {
               text: 'OK',
-              onPress: () => navigation.navigate('Home'),
+              onPress: () => navigation.navigate('MainTabs'),
             },
           ]
         );

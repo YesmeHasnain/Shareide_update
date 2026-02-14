@@ -26,6 +26,7 @@ const RED = '#EF4444';
 const LIGHT_BG = '#F7F8FA';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+const GOOGLE_API_KEY = 'AIzaSyC3D7EgF9_N8jzEYubmJr0uIGbyzGdjOqU';
 const RECENT_SEARCHES_KEY = 'recent_searches';
 const SAVED_PLACES_KEY = 'saved_places';
 
@@ -40,7 +41,6 @@ const LocationSearchScreen = ({ route, navigation }) => {
   const existingPickup = params.pickup || null;
   const existingDropoff = params.dropoff || null;
 
-  // Active field: 'pickup' or 'dropoff'
   const [activeField, setActiveField] = useState(initialType);
   const [pickupText, setPickupText] = useState(existingPickup?.name || '');
   const [dropoffText, setDropoffText] = useState(existingDropoff?.name || '');
@@ -50,8 +50,14 @@ const LocationSearchScreen = ({ route, navigation }) => {
   const [recentSearches, setRecentSearches] = useState([]);
   const [savedPlaces, setSavedPlaces] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [selecting, setSelecting] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
   const searchTimeout = useRef(null);
+  const sessionToken = useRef(generateSessionToken());
+
+  function generateSessionToken() {
+    return 'xxxx-xxxx-xxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16));
+  }
 
   useEffect(() => {
     loadRecentSearches();
@@ -63,7 +69,6 @@ const LocationSearchScreen = ({ route, navigation }) => {
       useNativeDriver: true,
     }).start();
 
-    // Focus the active field
     setTimeout(() => {
       if (initialType === 'pickup') {
         pickupRef.current?.focus();
@@ -89,7 +94,9 @@ const LocationSearchScreen = ({ route, navigation }) => {
 
   const saveRecentSearch = async (location) => {
     try {
-      const updated = [location, ...recentSearches.filter(s => s.address !== location.address)].slice(0, 8);
+      const updated = [location, ...recentSearches.filter(s =>
+        s.name !== location.name || s.address !== location.address
+      )].slice(0, 10);
       await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
       setRecentSearches(updated);
     } catch (e) {}
@@ -103,7 +110,6 @@ const LocationSearchScreen = ({ route, navigation }) => {
       const coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
       setCurrentLocation(coords);
 
-      // Reverse geocode to get address
       try {
         const [address] = await Location.reverseGeocodeAsync(coords);
         if (address) {
@@ -127,6 +133,56 @@ const LocationSearchScreen = ({ route, navigation }) => {
     } catch (e) {}
   };
 
+  // Google Places Autocomplete
+  const searchWithGoogle = async (text) => {
+    try {
+      const locationBias = currentLocation
+        ? `&location=${currentLocation.latitude},${currentLocation.longitude}&radius=50000`
+        : '';
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(text)}&key=${GOOGLE_API_KEY}&components=country:pk&language=en&sessiontoken=${sessionToken.current}${locationBias}`
+      );
+      const data = await response.json();
+      if (data.status === 'OK' && data.predictions?.length > 0) {
+        return data.predictions.map((p) => ({
+          id: p.place_id,
+          placeId: p.place_id,
+          name: p.structured_formatting?.main_text || p.description.split(',')[0],
+          address: p.structured_formatting?.secondary_text || p.description.split(',').slice(1).join(',').trim(),
+          fullAddress: p.description,
+          source: 'google',
+        }));
+      }
+    } catch (e) {}
+    return null;
+  };
+
+  // Nominatim fallback
+  const searchWithNominatim = async (text) => {
+    try {
+      const locationBias = currentLocation
+        ? `&viewbox=${currentLocation.longitude - 0.5},${currentLocation.latitude - 0.5},${currentLocation.longitude + 0.5},${currentLocation.latitude + 0.5}&bounded=0`
+        : '&viewbox=60.0,23.0,77.0,37.0&bounded=0';
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&countrycodes=pk&limit=15&addressdetails=1${locationBias}`,
+        { headers: { 'User-Agent': 'Shareide/1.0' } }
+      );
+      const data = await response.json();
+      if (data?.length > 0) {
+        return data.map((p, i) => ({
+          id: p.place_id || i,
+          name: p.name || p.display_name.split(',')[0],
+          address: p.display_name.split(',').slice(1, 3).join(',').trim(),
+          fullAddress: p.display_name,
+          latitude: parseFloat(p.lat),
+          longitude: parseFloat(p.lon),
+          source: 'nominatim',
+        }));
+      }
+    } catch (e) {}
+    return [];
+  };
+
   const searchPlaces = async (text) => {
     if (!text || text.length < 2) {
       setSearchResults([]);
@@ -134,24 +190,14 @@ const LocationSearchScreen = ({ route, navigation }) => {
     }
     setSearching(true);
     try {
-      // Add viewbox for Pakistan to get better results
-      const viewbox = '60.0,23.0,77.0,37.0';
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&countrycodes=pk&limit=8&addressdetails=1&viewbox=${viewbox}&bounded=0`,
-        { headers: { 'User-Agent': 'Shareide/1.0' } }
-      );
-      const data = await response.json();
-      if (data?.length > 0) {
-        setSearchResults(data.map((p, i) => ({
-          id: p.place_id || i,
-          name: p.name || p.display_name.split(',')[0],
-          address: p.display_name.split(',').slice(1, 3).join(',').trim(),
-          fullAddress: p.display_name,
-          latitude: parseFloat(p.lat),
-          longitude: parseFloat(p.lon),
-        })));
+      // Try Google Places first (much better results)
+      const googleResults = await searchWithGoogle(text);
+      if (googleResults && googleResults.length > 0) {
+        setSearchResults(googleResults);
       } else {
-        setSearchResults([]);
+        // Fallback to Nominatim
+        const nominatimResults = await searchWithNominatim(text);
+        setSearchResults(nominatimResults || []);
       }
     } catch (e) {
       setSearchResults([]);
@@ -160,59 +206,97 @@ const LocationSearchScreen = ({ route, navigation }) => {
     }
   };
 
+  // Get coordinates from Google Place Details
+  const getPlaceDetails = async (placeId) => {
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry,name,formatted_address&key=${GOOGLE_API_KEY}&sessiontoken=${sessionToken.current}`
+      );
+      const data = await response.json();
+      if (data.status === 'OK' && data.result?.geometry) {
+        // Generate new session token after place details (billing optimization)
+        sessionToken.current = generateSessionToken();
+        return {
+          latitude: data.result.geometry.location.lat,
+          longitude: data.result.geometry.location.lng,
+          name: data.result.name,
+          address: data.result.formatted_address,
+        };
+      }
+    } catch (e) {}
+    return null;
+  };
+
   const handleTextChange = (text) => {
     if (activeField === 'pickup') {
       setPickupText(text);
-      setPickupLocation(null); // Clear selected location when typing
+      setPickupLocation(null);
     } else {
       setDropoffText(text);
       setDropoffLocation(null);
     }
 
-    // Debounced search
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => searchPlaces(text), 300);
   };
 
-  const selectLocation = (location) => {
+  const navigateWithLocations = (pickup, dropoff) => {
+    navigation.navigate('RideOptions', { pickup, dropoff });
+  };
+
+  const selectLocation = async (location) => {
     Keyboard.dismiss();
-    saveRecentSearch(location);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
+    let finalLocation = { ...location };
+
+    // If Google result (no coordinates yet), fetch from Place Details
+    if (location.source === 'google' && location.placeId && !location.latitude) {
+      setSelecting(true);
+      const details = await getPlaceDetails(location.placeId);
+      setSelecting(false);
+      if (details) {
+        finalLocation = {
+          ...finalLocation,
+          latitude: details.latitude,
+          longitude: details.longitude,
+          name: finalLocation.name || details.name,
+          address: details.address || finalLocation.address,
+        };
+      } else {
+        // Failed to get coordinates - skip
+        return;
+      }
+    }
+
+    saveRecentSearch(finalLocation);
+
     if (activeField === 'pickup') {
-      setPickupLocation(location);
-      setPickupText(location.name);
+      setPickupLocation(finalLocation);
+      setPickupText(finalLocation.name);
       setSearchResults([]);
 
-      // If dropoff is already set, go back to HomeScreen with both
       if (dropoffLocation) {
-        navigation.navigate('MainTabs', {
-          screen: 'HomeTab',
-          params: { pickup: location, dropoff: dropoffLocation },
-        });
+        navigateWithLocations(finalLocation, dropoffLocation);
       } else {
-        // Switch to dropoff field
         setActiveField('dropoff');
         setDropoffText('');
         setTimeout(() => dropoffRef.current?.focus(), 100);
       }
     } else {
-      setDropoffLocation(location);
-      setDropoffText(location.name);
+      setDropoffLocation(finalLocation);
+      setDropoffText(finalLocation.name);
       setSearchResults([]);
 
-      // Use existing pickup or current location
       const finalPickup = pickupLocation || (currentLocation ? {
         ...currentLocation,
         name: currentLocation.name || 'Current Location',
         address: currentLocation.address || 'Your current location',
       } : null);
 
-      // Go back to HomeScreen with both locations
-      navigation.navigate('MainTabs', {
-        screen: 'HomeTab',
-        params: { pickup: finalPickup, dropoff: location },
-      });
+      if (finalPickup) {
+        navigateWithLocations(finalPickup, finalLocation);
+      }
     }
   };
 
@@ -230,14 +314,9 @@ const LocationSearchScreen = ({ route, navigation }) => {
     setPickupText(loc.name);
     setSearchResults([]);
 
-    // If we're on pickup field and dropoff is set, navigate home
     if (activeField === 'pickup' && dropoffLocation) {
-      navigation.navigate('MainTabs', {
-        screen: 'HomeTab',
-        params: { pickup: loc, dropoff: dropoffLocation },
-      });
+      navigateWithLocations(loc, dropoffLocation);
     } else {
-      // Switch to dropoff
       setActiveField('dropoff');
       setDropoffText('');
       setTimeout(() => dropoffRef.current?.focus(), 100);
@@ -246,7 +325,6 @@ const LocationSearchScreen = ({ route, navigation }) => {
 
   const switchFields = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Swap pickup and dropoff
     const tempLoc = pickupLocation;
     const tempText = pickupText;
     setPickupLocation(dropoffLocation);
@@ -306,7 +384,6 @@ const LocationSearchScreen = ({ route, navigation }) => {
                   selectLocation(saved);
                 } else {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  // User hasn't saved this yet - just show a hint
                 }
               }}
               activeOpacity={0.7}
@@ -334,7 +411,6 @@ const LocationSearchScreen = ({ route, navigation }) => {
 
       {/* Header with Two Fields */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        {/* Back Button */}
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => navigation.goBack()}
@@ -343,7 +419,6 @@ const LocationSearchScreen = ({ route, navigation }) => {
           <Ionicons name="arrow-back" size={22} color={DARK} />
         </TouchableOpacity>
 
-        {/* Input Fields Container */}
         <View style={styles.fieldsContainer}>
           {/* Timeline Dots */}
           <View style={styles.timelineDots}>
@@ -358,7 +433,6 @@ const LocationSearchScreen = ({ route, navigation }) => {
 
           {/* Fields */}
           <View style={styles.fieldsWrap}>
-            {/* Pickup Field */}
             <TouchableOpacity
               style={[
                 styles.inputField,
@@ -388,7 +462,6 @@ const LocationSearchScreen = ({ route, navigation }) => {
               )}
             </TouchableOpacity>
 
-            {/* Dropoff Field */}
             <TouchableOpacity
               style={[
                 styles.inputField,
@@ -430,7 +503,6 @@ const LocationSearchScreen = ({ route, navigation }) => {
         </View>
       </View>
 
-      {/* Divider */}
       <View style={styles.divider} />
 
       {/* Content */}
@@ -442,7 +514,6 @@ const LocationSearchScreen = ({ route, navigation }) => {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <>
-            {/* Use Current Location */}
             {showCurrentLoc && (
               <TouchableOpacity
                 style={styles.currentLocRow}
@@ -461,10 +532,8 @@ const LocationSearchScreen = ({ route, navigation }) => {
               </TouchableOpacity>
             )}
 
-            {/* Saved Places */}
             {showSaved && renderSavedPlaces()}
 
-            {/* Section Label */}
             {showRecent && (
               <Text style={styles.sectionLabel}>RECENT</Text>
             )}
@@ -479,11 +548,14 @@ const LocationSearchScreen = ({ route, navigation }) => {
             onPress={() => selectLocation(item)}
             activeOpacity={0.6}
           >
-            <View style={styles.placeIcon}>
+            <View style={[
+              styles.placeIcon,
+              searchResults.length > 0 && { backgroundColor: RED + '10' },
+            ]}>
               <Ionicons
                 name={searchResults.length > 0 ? 'location' : 'time-outline'}
                 size={18}
-                color={GRAY}
+                color={searchResults.length > 0 ? RED : GRAY}
               />
             </View>
             <View style={styles.placeInfo}>
@@ -504,11 +576,19 @@ const LocationSearchScreen = ({ route, navigation }) => {
         }
       />
 
-      {/* Loading Indicator */}
+      {/* Loading Indicators */}
       {searching && (
         <View style={styles.searchingBar}>
           <ActivityIndicator size="small" color={PRIMARY} />
           <Text style={styles.searchingText}>Searching...</Text>
+        </View>
+      )}
+      {selecting && (
+        <View style={styles.selectingOverlay}>
+          <View style={styles.selectingBox}>
+            <ActivityIndicator size="small" color={PRIMARY} />
+            <Text style={styles.selectingText}>Getting location...</Text>
+          </View>
         </View>
       )}
     </Animated.View>
@@ -755,6 +835,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: GRAY,
+  },
+
+  // Selecting overlay
+  selectingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectingBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 16,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  selectingText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: DARK,
   },
 });
 

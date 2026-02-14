@@ -330,7 +330,7 @@ const ScheduledRidesScreen = ({ navigation }) => {
         <TouchableOpacity
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            navigation.navigate('Home');
+            navigation.navigate('MainTabs');
           }}
           activeOpacity={0.8}
         >
@@ -369,7 +369,7 @@ const ScheduledRidesScreen = ({ navigation }) => {
           style={styles.addButton}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            navigation.navigate('Home');
+            navigation.navigate('MainTabs');
           }}
         >
           <Ionicons name="add" size={24} color="#000" />
