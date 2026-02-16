@@ -14,10 +14,10 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { walletAPI } from '../../api/wallet';
-
-const PRIMARY_COLOR = '#FCC014';
+import { useTheme } from '../../context/ThemeContext';
 
 const TopUpScreen = ({ navigation }) => {
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const [amount, setAmount] = useState('');
   const [selectedMethod, setSelectedMethod] = useState('card');
@@ -26,15 +26,15 @@ const TopUpScreen = ({ navigation }) => {
 
   const quickAmounts = [500, 1000, 2000, 5000];
 
-  const requiresAccountNumber = selectedMethod === 'alfa_wallet' || selectedMethod === 'bank_account';
-  const accountPlaceholder = selectedMethod === 'alfa_wallet' ? '03XX XXXXXXX' : 'Account Number';
+  const requiresAccountNumber = selectedMethod === 'alfa_wallet' || selectedMethod === 'bank_account' || selectedMethod === 'jazzcash' || selectedMethod === 'easypaisa';
+  const accountPlaceholder = (selectedMethod === 'alfa_wallet' || selectedMethod === 'jazzcash' || selectedMethod === 'easypaisa') ? '03XX XXXXXXX' : 'Account Number';
 
   const paymentMethods = [
     { id: 'card', name: 'Debit/Credit Card', icon: 'card-outline', desc: 'Visa, Mastercard' },
     { id: 'alfa_wallet', name: 'Alfa Wallet', icon: 'phone-portrait-outline', desc: 'Bank Alfalah Wallet' },
     { id: 'bank_account', name: 'Bank Account', icon: 'business-outline', desc: 'Alfalah Bank Account' },
-    { id: 'jazzcash', name: 'JazzCash', icon: 'phone-portrait-outline', desc: 'Coming Soon', disabled: true },
-    { id: 'easypaisa', name: 'Easypaisa', icon: 'wallet-outline', desc: 'Coming Soon', disabled: true },
+    { id: 'jazzcash', name: 'JazzCash', icon: 'phone-portrait-outline', desc: 'Mobile Wallet' },
+    { id: 'easypaisa', name: 'Easypaisa', icon: 'wallet-outline', desc: 'Mobile Wallet' },
   ];
 
   const handleTopUp = async () => {
@@ -123,15 +123,15 @@ const TopUpScreen = ({ navigation }) => {
   const canProceed = isValidAmount && isAccountValid;
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.container, { backgroundColor: colors.backgroundSecondary || colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.card} />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color="#000" />
+      <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: colors.card }]}>
+        <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.inputBackground }]} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={20} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Top Up</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Top Up</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -141,46 +141,54 @@ const TopUpScreen = ({ navigation }) => {
         keyboardShouldPersistTaps="handled"
       >
         {/* Amount Input Card */}
-        <View style={styles.amountCard}>
-          <Text style={styles.amountLabel}>Enter Amount</Text>
+        <View style={[styles.amountCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.amountLabel, { color: colors.textTertiary }]}>Enter Amount</Text>
           <View style={styles.amountRow}>
-            <Text style={styles.currencyText}>Rs.</Text>
+            <Text style={[styles.currencyText, { color: colors.primary }]}>Rs.</Text>
             <TextInput
-              style={styles.amountInput}
+              style={[styles.amountInput, { color: colors.text }]}
               value={amount}
               onChangeText={(text) => {
                 setAmount(text.replace(/[^0-9]/g, ''));
                 Haptics.selectionAsync();
               }}
               placeholder="0"
-              placeholderTextColor="#D1D5DB"
+              placeholderTextColor={colors.textTertiary}
               keyboardType="number-pad"
               maxLength={5}
             />
           </View>
-          <View style={styles.amountRange}>
-            <Text style={styles.rangeText}>Min Rs. 100</Text>
-            <View style={styles.rangeDot} />
-            <Text style={styles.rangeText}>Max Rs. 50,000</Text>
+          <View style={[styles.amountRange, { borderTopColor: colors.border }]}>
+            <Text style={[styles.rangeText, { color: colors.textTertiary }]}>Min Rs. 100</Text>
+            <View style={[styles.rangeDot, { backgroundColor: colors.border }]} />
+            <Text style={[styles.rangeText, { color: colors.textTertiary }]}>Max Rs. 50,000</Text>
           </View>
         </View>
 
         {/* Quick Amounts */}
-        <Text style={styles.sectionTitle}>Quick Select</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Select</Text>
         <View style={styles.quickGrid}>
           {quickAmounts.map((amt) => {
             const isSelected = amount === amt.toString();
             return (
               <TouchableOpacity
                 key={amt}
-                style={[styles.quickBtn, isSelected && styles.quickBtnSelected]}
+                style={[
+                  styles.quickBtn,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                  isSelected && { backgroundColor: colors.primary, borderColor: colors.primary },
+                ]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setAmount(amt.toString());
                 }}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.quickBtnText, isSelected && styles.quickBtnTextSelected]}>
+                <Text style={[
+                  styles.quickBtnText,
+                  { color: colors.text },
+                  isSelected && { color: '#000' },
+                ]}>
                   Rs. {amt.toLocaleString()}
                 </Text>
               </TouchableOpacity>
@@ -189,8 +197,8 @@ const TopUpScreen = ({ navigation }) => {
         </View>
 
         {/* Payment Methods */}
-        <Text style={styles.sectionTitle}>Payment Method</Text>
-        <View style={styles.methodsList}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Payment Method</Text>
+        <View style={[styles.methodsList, { backgroundColor: colors.card }]}>
           {paymentMethods.map((method) => {
             const isSelected = selectedMethod === method.id;
             return (
@@ -198,7 +206,8 @@ const TopUpScreen = ({ navigation }) => {
                 key={method.id}
                 style={[
                   styles.methodItem,
-                  isSelected && !method.disabled && styles.methodItemSelected,
+                  { borderBottomColor: colors.border },
+                  isSelected && !method.disabled && { backgroundColor: colors.primary + '12' },
                   method.disabled && styles.methodItemDisabled,
                 ]}
                 onPress={() => {
@@ -211,27 +220,30 @@ const TopUpScreen = ({ navigation }) => {
               >
                 <View style={[
                   styles.methodIcon,
-                  isSelected && !method.disabled && { backgroundColor: PRIMARY_COLOR + '20' },
+                  { backgroundColor: colors.inputBackground },
+                  isSelected && !method.disabled && { backgroundColor: colors.primary + '20' },
                 ]}>
                   <Ionicons
                     name={method.icon}
                     size={22}
-                    color={method.disabled ? '#D1D5DB' : isSelected ? PRIMARY_COLOR : '#6B7280'}
+                    color={method.disabled ? colors.border : isSelected ? colors.primary : colors.textSecondary}
                   />
                 </View>
                 <View style={styles.methodInfo}>
                   <Text style={[
                     styles.methodName,
-                    method.disabled && { color: '#D1D5DB' },
+                    { color: colors.text },
+                    method.disabled && { color: colors.border },
                   ]}>{method.name}</Text>
                   <Text style={[
                     styles.methodDesc,
-                    method.disabled && { color: '#E5E7EB' },
+                    { color: colors.textTertiary },
+                    method.disabled && { color: colors.border },
                   ]}>{method.desc}</Text>
                 </View>
                 {!method.disabled && (
-                  <View style={[styles.radio, isSelected && styles.radioSelected]}>
-                    {isSelected && <View style={styles.radioDot} />}
+                  <View style={[styles.radio, { borderColor: colors.border }, isSelected && { borderColor: colors.primary }]}>
+                    {isSelected && <View style={[styles.radioDot, { backgroundColor: colors.primary }]} />}
                   </View>
                 )}
               </TouchableOpacity>
@@ -242,25 +254,25 @@ const TopUpScreen = ({ navigation }) => {
         {/* Account Number Input */}
         {requiresAccountNumber && (
           <View style={styles.accountSection}>
-            <Text style={styles.sectionTitle}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
               {selectedMethod === 'alfa_wallet' ? 'Wallet Number' : 'Account Number'}
             </Text>
-            <View style={styles.accountInputBox}>
-              <Ionicons name="keypad-outline" size={20} color="#9CA3AF" />
+            <View style={[styles.accountInputBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Ionicons name="keypad-outline" size={20} color={colors.textTertiary} />
               <TextInput
-                style={styles.accountInput}
+                style={[styles.accountInput, { color: colors.text }]}
                 value={accountNumber}
                 onChangeText={(text) => {
                   setAccountNumber(text);
                   Haptics.selectionAsync();
                 }}
                 placeholder={accountPlaceholder}
-                placeholderTextColor="#D1D5DB"
+                placeholderTextColor={colors.textTertiary}
                 keyboardType={selectedMethod === 'alfa_wallet' ? 'phone-pad' : 'number-pad'}
                 maxLength={selectedMethod === 'alfa_wallet' ? 11 : 20}
               />
             </View>
-            <Text style={styles.accountHint}>
+            <Text style={[styles.accountHint, { color: colors.textTertiary }]}>
               {selectedMethod === 'alfa_wallet'
                 ? 'Enter your registered Alfa Wallet mobile number'
                 : 'Enter your Alfalah Bank account number'}
@@ -269,9 +281,9 @@ const TopUpScreen = ({ navigation }) => {
         )}
 
         {/* Security Note */}
-        <View style={styles.securityNote}>
-          <Ionicons name="shield-checkmark" size={18} color="#10B981" />
-          <Text style={styles.securityText}>
+        <View style={[styles.securityNote, { backgroundColor: colors.success + '12' }]}>
+          <Ionicons name="shield-checkmark" size={18} color={colors.success} />
+          <Text style={[styles.securityText, { color: colors.textSecondary }]}>
             Secured via Bank Alfalah. Your details are never stored.
           </Text>
         </View>
@@ -280,9 +292,13 @@ const TopUpScreen = ({ navigation }) => {
       </ScrollView>
 
       {/* Bottom Button */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16, backgroundColor: colors.card, borderTopColor: colors.border }]}>
         <TouchableOpacity
-          style={[styles.payButton, !canProceed && styles.payButtonDisabled]}
+          style={[
+            styles.payButton,
+            { backgroundColor: colors.primary },
+            !canProceed && { backgroundColor: colors.inputBackground },
+          ]}
           onPress={handleTopUp}
           disabled={!canProceed || loading}
           activeOpacity={0.8}
@@ -291,7 +307,10 @@ const TopUpScreen = ({ navigation }) => {
             <ActivityIndicator color="#000" size="small" />
           ) : (
             <>
-              <Text style={[styles.payButtonText, !canProceed && styles.payButtonTextDisabled]}>
+              <Text style={[
+                styles.payButtonText,
+                !canProceed && { color: colors.textTertiary },
+              ]}>
                 {canProceed
                   ? `Top Up Rs. ${numAmount.toLocaleString()}`
                   : !isValidAmount ? 'Enter Amount (min Rs. 100)' : 'Enter Account Number'
@@ -309,7 +328,6 @@ const TopUpScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   header: {
     flexDirection: 'row',
@@ -317,20 +335,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1A1A2E',
   },
   headerRight: {
     width: 40,
@@ -342,7 +357,6 @@ const styles = StyleSheet.create({
 
   // Amount Card
   amountCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 24,
     marginBottom: 28,
@@ -356,7 +370,6 @@ const styles = StyleSheet.create({
   amountLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#9CA3AF',
     marginBottom: 16,
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -369,13 +382,11 @@ const styles = StyleSheet.create({
   currencyText: {
     fontSize: 24,
     fontWeight: '700',
-    color: PRIMARY_COLOR,
     marginRight: 4,
   },
   amountInput: {
     fontSize: 48,
     fontWeight: '800',
-    color: '#1A1A2E',
     minWidth: 80,
     textAlign: 'center',
     padding: 0,
@@ -385,26 +396,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
     gap: 12,
   },
   rangeText: {
     fontSize: 12,
-    color: '#9CA3AF',
     fontWeight: '500',
   },
   rangeDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#E5E7EB',
   },
 
   // Section Title
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1A1A2E',
     marginBottom: 12,
   },
 
@@ -420,27 +427,16 @@ const styles = StyleSheet.create({
     minWidth: '45%',
     paddingVertical: 16,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-  },
-  quickBtnSelected: {
-    backgroundColor: PRIMARY_COLOR,
-    borderColor: PRIMARY_COLOR,
   },
   quickBtnText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#374151',
-  },
-  quickBtnTextSelected: {
-    color: '#000',
   },
 
   // Payment Methods
   methodsList: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 24,
@@ -455,10 +451,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  methodItemSelected: {
-    backgroundColor: '#FFFBEB',
   },
   methodItemDisabled: {
     opacity: 0.5,
@@ -467,7 +459,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
@@ -478,30 +469,23 @@ const styles = StyleSheet.create({
   methodName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1A1A2E',
     marginBottom: 2,
   },
   methodDesc: {
     fontSize: 13,
-    color: '#9CA3AF',
   },
   radio: {
     width: 22,
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  radioSelected: {
-    borderColor: PRIMARY_COLOR,
   },
   radioDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: PRIMARY_COLOR,
   },
 
   // Account Input
@@ -511,23 +495,19 @@ const styles = StyleSheet.create({
   accountInputBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderRadius: 14,
     paddingHorizontal: 16,
     height: 54,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
     gap: 12,
   },
   accountInput: {
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: '#1A1A2E',
   },
   accountHint: {
     fontSize: 12,
-    color: '#9CA3AF',
     marginTop: 8,
     marginLeft: 4,
   },
@@ -536,7 +516,6 @@ const styles = StyleSheet.create({
   securityNote: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0FDF4',
     padding: 14,
     borderRadius: 12,
     gap: 10,
@@ -544,7 +523,6 @@ const styles = StyleSheet.create({
   securityText: {
     flex: 1,
     fontSize: 13,
-    color: '#6B7280',
     lineHeight: 18,
   },
 
@@ -556,9 +534,7 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 20,
     paddingTop: 16,
-    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.06,
@@ -569,21 +545,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: PRIMARY_COLOR,
     paddingVertical: 16,
     borderRadius: 16,
     gap: 8,
-  },
-  payButtonDisabled: {
-    backgroundColor: '#F3F4F6',
   },
   payButtonText: {
     fontSize: 17,
     fontWeight: '700',
     color: '#000',
-  },
-  payButtonTextDisabled: {
-    color: '#9CA3AF',
   },
 });
 

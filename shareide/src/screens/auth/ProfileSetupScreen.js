@@ -21,11 +21,11 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { authAPI } from '../../api/auth';
 import apiClient from '../../api/client';
 import { maleAvatars, femaleAvatars } from '../../utils/avatars';
 
-const PRIMARY_COLOR = '#FCC014';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const AVATAR_SIZE = (SCREEN_WIDTH - 80) / 5;
 
@@ -33,6 +33,7 @@ const ProfileSetupScreen = ({ route, navigation }) => {
   const auth = useAuth();
   const login = auth?.login;
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const params = route?.params || {};
   const { phone, gender, verificationToken, token, user, isNewUser } = params;
 
@@ -189,8 +190,8 @@ const ProfileSetupScreen = ({ route, navigation }) => {
   const isValid = name.trim().length > 2;
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
@@ -203,26 +204,26 @@ const ProfileSetupScreen = ({ route, navigation }) => {
         >
           {/* Header */}
           <TouchableOpacity
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: colors.borderLight }]}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={20} color="#000" />
+            <Ionicons name="arrow-back" size={20} color={colors.text} />
           </TouchableOpacity>
 
           {/* Title */}
-          <Text style={styles.title}>Add a Profile Picture</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, { color: colors.text }]}>Add a Profile Picture</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Help drivers or riders identify you more easily, this increases trust.
           </Text>
 
           {/* Avatar Section */}
           <View style={styles.avatarSection}>
             <TouchableOpacity onPress={pickImage} activeOpacity={0.9}>
-              <View style={styles.avatarContainer}>
+              <View style={[styles.avatarContainer, { backgroundColor: colors.borderLight }]}>
                 {getProfileDisplay() ? (
                   <Image source={getProfileDisplay()} style={styles.avatar} />
                 ) : (
-                  <Ionicons name="person" size={48} color="#9CA3AF" />
+                  <Ionicons name="person" size={48} color={colors.textTertiary} />
                 )}
               </View>
             </TouchableOpacity>
@@ -230,14 +231,14 @@ const ProfileSetupScreen = ({ route, navigation }) => {
 
           {/* Name Input */}
           <View style={styles.inputSection}>
-            <Text style={styles.label}>Your Name</Text>
-            <View style={styles.inputBox}>
+            <Text style={[styles.label, { color: colors.text }]}>Your Name</Text>
+            <View style={[styles.inputBox, { backgroundColor: colors.inputBackground }]}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 value={name}
                 onChangeText={setName}
                 placeholder="Enter your full name"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.textTertiary}
                 autoCapitalize="words"
                 editable={!loading}
               />
@@ -249,7 +250,7 @@ const ProfileSetupScreen = ({ route, navigation }) => {
         <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 24 }]}>
           {/* Take Selfie Button */}
           <TouchableOpacity
-            style={[styles.primaryButton, { backgroundColor: PRIMARY_COLOR }]}
+            style={[styles.primaryButton, { backgroundColor: colors.primary }]}
             onPress={takePhoto}
             activeOpacity={0.8}
           >
@@ -258,27 +259,27 @@ const ProfileSetupScreen = ({ route, navigation }) => {
 
           {/* Choose from Library Button */}
           <TouchableOpacity
-            style={styles.secondaryButton}
+            style={[styles.secondaryButton, { backgroundColor: colors.warningLight }]}
             onPress={pickImage}
             activeOpacity={0.8}
           >
-            <Text style={styles.secondaryButtonText}>Choose from library</Text>
+            <Text style={[styles.secondaryButtonText, { color: colors.text }]}>Choose from library</Text>
           </TouchableOpacity>
 
           {/* Choose Avatar Button */}
           <TouchableOpacity
-            style={[styles.secondaryButton, { backgroundColor: '#E0E7FF', marginTop: 0 }]}
+            style={[styles.secondaryButton, { backgroundColor: colors.infoLight, marginTop: 0 }]}
             onPress={() => setShowAvatarModal(true)}
             activeOpacity={0.8}
           >
-            <Text style={[styles.secondaryButtonText, { color: '#4F46E5' }]}>Choose Shareide Avatar</Text>
+            <Text style={[styles.secondaryButtonText, { color: colors.info }]}>Choose Shareide Avatar</Text>
           </TouchableOpacity>
 
           {/* Complete Button */}
           <TouchableOpacity
             style={[
               styles.primaryButton,
-              { backgroundColor: isValid ? PRIMARY_COLOR : '#F3F4F6', marginTop: 24 },
+              { backgroundColor: isValid ? colors.primary : colors.borderLight, marginTop: 24 },
             ]}
             onPress={handleComplete}
             disabled={!isValid || loading}
@@ -287,7 +288,7 @@ const ProfileSetupScreen = ({ route, navigation }) => {
             {loading ? (
               <ActivityIndicator color="#000" />
             ) : (
-              <Text style={[styles.primaryButtonText, { color: isValid ? '#000' : '#9CA3AF' }]}>
+              <Text style={[styles.primaryButtonText, { color: isValid ? '#000' : colors.textTertiary }]}>
                 Complete Registration
               </Text>
             )}
@@ -299,10 +300,10 @@ const ProfileSetupScreen = ({ route, navigation }) => {
       <Modal visible={showAvatarModal} transparent animationType="slide" onRequestClose={() => setShowAvatarModal(false)}>
         <View style={styles.modalOverlay}>
           <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowAvatarModal(false)} />
-          <View style={styles.modalSheet}>
-            <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Choose Your Avatar</Text>
-            <Text style={styles.modalSubtitle}>
+          <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
+            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Choose Your Avatar</Text>
+            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
               {gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : ''} Avatars
             </Text>
             <FlatList
@@ -314,7 +315,7 @@ const ProfileSetupScreen = ({ route, navigation }) => {
                 <TouchableOpacity
                   style={[
                     styles.avatarGridItem,
-                    selectedAvatarIndex === index && { borderColor: PRIMARY_COLOR, borderWidth: 3 },
+                    selectedAvatarIndex === index && { borderColor: colors.primary, borderWidth: 3 },
                   ]}
                   onPress={() => selectAvatar(index)}
                   activeOpacity={0.7}
@@ -333,7 +334,6 @@ const ProfileSetupScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   keyboardView: {
     flex: 1,
@@ -346,7 +346,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
@@ -354,12 +353,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#000',
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 15,
-    color: '#6B7280',
     lineHeight: 22,
     marginBottom: 40,
   },
@@ -371,7 +368,6 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -387,19 +383,16 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#000',
     marginBottom: 8,
   },
   inputBox: {
     height: 52,
     borderRadius: 12,
-    backgroundColor: '#F9FAFB',
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
   input: {
     fontSize: 16,
-    color: '#000',
   },
   bottomSection: {
     paddingHorizontal: 24,
@@ -421,12 +414,10 @@ const styles = StyleSheet.create({
     borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FEF3C7',
   },
   secondaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
   },
   // Modal styles
   modalOverlay: {
@@ -438,7 +429,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalSheet: {
-    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 16,
@@ -448,7 +438,6 @@ const styles = StyleSheet.create({
   modalHandle: {
     width: 40,
     height: 4,
-    backgroundColor: '#D1D5DB',
     borderRadius: 2,
     alignSelf: 'center',
     marginTop: 12,
@@ -458,13 +447,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     textAlign: 'center',
-    color: '#000',
     marginBottom: 4,
   },
   modalSubtitle: {
     fontSize: 14,
     textAlign: 'center',
-    color: '#6B7280',
     marginBottom: 16,
   },
   avatarGrid: {

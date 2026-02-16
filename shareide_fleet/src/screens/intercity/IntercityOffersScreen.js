@@ -145,7 +145,7 @@ const IntercityOffersScreen = ({ navigation }) => {
         <View style={styles.modalOverlay}>
           <TouchableOpacity style={styles.modalBackdrop} onPress={() => setShowCreate(false)} />
           <View style={[styles.modalSheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + 16 }]}>
-            <View style={styles.modalHandle} />
+            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
             <Text style={[styles.modalTitle, { color: colors.text }]}>Post Intercity Ride</Text>
 
             <TextInput

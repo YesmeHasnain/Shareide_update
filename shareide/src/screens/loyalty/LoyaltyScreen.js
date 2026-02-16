@@ -14,25 +14,10 @@ import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { loyaltyAPI } from '../../api/loyalty';
-
-const PRIMARY_COLOR = '#FCC014';
-
-const TabButton = ({ label, isActive, onPress }) => (
-  <TouchableOpacity
-    onPress={() => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      onPress();
-    }}
-    activeOpacity={0.7}
-    style={[styles.tab, isActive && styles.tabActive]}
-  >
-    <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
-      {label}
-    </Text>
-  </TouchableOpacity>
-);
+import { useTheme } from '../../context/ThemeContext';
 
 const LoyaltyScreen = ({ navigation }) => {
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -108,31 +93,31 @@ const LoyaltyScreen = ({ navigation }) => {
   };
 
   const getTierColors = (tierName) => {
-    const colors = {
+    const tierColorMap = {
       Bronze: { bg: '#CD7F32', light: '#CD7F3220' },
       Silver: { bg: '#C0C0C0', light: '#C0C0C020' },
-      Gold: { bg: PRIMARY_COLOR, light: PRIMARY_COLOR + '20' },
+      Gold: { bg: colors.primary, light: colors.primary + '20' },
       Platinum: { bg: '#E5E4E2', light: '#E5E4E220' },
     };
-    return colors[tierName] || { bg: PRIMARY_COLOR, light: PRIMARY_COLOR + '20' };
+    return tierColorMap[tierName] || { bg: colors.primary, light: colors.primary + '20' };
   };
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
         <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
           <TouchableOpacity
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: colors.inputBackground }]}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={20} color="#000" />
+            <Ionicons name="arrow-back" size={20} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Loyalty</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Loyalty</Text>
           <View style={styles.placeholder} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={PRIMARY_COLOR} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
     );
@@ -147,26 +132,26 @@ const LoyaltyScreen = ({ navigation }) => {
     : 100;
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: colors.inputBackground }]}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={20} color="#000" />
+          <Ionicons name="arrow-back" size={20} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Loyalty</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Loyalty</Text>
         <TouchableOpacity
-          style={styles.historyButton}
+          style={[styles.historyButton, { backgroundColor: colors.inputBackground }]}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             navigation.navigate('PointsHistory');
           }}
         >
-          <Ionicons name="time-outline" size={20} color="#000" />
+          <Ionicons name="time-outline" size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
 
@@ -176,14 +161,14 @@ const LoyaltyScreen = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={PRIMARY_COLOR}
-            colors={[PRIMARY_COLOR]}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Points Card */}
-        <View style={styles.pointsCard}>
+        {/* Points Card - stays on primary background, text stays #000 */}
+        <View style={[styles.pointsCard, { backgroundColor: colors.primary }]}>
           <View style={styles.tierBadge}>
             <FontAwesome5 name={getTierIcon(currentTier?.name)} size={16} color="#000" />
             <Text style={styles.tierName}>{currentTier?.name || 'Bronze'} Member</Text>
@@ -234,18 +219,29 @@ const LoyaltyScreen = ({ navigation }) => {
         </View>
 
         {/* Tabs */}
-        <View style={styles.tabContainer}>
+        <View style={[styles.tabContainer, { backgroundColor: colors.inputBackground }]}>
           {[
             { key: 'overview', label: 'Overview' },
             { key: 'rewards', label: 'Rewards' },
             { key: 'achievements', label: 'Achievements' },
           ].map((tab) => (
-            <TabButton
+            <TouchableOpacity
               key={tab.key}
-              label={tab.label}
-              isActive={activeTab === tab.key}
-              onPress={() => setActiveTab(tab.key)}
-            />
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setActiveTab(tab.key);
+              }}
+              activeOpacity={0.7}
+              style={[styles.tab, activeTab === tab.key && { backgroundColor: colors.primary }]}
+            >
+              <Text style={[
+                styles.tabText,
+                { color: colors.textSecondary },
+                activeTab === tab.key && { color: '#000' },
+              ]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
           ))}
         </View>
 
@@ -255,10 +251,10 @@ const LoyaltyScreen = ({ navigation }) => {
             <>
               {/* Recent Activity */}
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Recent Activity</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Activity</Text>
                 {dashboard?.recent_points?.length > 0 ? (
                   dashboard.recent_points.slice(0, 5).map((point, index) => (
-                    <View key={index} style={styles.activityItem}>
+                    <View key={index} style={[styles.activityItem, { backgroundColor: colors.card }]}>
                       <View
                         style={[
                           styles.activityIcon,
@@ -272,8 +268,8 @@ const LoyaltyScreen = ({ navigation }) => {
                         />
                       </View>
                       <View style={styles.activityInfo}>
-                        <Text style={styles.activityTitle}>{point.description}</Text>
-                        <Text style={styles.activityDate}>
+                        <Text style={[styles.activityTitle, { color: colors.text }]}>{point.description}</Text>
+                        <Text style={[styles.activityDate, { color: colors.textSecondary }]}>
                           {new Date(point.created_at).toLocaleDateString()}
                         </Text>
                       </View>
@@ -289,9 +285,9 @@ const LoyaltyScreen = ({ navigation }) => {
                     </View>
                   ))
                 ) : (
-                  <View style={styles.emptyState}>
-                    <Ionicons name="time-outline" size={40} color="#9CA3AF" />
-                    <Text style={styles.emptyText}>No recent activity</Text>
+                  <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
+                    <Ionicons name="time-outline" size={40} color={colors.textTertiary} />
+                    <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No recent activity</Text>
                   </View>
                 )}
               </View>
@@ -299,12 +295,12 @@ const LoyaltyScreen = ({ navigation }) => {
               {/* Tier Benefits */}
               {currentTier?.benefits && currentTier.benefits.length > 0 && (
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Your Benefits</Text>
-                  <View style={styles.benefitsCard}>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Benefits</Text>
+                  <View style={[styles.benefitsCard, { backgroundColor: colors.card }]}>
                     {currentTier.benefits.map((benefit, index) => (
                       <View key={index} style={styles.benefitItem}>
-                        <Ionicons name="checkmark-circle" size={20} color={PRIMARY_COLOR} />
-                        <Text style={styles.benefitText}>{benefit}</Text>
+                        <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+                        <Text style={[styles.benefitText, { color: colors.textSecondary }]}>{benefit}</Text>
                       </View>
                     ))}
                   </View>
@@ -313,7 +309,7 @@ const LoyaltyScreen = ({ navigation }) => {
 
               {/* All Tiers */}
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Membership Tiers</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Membership Tiers</Text>
                 {tiers.map((tier, index) => {
                   const tierColors = getTierColors(tier.name);
                   const isCurrentTier = tier.id === currentTier?.id;
@@ -322,7 +318,8 @@ const LoyaltyScreen = ({ navigation }) => {
                       key={tier.id}
                       style={[
                         styles.tierCard,
-                        isCurrentTier && { borderColor: PRIMARY_COLOR, borderWidth: 2 },
+                        { backgroundColor: colors.card },
+                        isCurrentTier && { borderColor: colors.primary, borderWidth: 2 },
                       ]}
                     >
                       <View style={[styles.tierIcon, { backgroundColor: tierColors.light }]}>
@@ -334,17 +331,17 @@ const LoyaltyScreen = ({ navigation }) => {
                       </View>
                       <View style={styles.tierInfo}>
                         <View style={styles.tierHeader}>
-                          <Text style={styles.tierCardName}>{tier.name}</Text>
+                          <Text style={[styles.tierCardName, { color: colors.text }]}>{tier.name}</Text>
                           {isCurrentTier && (
-                            <View style={styles.currentBadge}>
+                            <View style={[styles.currentBadge, { backgroundColor: colors.primary }]}>
                               <Text style={styles.currentBadgeText}>Current</Text>
                             </View>
                           )}
                         </View>
-                        <Text style={styles.tierPoints}>
+                        <Text style={[styles.tierPoints, { color: colors.textSecondary }]}>
                           {tier.min_points.toLocaleString()} points required
                         </Text>
-                        <Text style={styles.tierBenefits}>
+                        <Text style={[styles.tierBenefits, { color: colors.textTertiary }]}>
                           {tier.discount_percentage}% discount • {tier.points_multiplier}x points
                         </Text>
                       </View>
@@ -360,23 +357,24 @@ const LoyaltyScreen = ({ navigation }) => {
               {rewards.length > 0 ? (
                 rewards.map((reward) => (
                   <View key={reward.id} style={styles.rewardCard}>
-                    <View style={styles.rewardIconContainer}>
-                      <FontAwesome5 name="gift" size={24} color={PRIMARY_COLOR} />
+                    <View style={[styles.rewardIconContainer, { backgroundColor: colors.primary + '20' }]}>
+                      <FontAwesome5 name="gift" size={24} color={colors.primary} />
                     </View>
-                    <Text style={styles.rewardName}>{reward.name}</Text>
-                    <Text style={styles.rewardDescription} numberOfLines={2}>
+                    <Text style={[styles.rewardName, { color: colors.text }]}>{reward.name}</Text>
+                    <Text style={[styles.rewardDescription, { color: colors.textSecondary }]} numberOfLines={2}>
                       {reward.description}
                     </Text>
                     <View style={styles.rewardPointsRow}>
-                      <Ionicons name="star" size={14} color={PRIMARY_COLOR} />
-                      <Text style={styles.rewardPointsText}>
+                      <Ionicons name="star" size={14} color={colors.primary} />
+                      <Text style={[styles.rewardPointsText, { color: colors.primary }]}>
                         {reward.points_required} pts
                       </Text>
                     </View>
                     <TouchableOpacity
                       style={[
                         styles.redeemButton,
-                        !reward.can_redeem && styles.redeemButtonDisabled,
+                        { backgroundColor: colors.primary },
+                        !reward.can_redeem && { backgroundColor: colors.border },
                       ]}
                       onPress={() =>
                         handleRedeemReward(reward.id, reward.points_required, reward.name)
@@ -386,7 +384,7 @@ const LoyaltyScreen = ({ navigation }) => {
                       <Text
                         style={[
                           styles.redeemButtonText,
-                          !reward.can_redeem && styles.redeemButtonTextDisabled,
+                          !reward.can_redeem && { color: colors.textTertiary },
                         ]}
                       >
                         {reward.can_redeem ? 'Redeem' : 'Not Enough'}
@@ -396,9 +394,9 @@ const LoyaltyScreen = ({ navigation }) => {
                 ))
               ) : (
                 <View style={styles.emptyStateCenter}>
-                  <Ionicons name="gift-outline" size={48} color="#9CA3AF" />
-                  <Text style={styles.emptyTitle}>No Rewards Available</Text>
-                  <Text style={styles.emptyText}>Check back later for new rewards</Text>
+                  <Ionicons name="gift-outline" size={48} color={colors.textTertiary} />
+                  <Text style={[styles.emptyTitle, { color: colors.text }]}>No Rewards Available</Text>
+                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Check back later for new rewards</Text>
                 </View>
               )}
             </View>
@@ -408,43 +406,43 @@ const LoyaltyScreen = ({ navigation }) => {
             <View style={styles.achievementsList}>
               {achievements.length > 0 ? (
                 achievements.map((achievement) => (
-                  <View key={achievement.id} style={styles.achievementCard}>
+                  <View key={achievement.id} style={[styles.achievementCard, { backgroundColor: colors.card }]}>
                     <View
                       style={[
                         styles.achievementIcon,
                         {
                           backgroundColor: achievement.is_completed
-                            ? PRIMARY_COLOR
-                            : '#F3F4F6',
+                            ? colors.primary
+                            : colors.inputBackground,
                         },
                       ]}
                     >
                       <FontAwesome5
                         name="trophy"
                         size={18}
-                        color={achievement.is_completed ? '#000' : '#9CA3AF'}
+                        color={achievement.is_completed ? '#000' : colors.textTertiary}
                       />
                     </View>
                     <View style={styles.achievementInfo}>
-                      <Text style={styles.achievementName}>{achievement.name}</Text>
-                      <Text style={styles.achievementDesc}>{achievement.description}</Text>
+                      <Text style={[styles.achievementName, { color: colors.text }]}>{achievement.name}</Text>
+                      <Text style={[styles.achievementDesc, { color: colors.textSecondary }]}>{achievement.description}</Text>
                       <View style={styles.achievementProgress}>
-                        <View style={styles.achievementProgressBar}>
+                        <View style={[styles.achievementProgressBar, { backgroundColor: colors.border }]}>
                           <View
                             style={[
                               styles.achievementProgressFill,
-                              { width: `${achievement.progress_percentage}%` },
+                              { width: `${achievement.progress_percentage}%`, backgroundColor: colors.primary },
                             ]}
                           />
                         </View>
-                        <Text style={styles.achievementProgressText}>
+                        <Text style={[styles.achievementProgressText, { color: colors.textSecondary }]}>
                           {achievement.current_progress}/{achievement.target_value}
                         </Text>
                       </View>
                     </View>
-                    <View style={styles.achievementReward}>
-                      <Ionicons name="star" size={12} color={PRIMARY_COLOR} />
-                      <Text style={styles.achievementRewardText}>
+                    <View style={[styles.achievementReward, { backgroundColor: colors.primary + '20' }]}>
+                      <Ionicons name="star" size={12} color={colors.primary} />
+                      <Text style={[styles.achievementRewardText, { color: colors.primary }]}>
                         {achievement.points_reward}
                       </Text>
                     </View>
@@ -452,9 +450,9 @@ const LoyaltyScreen = ({ navigation }) => {
                 ))
               ) : (
                 <View style={styles.emptyStateCenter}>
-                  <Ionicons name="trophy-outline" size={48} color="#9CA3AF" />
-                  <Text style={styles.emptyTitle}>No Achievements</Text>
-                  <Text style={styles.emptyText}>Start riding to unlock achievements</Text>
+                  <Ionicons name="trophy-outline" size={48} color={colors.textTertiary} />
+                  <Text style={[styles.emptyTitle, { color: colors.text }]}>No Achievements</Text>
+                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Start riding to unlock achievements</Text>
                 </View>
               )}
             </View>
@@ -470,7 +468,6 @@ const LoyaltyScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
@@ -483,20 +480,17 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
   },
   historyButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -511,8 +505,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 24,
   },
+  // Points card on primary background - text stays black
   pointsCard: {
-    backgroundColor: PRIMARY_COLOR,
     borderRadius: 20,
     padding: 24,
     marginBottom: 24,
@@ -594,7 +588,6 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
     borderRadius: 12,
     padding: 4,
     marginBottom: 24,
@@ -605,16 +598,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 10,
   },
-  tabActive: {
-    backgroundColor: PRIMARY_COLOR,
-  },
   tabText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#6B7280',
-  },
-  tabTextActive: {
-    color: '#000',
   },
   content: {},
   section: {
@@ -623,13 +609,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#000',
     marginBottom: 12,
   },
   activityItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
     padding: 14,
     borderRadius: 12,
     marginBottom: 8,
@@ -648,11 +632,9 @@ const styles = StyleSheet.create({
   activityTitle: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#000',
   },
   activityDate: {
     fontSize: 12,
-    color: '#6B7280',
     marginTop: 2,
   },
   activityPoints: {
@@ -662,7 +644,6 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     padding: 24,
-    backgroundColor: '#F9FAFB',
     borderRadius: 12,
   },
   emptyStateCenter: {
@@ -673,17 +654,14 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
     marginTop: 16,
   },
   emptyText: {
     fontSize: 14,
-    color: '#6B7280',
     marginTop: 8,
     textAlign: 'center',
   },
   benefitsCard: {
-    backgroundColor: '#F9FAFB',
     borderRadius: 16,
     padding: 16,
   },
@@ -695,13 +673,11 @@ const styles = StyleSheet.create({
   },
   benefitText: {
     fontSize: 14,
-    color: '#374151',
     flex: 1,
   },
   tierCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
@@ -725,10 +701,8 @@ const styles = StyleSheet.create({
   tierCardName: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#000',
   },
   currentBadge: {
-    backgroundColor: PRIMARY_COLOR,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
@@ -740,12 +714,10 @@ const styles = StyleSheet.create({
   },
   tierPoints: {
     fontSize: 13,
-    color: '#6B7280',
     marginTop: 2,
   },
   tierBenefits: {
     fontSize: 12,
-    color: '#9CA3AF',
     marginTop: 2,
   },
   rewardsGrid: {
@@ -757,17 +729,10 @@ const styles = StyleSheet.create({
     width: '50%',
     padding: 6,
   },
-  rewardCardInner: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-  },
   rewardIconContainer: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: PRIMARY_COLOR + '20',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -775,13 +740,11 @@ const styles = StyleSheet.create({
   rewardName: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#000',
     textAlign: 'center',
     marginBottom: 4,
   },
   rewardDescription: {
     fontSize: 12,
-    color: '#6B7280',
     textAlign: 'center',
     marginBottom: 10,
     minHeight: 32,
@@ -795,32 +758,23 @@ const styles = StyleSheet.create({
   rewardPointsText: {
     fontSize: 14,
     fontWeight: '600',
-    color: PRIMARY_COLOR,
   },
   redeemButton: {
-    backgroundColor: PRIMARY_COLOR,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 20,
     alignItems: 'center',
     width: '100%',
   },
-  redeemButtonDisabled: {
-    backgroundColor: '#E5E7EB',
-  },
   redeemButtonText: {
     color: '#000',
     fontWeight: '600',
     fontSize: 13,
   },
-  redeemButtonTextDisabled: {
-    color: '#9CA3AF',
-  },
   achievementsList: {},
   achievementCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
@@ -839,11 +793,9 @@ const styles = StyleSheet.create({
   achievementName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#000',
   },
   achievementDesc: {
     fontSize: 12,
-    color: '#6B7280',
     marginTop: 2,
   },
   achievementProgress: {
@@ -854,24 +806,20 @@ const styles = StyleSheet.create({
   achievementProgressBar: {
     flex: 1,
     height: 6,
-    backgroundColor: '#E5E7EB',
     borderRadius: 3,
     overflow: 'hidden',
     marginRight: 8,
   },
   achievementProgressFill: {
     height: '100%',
-    backgroundColor: PRIMARY_COLOR,
     borderRadius: 3,
   },
   achievementProgressText: {
     fontSize: 12,
-    color: '#6B7280',
   },
   achievementReward: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: PRIMARY_COLOR + '20',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
@@ -880,7 +828,6 @@ const styles = StyleSheet.create({
   achievementRewardText: {
     fontSize: 12,
     fontWeight: '600',
-    color: PRIMARY_COLOR,
   },
 });
 

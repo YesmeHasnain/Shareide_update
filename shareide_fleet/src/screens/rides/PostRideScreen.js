@@ -148,7 +148,7 @@ const ampmData = [
 ];
 
 const PostRideScreen = ({ navigation }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
 
@@ -627,16 +627,16 @@ const PostRideScreen = ({ navigation }) => {
             activeOpacity={1}
             onPress={() => setShowPicker(false)}
           />
-          <View style={styles.pickerSheet}>
+          <View style={[styles.pickerSheet, { backgroundColor: colors.card || colors.surface }]}>
             {/* Handle bar */}
-            <View style={styles.handleBar} />
+            <View style={[styles.handleBar, { backgroundColor: colors.border }]} />
 
             {/* Title */}
-            <Text style={styles.pickerTitle}>Select Date & Time</Text>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>Select Date & Time</Text>
 
             {/* Date scroll (full width) */}
-            <Text style={styles.pickerSectionLabel}>DATE</Text>
-            <View style={[styles.pickerWrapper, { height: PICKER_HEIGHT }]}>
+            <Text style={[styles.pickerSectionLabel, { color: colors.textTertiary }]}>DATE</Text>
+            <View style={[styles.pickerWrapper, { height: PICKER_HEIGHT, backgroundColor: colors.inputBackground }]}>
               <View style={styles.pickerHighlight} />
               <ScrollPicker
                 data={dates}
@@ -647,8 +647,8 @@ const PostRideScreen = ({ navigation }) => {
             </View>
 
             {/* Time scroll (hour : minute AM/PM) */}
-            <Text style={[styles.pickerSectionLabel, { marginTop: 16 }]}>TIME</Text>
-            <View style={[styles.pickerWrapper, { height: PICKER_HEIGHT }]}>
+            <Text style={[styles.pickerSectionLabel, { marginTop: 16, color: colors.textTertiary }]}>TIME</Text>
+            <View style={[styles.pickerWrapper, { height: PICKER_HEIGHT, backgroundColor: colors.inputBackground }]}>
               <View style={styles.pickerHighlight} />
               <View style={styles.timeRow}>
                 <ScrollPicker
@@ -657,7 +657,7 @@ const PostRideScreen = ({ navigation }) => {
                   onSelect={setSelectedHourIndex}
                   width={70}
                 />
-                <Text style={styles.pickerColon}>:</Text>
+                <Text style={[styles.pickerColon, { color: colors.text }]}>:</Text>
                 <ScrollPicker
                   data={minutes}
                   selectedIndex={selectedMinuteIndex}
@@ -676,10 +676,10 @@ const PostRideScreen = ({ navigation }) => {
             {/* Buttons */}
             <View style={styles.pickerBtnRow}>
               <TouchableOpacity
-                style={styles.pickerCancelBtn}
+                style={[styles.pickerCancelBtn, { backgroundColor: colors.inputBackground }]}
                 onPress={() => setShowPicker(false)}
               >
-                <Text style={styles.pickerCancelText}>Cancel</Text>
+                <Text style={[styles.pickerCancelText, { color: colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.pickerConfirmBtn}

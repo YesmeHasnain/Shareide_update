@@ -16,15 +16,16 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { authAPI } from '../../api/auth';
 
-const PRIMARY_COLOR = '#FCC014';
 const OTP_LENGTH = 6;
 
 const OTPScreen = ({ route, navigation }) => {
   const auth = useAuth();
   const login = auth?.login;
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const phone = route?.params?.phone || '';
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -148,8 +149,8 @@ const OTPScreen = ({ route, navigation }) => {
   const isComplete = otp.every(digit => digit !== '');
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
@@ -158,18 +159,18 @@ const OTPScreen = ({ route, navigation }) => {
         {/* Header */}
         <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
           <TouchableOpacity
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: colors.borderLight }]}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={20} color="#000" />
+            <Ionicons name="arrow-back" size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
 
         {/* Content */}
         <View style={styles.content}>
           {/* Title */}
-          <Text style={styles.title}>We sent you an WhatsApp</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, { color: colors.text }]}>We sent you an WhatsApp</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Please enter the code we just{'\n'}sent to {phone}
           </Text>
 
@@ -181,12 +182,13 @@ const OTPScreen = ({ route, navigation }) => {
                   key={index}
                   style={[
                     styles.otpBox,
-                    digit && styles.otpBoxFilled,
+                    { backgroundColor: colors.borderLight },
+                    digit && { backgroundColor: colors.background, borderWidth: 2, borderColor: colors.primary },
                   ]}
                 >
                   <TextInput
                     ref={(ref) => (inputRefs.current[index] = ref)}
-                    style={styles.otpInput}
+                    style={[styles.otpInput, { color: colors.text }]}
                     value={digit}
                     onChangeText={(value) => handleOtpChange(value, index)}
                     onKeyPress={(e) => handleKeyPress(e, index)}
@@ -204,12 +206,12 @@ const OTPScreen = ({ route, navigation }) => {
           {/* Timer / Resend */}
           <View style={styles.resendSection}>
             {!canResend ? (
-              <Text style={styles.timerText}>
+              <Text style={[styles.timerText, { color: colors.success }]}>
                 Resend code in {formatTime(countdown)}
               </Text>
             ) : (
               <TouchableOpacity onPress={handleResendOTP} disabled={resending}>
-                <Text style={styles.resendText}>
+                <Text style={[styles.resendText, { color: colors.primary }]}>
                   {resending ? 'Sending...' : 'Resend code'}
                 </Text>
               </TouchableOpacity>
@@ -222,7 +224,7 @@ const OTPScreen = ({ route, navigation }) => {
           <TouchableOpacity
             style={[
               styles.verifyButton,
-              { backgroundColor: isComplete ? PRIMARY_COLOR : '#F3F4F6' },
+              { backgroundColor: isComplete ? colors.primary : colors.borderLight },
             ]}
             onPress={() => handleVerify(otp.join(''))}
             disabled={!isComplete || loading}
@@ -233,7 +235,7 @@ const OTPScreen = ({ route, navigation }) => {
             ) : (
               <Text style={[
                 styles.verifyText,
-                { color: isComplete ? '#000' : '#9CA3AF' }
+                { color: isComplete ? '#000' : colors.textTertiary }
               ]}>
                 Verify code
               </Text>
@@ -248,7 +250,6 @@ const OTPScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   keyboardView: {
     flex: 1,
@@ -261,7 +262,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -272,12 +272,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#000',
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 15,
-    color: '#6B7280',
     lineHeight: 22,
     marginBottom: 40,
   },
@@ -292,19 +290,12 @@ const styles = StyleSheet.create({
     width: 50,
     height: 56,
     borderRadius: 12,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  otpBoxFilled: {
-    backgroundColor: '#FFF',
-    borderWidth: 2,
-    borderColor: PRIMARY_COLOR,
   },
   otpInput: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#000',
     textAlign: 'center',
     width: '100%',
     height: '100%',
@@ -315,12 +306,10 @@ const styles = StyleSheet.create({
   timerText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#10B981',
   },
   resendText: {
     fontSize: 15,
     fontWeight: '600',
-    color: PRIMARY_COLOR,
   },
   bottomSection: {
     paddingHorizontal: 24,

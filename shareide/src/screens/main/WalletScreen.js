@@ -14,12 +14,14 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { walletAPI } from '../../api/wallet';
+import { useTheme } from '../../context/ThemeContext';
 
 const PRIMARY_COLOR = '#FCC014';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const WalletScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -81,32 +83,32 @@ const WalletScreen = ({ navigation }) => {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={20} color="#000" />
+      <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
+        <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: colors.background }]}>
+          <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.inputBackground }]} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={20} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Wallet</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Wallet</Text>
           <View style={styles.headerRight} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={PRIMARY_COLOR} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color="#000" />
+      <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: colors.background }]}>
+        <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.inputBackground }]} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={20} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Wallet</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Wallet</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -116,14 +118,14 @@ const WalletScreen = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={PRIMARY_COLOR}
-            colors={[PRIMARY_COLOR]}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 24 }]}
       >
         {/* Balance Card */}
-        <View style={styles.balanceCard}>
+        <View style={[styles.balanceCard, { backgroundColor: colors.primary }]}>
           <View style={styles.balanceTop}>
             <View style={styles.walletIconCircle}>
               <Ionicons name="wallet" size={22} color="#000" />
@@ -168,7 +170,7 @@ const WalletScreen = ({ navigation }) => {
             <View style={[styles.quickActionIcon, { backgroundColor: '#FEF3C7' }]}>
               <Ionicons name="gift-outline" size={22} color="#F59E0B" />
             </View>
-            <Text style={styles.quickActionLabel}>Voucher</Text>
+            <Text style={[styles.quickActionLabel, { color: colors.textSecondary }]}>Voucher</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -182,7 +184,7 @@ const WalletScreen = ({ navigation }) => {
             <View style={[styles.quickActionIcon, { backgroundColor: '#DBEAFE' }]}>
               <Ionicons name="card-outline" size={22} color="#3B82F6" />
             </View>
-            <Text style={styles.quickActionLabel}>Add Money</Text>
+            <Text style={[styles.quickActionLabel, { color: colors.textSecondary }]}>Add Money</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -196,33 +198,33 @@ const WalletScreen = ({ navigation }) => {
             <View style={[styles.quickActionIcon, { backgroundColor: '#D1FAE5' }]}>
               <Ionicons name="receipt-outline" size={22} color="#10B981" />
             </View>
-            <Text style={styles.quickActionLabel}>Transactions</Text>
+            <Text style={[styles.quickActionLabel, { color: colors.textSecondary }]}>Transactions</Text>
           </TouchableOpacity>
         </View>
 
         {/* Recent Transactions */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Activity</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Activity</Text>
             {transactions.length > 0 && (
               <TouchableOpacity onPress={() => navigation.navigate('TransactionHistory')}>
-                <Text style={styles.seeAllText}>See All</Text>
+                <Text style={[styles.seeAllText, { color: colors.primary }]}>See All</Text>
               </TouchableOpacity>
             )}
           </View>
 
           {transactions.length === 0 ? (
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIcon}>
-                <Ionicons name="receipt-outline" size={32} color="#D1D5DB" />
+            <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
+              <View style={[styles.emptyIcon, { backgroundColor: colors.inputBackground }]}>
+                <Ionicons name="receipt-outline" size={32} color={colors.textTertiary} />
               </View>
-              <Text style={styles.emptyTitle}>No transactions yet</Text>
-              <Text style={styles.emptySubtitle}>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>No transactions yet</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textTertiary }]}>
                 Top up your wallet to get started
               </Text>
             </View>
           ) : (
-            <View style={styles.transactionsList}>
+            <View style={[styles.transactionsList, { backgroundColor: colors.card }]}>
               {transactions.map((tx, index) => {
                 const icon = getTransactionIcon(tx.type);
                 const isCredit = tx.amount > 0;
@@ -231,17 +233,17 @@ const WalletScreen = ({ navigation }) => {
                     key={tx.id || index}
                     style={[
                       styles.transactionItem,
-                      index < transactions.length - 1 && styles.transactionBorder,
+                      index < transactions.length - 1 && [styles.transactionBorder, { borderBottomColor: colors.borderLight }],
                     ]}
                   >
                     <View style={[styles.txIcon, { backgroundColor: icon.color + '15' }]}>
                       <Ionicons name={icon.name} size={20} color={icon.color} />
                     </View>
                     <View style={styles.txInfo}>
-                      <Text style={styles.txDesc}>{tx.description || tx.type}</Text>
-                      <Text style={styles.txDate}>{formatDate(tx.created_at)}</Text>
+                      <Text style={[styles.txDesc, { color: colors.text }]}>{tx.description || tx.type}</Text>
+                      <Text style={[styles.txDate, { color: colors.textTertiary }]}>{formatDate(tx.created_at)}</Text>
                     </View>
-                    <Text style={[styles.txAmount, { color: isCredit ? '#10B981' : '#1A1A2E' }]}>
+                    <Text style={[styles.txAmount, { color: isCredit ? '#10B981' : colors.text }]}>
                       {isCredit ? '+' : ''}{formatCurrency(Math.abs(tx.amount))}
                     </Text>
                   </View>
@@ -252,9 +254,9 @@ const WalletScreen = ({ navigation }) => {
         </View>
 
         {/* Payment Info */}
-        <View style={styles.infoCard}>
-          <Ionicons name="shield-checkmark" size={20} color="#10B981" />
-          <Text style={styles.infoText}>
+        <View style={[styles.infoCard, { backgroundColor: isDark ? colors.successLight : '#F0FDF4' }]}>
+          <Ionicons name="shield-checkmark" size={20} color={colors.success} />
+          <Text style={[styles.infoText, { color: colors.textSecondary }]}>
             All transactions are secured via Bank Alfalah payment gateway
           </Text>
         </View>
@@ -266,7 +268,6 @@ const WalletScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   header: {
     flexDirection: 'row',
@@ -274,20 +275,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 12,
-    backgroundColor: '#FFFFFF',
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1A1A2E',
   },
   headerRight: {
     width: 40,
@@ -304,7 +302,6 @@ const styles = StyleSheet.create({
 
   // Balance Card
   balanceCard: {
-    backgroundColor: PRIMARY_COLOR,
     borderRadius: 24,
     padding: 24,
     marginBottom: 24,
@@ -396,7 +393,6 @@ const styles = StyleSheet.create({
   quickActionLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#6B7280',
   },
 
   // Sections
@@ -412,26 +408,22 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#1A1A2E',
   },
   seeAllText: {
     fontSize: 14,
     fontWeight: '600',
-    color: PRIMARY_COLOR,
   },
 
   // Empty State
   emptyState: {
     alignItems: 'center',
     paddingVertical: 32,
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
   },
   emptyIcon: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -439,17 +431,14 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
     marginBottom: 4,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#9CA3AF',
   },
 
   // Transactions
   transactionsList: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     overflow: 'hidden',
   },
@@ -460,7 +449,6 @@ const styles = StyleSheet.create({
   },
   transactionBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
   },
   txIcon: {
     width: 42,
@@ -476,12 +464,10 @@ const styles = StyleSheet.create({
   txDesc: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1A1A2E',
     marginBottom: 2,
   },
   txDate: {
     fontSize: 13,
-    color: '#9CA3AF',
   },
   txAmount: {
     fontSize: 15,
@@ -492,7 +478,6 @@ const styles = StyleSheet.create({
   infoCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0FDF4',
     padding: 14,
     borderRadius: 12,
     gap: 10,
@@ -501,7 +486,6 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 13,
-    color: '#6B7280',
     lineHeight: 18,
   },
 });

@@ -14,12 +14,12 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../../context/ThemeContext';
 import { authAPI } from '../../api/auth';
-
-const PRIMARY_COLOR = '#FCC014';
 
 const PhoneScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -72,8 +72,8 @@ const PhoneScreen = ({ navigation }) => {
   const isValidPhone = cleanedPhone.length >= 10 && cleanedPhone.length <= 11;
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
@@ -82,37 +82,37 @@ const PhoneScreen = ({ navigation }) => {
         {/* Header with Back Button */}
         <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
           <TouchableOpacity
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: colors.borderLight }]}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={20} color="#000" />
+            <Ionicons name="arrow-back" size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
 
         {/* Content */}
         <View style={styles.content}>
           {/* Title */}
-          <Text style={styles.title}>Enter Your Contact Details</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, { color: colors.text }]}>Enter Your Contact Details</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Enter your phone number with valid country code so others can reach you
           </Text>
 
           {/* Phone Input */}
           <View style={styles.inputRow}>
             {/* Country Code */}
-            <TouchableOpacity style={styles.countryBox}>
+            <TouchableOpacity style={[styles.countryBox, { borderColor: colors.border }]}>
               <Text style={styles.flag}>🇵🇰</Text>
-              <Ionicons name="chevron-down" size={16} color="#666" />
+              <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
             </TouchableOpacity>
 
             {/* Phone Input */}
-            <View style={styles.phoneInputBox}>
+            <View style={[styles.phoneInputBox, { backgroundColor: colors.inputBackground }]}>
               <TextInput
-                style={styles.phoneInput}
+                style={[styles.phoneInput, { color: colors.text }]}
                 value={phone}
                 onChangeText={(t) => setPhone(t.replace(/[^0-9]/g, '').slice(0, 11))}
                 placeholder="Phone number"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.textTertiary}
                 keyboardType="phone-pad"
                 editable={!loading}
                 maxLength={11}
@@ -126,7 +126,7 @@ const PhoneScreen = ({ navigation }) => {
           <TouchableOpacity
             style={[
               styles.continueButton,
-              { backgroundColor: isValidPhone ? PRIMARY_COLOR : '#F3F4F6' },
+              { backgroundColor: isValidPhone ? colors.primary : colors.borderLight },
             ]}
             onPress={handleContinue}
             disabled={!isValidPhone || loading}
@@ -137,7 +137,7 @@ const PhoneScreen = ({ navigation }) => {
             ) : (
               <Text style={[
                 styles.continueText,
-                { color: isValidPhone ? '#000' : '#9CA3AF' }
+                { color: isValidPhone ? '#000' : colors.textTertiary }
               ]}>
                 Send verification code
               </Text>
@@ -152,7 +152,6 @@ const PhoneScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   keyboardView: {
     flex: 1,
@@ -165,7 +164,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -176,12 +174,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#000',
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 15,
-    color: '#6B7280',
     lineHeight: 22,
     marginBottom: 32,
   },
@@ -196,7 +192,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     gap: 6,
   },
   flag: {
@@ -206,13 +201,11 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     borderRadius: 12,
-    backgroundColor: '#F9FAFB',
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
   phoneInput: {
     fontSize: 16,
-    color: '#000',
   },
   bottomSection: {
     paddingHorizontal: 24,

@@ -65,7 +65,7 @@ const IntercityRideCard = ({ ride, colors, onPress }) => (
       </View>
     </View>
     <View style={styles.rideCardFooter}>
-      <View style={styles.rideCardBadge}>
+      <View style={[styles.rideCardBadge, { backgroundColor: colors.inputBackground }]}>
         <Ionicons name="people" size={14} color={colors.textSecondary} />
         <Text style={[styles.rideCardBadgeText, { color: colors.textSecondary }]}>
           {ride.seats || 1} seat{(ride.seats || 1) > 1 ? 's' : ''}
@@ -225,7 +225,7 @@ const IntercitySearchScreen = ({ navigation }) => {
       </ScrollView>
 
       {/* Create Ride Button */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 8 }]}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 8, backgroundColor: colors.card, borderTopColor: colors.border }]}>
         <TouchableOpacity
           style={[styles.createBtn, { backgroundColor: colors.primary }]}
           onPress={handleCreateRide}
@@ -281,7 +281,6 @@ const styles = StyleSheet.create({
   rideCardBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
-    backgroundColor: '#F3F4F6',
   },
   rideCardBadgeText: { fontSize: 11, fontWeight: '600' },
   emptyState: { alignItems: 'center', paddingVertical: 40 },
@@ -289,8 +288,8 @@ const styles = StyleSheet.create({
   emptySubtitle: { fontSize: 14, marginTop: 4, textAlign: 'center' },
   footer: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingHorizontal: spacing.lg, paddingTop: 10, backgroundColor: '#FFF',
-    borderTopWidth: 1, borderTopColor: '#F3F4F6',
+    paddingHorizontal: spacing.lg, paddingTop: 10,
+    borderTopWidth: 1,
   },
   createBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

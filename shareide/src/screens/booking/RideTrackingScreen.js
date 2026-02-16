@@ -338,8 +338,8 @@ function updateDriverLocation(lat,lng){driverMarker.setLatLng([lat,lng]);if(!map
         />
 
         {/* Back Button */}
-        <TouchableOpacity style={[styles.backButton, { top: insets.top + 10 }]} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color="#1A1A2E" />
+        <TouchableOpacity style={[styles.backButton, { top: insets.top + 10, backgroundColor: colors.card || '#FFF' }]} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
 
         {/* SOS Button */}
@@ -455,7 +455,7 @@ function updateDriverLocation(lat,lng){driverMarker.setLatLng([lat,lng]);if(!map
         <View style={styles.cancelOverlay}>
           <TouchableOpacity style={styles.cancelBackdrop} onPress={() => setShowCancelReasons(false)} />
           <View style={[styles.cancelSheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + 16 }]}>
-            <View style={styles.cancelHandle} />
+            <View style={[styles.cancelHandle, { backgroundColor: colors.border }]} />
             <Text style={[styles.cancelTitle, { color: colors.text }]}>Why are you cancelling?</Text>
             {cancelReasons.map((reason, i) => (
               <TouchableOpacity key={i} style={[styles.cancelReasonBtn, { borderColor: colors.border }]} onPress={() => handleCancel(reason)}>
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
   map: { flex: 1 },
   backButton: {
     position: 'absolute', left: 16, width: 44, height: 44, borderRadius: 22,
-    backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center',
+    justifyContent: 'center', alignItems: 'center',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4,
   },
   sosFloating: {
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
   cancelOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'flex-end' },
   cancelBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
   cancelSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12 },
-  cancelHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginBottom: 16 },
+  cancelHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
   cancelTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
   cancelReasonBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1 },
   cancelReasonText: { fontSize: 15 },

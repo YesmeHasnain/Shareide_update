@@ -247,7 +247,7 @@ const PersonalInfoScreen = ({ navigation, route }) => {
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={styles.header}>
-            <View style={styles.progressBar}>
+            <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
               <View style={[styles.progressFill, { backgroundColor: colors.primary, width: '20%' }]} />
             </View>
             <Text style={[styles.stepText, { color: colors.textSecondary }]}>
@@ -391,7 +391,7 @@ const PersonalInfoScreen = ({ navigation, route }) => {
         <View style={styles.modalOverlay}>
           <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowAvatarModal(false)} />
           <View style={[styles.modalSheet, { backgroundColor: colors.card || '#FFF' }]}>
-            <View style={styles.modalHandle} />
+            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
             <Text style={[styles.modalTitle, { color: colors.text }]}>Choose Your Avatar</Text>
             <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
               {gender === 'male' ? 'Male' : 'Female'} Avatars

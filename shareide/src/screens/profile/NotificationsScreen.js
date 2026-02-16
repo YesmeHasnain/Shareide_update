@@ -155,7 +155,7 @@ const NotificationsScreen = ({ navigation }) => {
     <View
             style={[styles.settingsSection, { backgroundColor: colors.surface }, shadows.sm]}
     >
-      <View style={styles.settingsHeader}>
+      <View style={[styles.settingsHeader, { borderBottomColor: colors.border }]}>
         <View style={[styles.settingsIconContainer, { backgroundColor: colors.primary + '15' }]}>
           <Ionicons name="settings" size={18} color={colors.primary} />
         </View>
@@ -327,7 +327,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     paddingBottom: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   settingsIconContainer: {
     width: 32,

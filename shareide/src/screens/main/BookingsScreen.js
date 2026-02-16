@@ -14,10 +14,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ridesAPI } from '../../api/rides';
+import { useTheme } from '../../context/ThemeContext';
 
 const PRIMARY_COLOR = '#FCC014';
 
-const TabButton = ({ label, isActive, onPress, count }) => {
+const TabButton = ({ label, isActive, onPress, count, colors }) => {
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
@@ -29,32 +30,32 @@ const TabButton = ({ label, isActive, onPress, count }) => {
       activeOpacity={0.7}
       style={[styles.tab, isActive && styles.tabActive]}
     >
-      <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+      <Text style={[styles.tabText, { color: colors.textSecondary }, isActive && [styles.tabTextActive, { color: colors.primary }]]}>
         {label}
       </Text>
       {count > 0 && (
-        <View style={[styles.tabBadge, isActive && styles.tabBadgeActive]}>
-          <Text style={[styles.tabBadgeText, isActive && styles.tabBadgeTextActive]}>{count}</Text>
+        <View style={[styles.tabBadge, { backgroundColor: colors.border }, isActive && [styles.tabBadgeActive, { backgroundColor: colors.primary }]]}>
+          <Text style={[styles.tabBadgeText, { color: colors.textSecondary }, isActive && styles.tabBadgeTextActive]}>{count}</Text>
         </View>
       )}
     </TouchableOpacity>
   );
 };
 
-const SubTabButton = ({ label, isActive, onPress }) => (
+const SubTabButton = ({ label, isActive, onPress, colors }) => (
   <TouchableOpacity
     onPress={() => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       onPress();
     }}
     activeOpacity={0.7}
-    style={[styles.subTab, isActive && styles.subTabActive]}
+    style={[styles.subTab, { backgroundColor: colors.inputBackground }, isActive && [styles.subTabActive, { backgroundColor: colors.text }]]}
   >
-    <Text style={[styles.subTabText, isActive && styles.subTabTextActive]}>{label}</Text>
+    <Text style={[styles.subTabText, { color: colors.textSecondary }, isActive && [styles.subTabTextActive, { color: colors.background }]]}>{label}</Text>
   </TouchableOpacity>
 );
 
-const AnimatedTripCard = ({ item, onPress, index }) => {
+const AnimatedTripCard = ({ item, onPress, index, colors }) => {
   const animValue = React.useRef(new Animated.Value(0)).current;
   const scaleValue = React.useRef(new Animated.Value(1)).current;
 
@@ -123,7 +124,7 @@ const AnimatedTripCard = ({ item, onPress, index }) => {
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         activeOpacity={0.9}
-        style={styles.tripCard}
+        style={[styles.tripCard, { backgroundColor: colors.card }]}
       >
         {/* Status Badge */}
         <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}>
@@ -136,38 +137,38 @@ const AnimatedTripCard = ({ item, onPress, index }) => {
           <View style={styles.routeDots}>
             <View style={styles.routeDotYellow} />
             <View style={styles.routeConnector}>
-              <View style={styles.routeDash} />
-              <View style={styles.routeDash} />
-              <View style={styles.routeDash} />
+              <View style={[styles.routeDash, { backgroundColor: colors.border }]} />
+              <View style={[styles.routeDash, { backgroundColor: colors.border }]} />
+              <View style={[styles.routeDash, { backgroundColor: colors.border }]} />
             </View>
             <View style={styles.routeDotGreen} />
           </View>
           <View style={styles.routeAddresses}>
-            <Text style={styles.routeAddress} numberOfLines={1}>
+            <Text style={[styles.routeAddress, { color: colors.text }]} numberOfLines={1}>
               {item.pickup?.address || item.pickup || 'Pickup location'}
             </Text>
-            <Text style={styles.routeAddress} numberOfLines={1}>
+            <Text style={[styles.routeAddress, { color: colors.text }]} numberOfLines={1}>
               {item.dropoff?.address || item.dropoff || 'Dropoff location'}
             </Text>
           </View>
         </View>
 
         {/* Footer */}
-        <View style={styles.tripFooter}>
+        <View style={[styles.tripFooter, { borderTopColor: colors.borderLight }]}>
           <View style={styles.tripDateRow}>
-            <Ionicons name="calendar-outline" size={14} color="#6B7280" />
-            <Text style={styles.tripDateTime}>
+            <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
+            <Text style={[styles.tripDateTime, { color: colors.textSecondary }]}>
               {formatDateTime(item.date || item.created_at)}
             </Text>
           </View>
-          <Text style={styles.tripPrice}>Rs. {item.fare || 0}</Text>
+          <Text style={[styles.tripPrice, { color: colors.text }]}>Rs. {item.fare || 0}</Text>
         </View>
 
         {/* Driver Info */}
         {item.driver?.name && item.driver.name !== 'Driver' && (
           <View style={styles.driverRow}>
-            <Ionicons name="person-circle-outline" size={16} color="#6B7280" />
-            <Text style={styles.driverName}>{item.driver.name}</Text>
+            <Ionicons name="person-circle-outline" size={16} color={colors.textSecondary} />
+            <Text style={[styles.driverName, { color: colors.textSecondary }]}>{item.driver.name}</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -175,15 +176,15 @@ const AnimatedTripCard = ({ item, onPress, index }) => {
   );
 };
 
-const EmptyState = ({ icon, title, message, actionLabel, onAction }) => (
+const EmptyState = ({ icon, title, message, actionLabel, onAction, colors }) => (
   <View style={styles.emptyContainer}>
-    <View style={styles.emptyIconCircle}>
-      <Ionicons name={icon} size={48} color="#9CA3AF" />
+    <View style={[styles.emptyIconCircle, { backgroundColor: colors.inputBackground }]}>
+      <Ionicons name={icon} size={48} color={colors.textTertiary} />
     </View>
-    <Text style={styles.emptyTitle}>{title}</Text>
-    <Text style={styles.emptyMessage}>{message}</Text>
+    <Text style={[styles.emptyTitle, { color: colors.text }]}>{title}</Text>
+    <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>{message}</Text>
     {actionLabel && onAction && (
-      <TouchableOpacity style={styles.emptyButton} onPress={onAction}>
+      <TouchableOpacity style={[styles.emptyButton, { backgroundColor: colors.primary }]} onPress={onAction}>
         <Text style={styles.emptyButtonText}>{actionLabel}</Text>
       </TouchableOpacity>
     )}
@@ -192,6 +193,7 @@ const EmptyState = ({ icon, title, message, actionLabel, onAction }) => (
 
 const BookingsScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const [activeTab, setActiveTab] = useState('booked');
   const [subTab, setSubTab] = useState('upcoming');
   const [bookings, setBookings] = useState({
@@ -291,6 +293,7 @@ const BookingsScreen = ({ navigation }) => {
     <AnimatedTripCard
       item={item}
       index={index}
+      colors={colors}
       onPress={() => navigation.navigate('BookingDetails', { booking: item })}
     />
   );
@@ -304,35 +307,36 @@ const BookingsScreen = ({ navigation }) => {
         message={config.message}
         actionLabel={config.actionLabel}
         onAction={config.onAction}
+        colors={colors}
       />
     );
   };
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-          <Text style={styles.headerTitle}>Trips</Text>
+      <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
+        <View style={[styles.header, { paddingTop: insets.top + 16, backgroundColor: colors.background }]}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Trips</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={PRIMARY_COLOR} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Text style={styles.headerTitle}>Trips</Text>
+      <View style={[styles.header, { paddingTop: insets.top + 16, backgroundColor: colors.background }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Trips</Text>
       </View>
 
       {/* Primary Tabs */}
-      <View style={styles.tabs}>
+      <View style={[styles.tabs, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
         {[
           { key: 'booked', label: 'Booked', count: bookings.booked.length },
           { key: 'published', label: 'Published', count: bookings.published.length },
@@ -344,21 +348,24 @@ const BookingsScreen = ({ navigation }) => {
             count={tab.count}
             isActive={activeTab === tab.key}
             onPress={() => setActiveTab(tab.key)}
+            colors={colors}
           />
         ))}
       </View>
 
       {/* Sub Tabs - Upcoming / Past */}
-      <View style={styles.subTabs}>
+      <View style={[styles.subTabs, { backgroundColor: colors.background }]}>
         <SubTabButton
           label="Upcoming"
           isActive={subTab === 'upcoming'}
           onPress={() => setSubTab('upcoming')}
+          colors={colors}
         />
         <SubTabButton
           label="Past"
           isActive={subTab === 'past'}
           onPress={() => setSubTab('past')}
+          colors={colors}
         />
       </View>
 
@@ -373,8 +380,8 @@ const BookingsScreen = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={PRIMARY_COLOR}
-            colors={[PRIMARY_COLOR]}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
       />
@@ -385,17 +392,14 @@ const BookingsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   header: {
     paddingHorizontal: 24,
     paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#1A1A2E',
     letterSpacing: -0.5,
   },
   loadingContainer: {
@@ -407,8 +411,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
   },
   tab: {
     flexDirection: 'row',
@@ -424,27 +426,21 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#6B7280',
   },
   tabTextActive: {
-    color: PRIMARY_COLOR,
     fontWeight: '600',
   },
   tabBadge: {
-    backgroundColor: '#E5E7EB',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 10,
     minWidth: 20,
     alignItems: 'center',
   },
-  tabBadgeActive: {
-    backgroundColor: PRIMARY_COLOR,
-  },
+  tabBadgeActive: {},
   tabBadgeText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#6B7280',
   },
   tabBadgeTextActive: {
     color: '#000',
@@ -454,31 +450,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     gap: 8,
-    backgroundColor: '#FFFFFF',
   },
   subTab: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
   },
-  subTabActive: {
-    backgroundColor: '#000',
-  },
+  subTabActive: {},
   subTabText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#6B7280',
   },
-  subTabTextActive: {
-    color: '#FFFFFF',
-  },
+  subTabTextActive: {},
   listContent: {
     padding: 24,
     flexGrow: 1,
   },
   tripCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 16,
     marginBottom: 14,
@@ -524,7 +512,6 @@ const styles = StyleSheet.create({
   routeDash: {
     width: 2,
     height: 4,
-    backgroundColor: '#E5E7EB',
     marginLeft: 4,
   },
   routeDotGreen: {
@@ -540,7 +527,6 @@ const styles = StyleSheet.create({
   routeAddress: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#000',
   },
   tripFooter: {
     flexDirection: 'row',
@@ -548,7 +534,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
   },
   tripDateRow: {
     flexDirection: 'row',
@@ -557,12 +542,10 @@ const styles = StyleSheet.create({
   },
   tripDateTime: {
     fontSize: 13,
-    color: '#6B7280',
   },
   tripPrice: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#000',
   },
   driverRow: {
     flexDirection: 'row',
@@ -572,7 +555,6 @@ const styles = StyleSheet.create({
   },
   driverName: {
     fontSize: 13,
-    color: '#6B7280',
     fontWeight: '500',
   },
   emptyContainer: {
@@ -586,7 +568,6 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
@@ -594,18 +575,15 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#000',
     marginBottom: 8,
   },
   emptyMessage: {
     fontSize: 15,
-    color: '#6B7280',
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 24,
   },
   emptyButton: {
-    backgroundColor: PRIMARY_COLOR,
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 27,

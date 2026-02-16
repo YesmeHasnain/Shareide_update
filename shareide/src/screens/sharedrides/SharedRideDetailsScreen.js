@@ -136,7 +136,7 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
         {/* Driver Card - Enhanced */}
         <Card style={styles.driverCard}>
           <TouchableOpacity
-            style={styles.driverSection}
+            style={[styles.driverSection, { borderBottomColor: colors.border }]}
             onPress={() => navigation.navigate('DriverProfile', { driverId: ride.driver?.id })}
           >
             <View style={styles.driverAvatarWrap}>
@@ -194,7 +194,7 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
           <View style={styles.routeSection}>
             <View style={styles.routeLine}>
               <View style={[styles.dot, { backgroundColor: colors.primary }]} />
-              <View style={styles.line} />
+              <View style={[styles.line, { backgroundColor: colors.border }]} />
               <View style={[styles.dot, styles.dotEnd, { backgroundColor: colors.success }]} />
             </View>
             <View style={styles.routeDetails}>
@@ -251,7 +251,7 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
                 <View key={index} style={styles.seatItem}>
                   <View style={[
                     styles.seatIcon,
-                    { backgroundColor: isOccupied ? colors.primary + '20' : '#F3F4F620' },
+                    { backgroundColor: isOccupied ? colors.primary + '20' : colors.inputBackground, borderColor: colors.border },
                     isOccupied && { borderColor: colors.primary, borderWidth: 2 },
                   ]}>
                     {isOccupied && passenger ? (
@@ -279,7 +279,7 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
             <View style={styles.passengerList}>
               <Text style={[styles.subTitle, { color: colors.textMuted }]}>Other Passengers</Text>
               {(ride.passengers || ride.confirmed_bookings).map((booking, idx) => (
-                <View key={booking.booking_id || booking.id || idx} style={styles.passengerRow}>
+                <View key={booking.booking_id || booking.id || idx} style={[styles.passengerRow, { borderTopColor: colors.border }]}>
                   <Avatar
                     source={(booking.user?.photo || booking.passenger?.avatar) ? { uri: booking.user?.photo || booking.passenger?.avatar } : null}
                     name={booking.user?.name || booking.passenger?.name}
@@ -323,7 +323,7 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
         <Card style={styles.preferencesCard}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Ride Preferences</Text>
           <View style={styles.preferencesGrid}>
-            <View style={[styles.preferenceItem, ride.ac_available && styles.preferenceActive]}>
+            <View style={[styles.preferenceItem, { backgroundColor: colors.inputBackground }, ride.ac_available && styles.preferenceActive]}>
               <Ionicons
                 name="snow"
                 size={20}
@@ -333,7 +333,7 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
                 AC Available
               </Text>
             </View>
-            <View style={[styles.preferenceItem, ride.luggage_allowed && styles.preferenceActive]}>
+            <View style={[styles.preferenceItem, { backgroundColor: colors.inputBackground }, ride.luggage_allowed && styles.preferenceActive]}>
               <Ionicons
                 name="briefcase"
                 size={20}
@@ -343,7 +343,7 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
                 Luggage OK
               </Text>
             </View>
-            <View style={[styles.preferenceItem, ride.women_only && styles.preferenceActive]}>
+            <View style={[styles.preferenceItem, { backgroundColor: colors.inputBackground }, ride.women_only && styles.preferenceActive]}>
               <Ionicons
                 name="female"
                 size={20}
@@ -353,7 +353,7 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
                 Women Only
               </Text>
             </View>
-            <View style={[styles.preferenceItem, !ride.smoking_allowed && styles.preferenceActive]}>
+            <View style={[styles.preferenceItem, { backgroundColor: colors.inputBackground }, !ride.smoking_allowed && styles.preferenceActive]}>
               <Ionicons
                 name={ride.smoking_allowed ? 'flame' : 'flame-outline'}
                 size={20}
@@ -366,7 +366,7 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
           </View>
 
           {ride.notes && (
-            <View style={styles.notesSection}>
+            <View style={[styles.notesSection, { borderTopColor: colors.border }]}>
               <Text style={[styles.notesLabel, { color: colors.textMuted }]}>Driver's Note:</Text>
               <Text style={[styles.notesText, { color: colors.textSecondary }]}>{ride.notes}</Text>
             </View>
@@ -382,7 +382,7 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
         <View style={[styles.bottomBar, { backgroundColor: colors.surface }]}>
           <TouchableOpacity style={styles.seatSelector} onPress={openSeatModal}>
             <Text style={[styles.seatLabelBottom, { color: colors.textMuted }]}>Seats</Text>
-            <View style={styles.seatDisplay}>
+            <View style={[styles.seatDisplay, { backgroundColor: colors.inputBackground }]}>
               <Text style={[styles.seatCount, { color: colors.text }]}>{seatsToBook}</Text>
               <Ionicons name="chevron-down" size={14} color={colors.textMuted} />
             </View>
@@ -421,6 +421,7 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={closeSeatModal}>
           <Animated.View style={[
             styles.modalSheet,
+            { backgroundColor: colors.card },
             {
               transform: [{
                 translateY: seatModalAnim.interpolate({ inputRange: [0, 1], outputRange: [300, 0] }),
@@ -428,16 +429,16 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
             },
           ]}>
             <TouchableOpacity activeOpacity={1}>
-              <View style={styles.modalHandle} />
+              <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
               <Text style={[styles.modalTitle, { color: colors.text }]}>How many seats would you like?</Text>
 
               <View style={styles.modalSeatRow}>
                 <TouchableOpacity
-                  style={[styles.modalSeatBtn, seatsToBook <= 1 && styles.modalSeatBtnDisabled]}
+                  style={[styles.modalSeatBtn, { borderColor: colors.border }, seatsToBook <= 1 && { borderColor: colors.inputBackground, backgroundColor: colors.inputBackground }]}
                   onPress={() => setSeatsToBook(Math.max(1, seatsToBook - 1))}
                   disabled={seatsToBook <= 1}
                 >
-                  <Ionicons name="remove" size={28} color={seatsToBook <= 1 ? '#D1D5DB' : colors.text} />
+                  <Ionicons name="remove" size={28} color={seatsToBook <= 1 ? colors.border : colors.text} />
                 </TouchableOpacity>
 
                 <View style={styles.modalSeatDisplay}>
@@ -448,11 +449,11 @@ const SharedRideDetailsScreen = ({ navigation, route }) => {
                 </View>
 
                 <TouchableOpacity
-                  style={[styles.modalSeatBtn, seatsToBook >= ride.available_seats && styles.modalSeatBtnDisabled]}
+                  style={[styles.modalSeatBtn, { borderColor: colors.border }, seatsToBook >= ride.available_seats && { borderColor: colors.inputBackground, backgroundColor: colors.inputBackground }]}
                   onPress={() => setSeatsToBook(Math.min(ride.available_seats, seatsToBook + 1))}
                   disabled={seatsToBook >= ride.available_seats}
                 >
-                  <Ionicons name="add" size={28} color={seatsToBook >= ride.available_seats ? '#D1D5DB' : colors.text} />
+                  <Ionicons name="add" size={28} color={seatsToBook >= ride.available_seats ? colors.border : colors.text} />
                 </TouchableOpacity>
               </View>
 
@@ -519,7 +520,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#FFF',
+    borderColor: '#10B981',
   },
   driverNameRow: {
     flexDirection: 'row',
@@ -535,7 +536,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   driverInfo: {
     flex: 1,
@@ -604,7 +604,6 @@ const styles = StyleSheet.create({
   line: {
     width: 2,
     height: 40,
-    backgroundColor: 'rgba(255,255,255,0.2)',
     marginVertical: 5,
   },
   dotEnd: {},
@@ -672,7 +671,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.1)',
     overflow: 'hidden',
   },
   seatLabel: {
@@ -700,7 +698,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
   },
   passengerInfo: {
     flex: 1,
@@ -742,7 +739,6 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: 10,
     borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     width: '48%',
   },
   preferenceActive: {
@@ -755,7 +751,6 @@ const styles = StyleSheet.create({
     marginTop: 15,
     paddingTop: 15,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
   },
   notesLabel: {
     fontSize: 12,
@@ -792,7 +787,6 @@ const styles = StyleSheet.create({
   seatDisplay: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -835,7 +829,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -845,7 +838,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#D1D5DB',
     alignSelf: 'center',
     marginBottom: 20,
   },
@@ -867,13 +859,10 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 26,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalSeatBtnDisabled: {
-    borderColor: '#F3F4F6',
-    backgroundColor: '#F9FAFB',
   },
   modalSeatDisplay: {
     alignItems: 'center',

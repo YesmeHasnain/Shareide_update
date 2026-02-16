@@ -9,28 +9,28 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-
-const PRIMARY_COLOR = '#FCC014';
+import { useTheme } from '../../context/ThemeContext';
 
 const OnboardingScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* Content */}
       <View style={[styles.content, { paddingTop: insets.top + 40 }]}>
         {/* Logo */}
         <View style={styles.logoSection}>
-          <View style={styles.logoBox}>
+          <View style={[styles.logoBox, { backgroundColor: colors.primary }]}>
             <View style={styles.arrowContainer}>
               <View style={styles.arrowLeft} />
               <View style={styles.arrowRight} />
             </View>
           </View>
-          <Text style={styles.brandName}>
-            SH<Text style={styles.brandArrow}>A</Text>REIDE
+          <Text style={[styles.brandName, { color: colors.text }]}>
+            SH<Text style={[styles.brandArrow, { color: colors.primary }]}>A</Text>REIDE
           </Text>
         </View>
 
@@ -55,8 +55,8 @@ const OnboardingScreen = ({ navigation }) => {
         </View>
 
         {/* Title */}
-        <Text style={styles.title}>Your ride, your way</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: colors.text }]}>Your ride, your way</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Book affordable rides across Pakistan. Safe, reliable, and always at your fingertips.
         </Text>
       </View>
@@ -64,17 +64,17 @@ const OnboardingScreen = ({ navigation }) => {
       {/* Bottom Buttons */}
       <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 24 }]}>
         <TouchableOpacity
-          style={styles.primaryButton}
+          style={[styles.primaryButton, { backgroundColor: colors.primary }]}
           onPress={() => navigation.replace('Phone')}
           activeOpacity={0.8}
         >
           <Text style={styles.primaryButtonText}>Get Started</Text>
         </TouchableOpacity>
 
-        <Text style={styles.termsText}>
+        <Text style={[styles.termsText, { color: colors.textTertiary }]}>
           By continuing, you agree to our{' '}
-          <Text style={styles.linkText}>Terms</Text> &{' '}
-          <Text style={styles.linkText}>Privacy Policy</Text>
+          <Text style={[styles.linkText, { color: colors.primary }]}>Terms</Text> &{' '}
+          <Text style={[styles.linkText, { color: colors.primary }]}>Privacy Policy</Text>
         </Text>
       </View>
     </View>
@@ -84,7 +84,6 @@ const OnboardingScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -98,7 +97,6 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 20,
-    backgroundColor: PRIMARY_COLOR,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -132,11 +130,9 @@ const styles = StyleSheet.create({
   brandName: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#1A1A2E',
     letterSpacing: 2,
   },
   brandArrow: {
-    color: PRIMARY_COLOR,
   },
   illustrationSection: {
     alignItems: 'center',
@@ -203,12 +199,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#000',
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 15,
-    color: '#6B7280',
     lineHeight: 22,
   },
   bottomSection: {
@@ -217,7 +211,6 @@ const styles = StyleSheet.create({
   primaryButton: {
     height: 54,
     borderRadius: 27,
-    backgroundColor: PRIMARY_COLOR,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -229,12 +222,10 @@ const styles = StyleSheet.create({
   },
   termsText: {
     fontSize: 12,
-    color: '#9CA3AF',
     textAlign: 'center',
     lineHeight: 18,
   },
   linkText: {
-    color: PRIMARY_COLOR,
   },
 });
 

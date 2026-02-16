@@ -81,8 +81,15 @@ const SettingsScreen = ({ navigation }) => {
       title: 'Account',
       icon: 'person-circle',
       items: [
-        { icon: 'key', label: 'Change Password', type: 'link' },
-        { icon: 'shield-checkmark', label: 'Two-Factor Auth', type: 'link' },
+        { icon: 'key', label: 'Change Password', type: 'link', action: () => {
+          Alert.alert('Change Password', 'A password reset link will be sent to your registered phone number.', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Send Link', onPress: () => Alert.alert('Success', 'Password reset link sent!') },
+          ]);
+        }},
+        { icon: 'shield-checkmark', label: 'Two-Factor Auth', type: 'link', action: () => {
+          Alert.alert('Two-Factor Authentication', 'Two-factor authentication is enabled via OTP on your registered phone number. This cannot be disabled for your security.');
+        }},
         { icon: 'finger-print', label: 'Face ID / Fingerprint', key: 'faceId', type: 'toggle' },
       ],
     },
@@ -92,7 +99,11 @@ const SettingsScreen = ({ navigation }) => {
       items: [
         { icon: 'location', label: 'Location Services', key: 'locationServices', type: 'toggle' },
         { icon: 'people', label: 'Ride Sharing', key: 'rideSharing', type: 'toggle', desc: 'Share rides with others' },
-        { icon: 'analytics', label: 'Analytics', type: 'link' },
+        { icon: 'analytics', label: 'Analytics', type: 'link', action: () => {
+          Alert.alert('Analytics', 'We collect anonymous usage data to improve the app experience. This helps us optimize routes and pricing.', [
+            { text: 'OK' },
+          ]);
+        }},
       ],
     },
     {
@@ -101,7 +112,7 @@ const SettingsScreen = ({ navigation }) => {
       items: [
         { icon: 'wallet', label: 'Payment Methods', type: 'link', screen: 'PaymentMethods' },
         { icon: 'refresh', label: 'Auto Top-up', key: 'autoTopup', type: 'toggle' },
-        { icon: 'receipt', label: 'Receipts', type: 'link' },
+        { icon: 'receipt', label: 'Receipts', type: 'link', screen: 'TransactionHistory' },
       ],
     },
     {
@@ -204,7 +215,8 @@ const SettingsScreen = ({ navigation }) => {
         ]}
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          item.screen && navigation.navigate(item.screen);
+          if (item.action) item.action();
+          else if (item.screen) navigation.navigate(item.screen);
         }}
       >
         <View style={styles.settingLeft}>

@@ -15,11 +15,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../../context/ThemeContext';
 import { authAPI } from '../../api/auth';
 
-const PRIMARY_COLOR = '#FCC014';
-
 const PhoneScreen = ({ navigation }) => {
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
@@ -74,37 +74,37 @@ const PhoneScreen = ({ navigation }) => {
   const isValidPhone = cleanedPhone.length >= 10 && cleanedPhone.length <= 11;
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'light-content'} backgroundColor={colors.background} />
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Dark Top Section */}
-        <View style={[styles.darkSection, { paddingTop: insets.top + 16 }]}>
+        <View style={[styles.darkSection, { paddingTop: insets.top + 16, backgroundColor: colors.background }]}>
           <TouchableOpacity
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={20} color="#FFF" />
+            <Ionicons name="arrow-back" size={20} color={colors.text} />
           </TouchableOpacity>
 
           <View style={styles.logoSection}>
             <Image
-              source={require('../../../assets/logodarkmode.png')}
+              source={isDark ? require('../../../assets/logodarkmode.png') : require('../../../assets/logolightmode.png')}
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.tagline}>Drive. Earn. Grow.</Text>
+            <Text style={[styles.tagline, { color: colors.textTertiary }]}>Drive. Earn. Grow.</Text>
           </View>
         </View>
 
         {/* Content */}
         <View style={styles.content}>
           {/* Title */}
-          <Text style={styles.title}>Enter Your Phone Number</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, { color: colors.text }]}>Enter Your Phone Number</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Enter your phone number to get started as a driver partner
           </Text>
 
@@ -113,23 +113,25 @@ const PhoneScreen = ({ navigation }) => {
             {/* Country Code */}
             <TouchableOpacity style={[
               styles.countryBox,
-              isFocused && styles.countryBoxFocused,
+              { borderColor: colors.border },
+              isFocused && { borderColor: colors.primary },
             ]}>
               <Text style={styles.flag}>🇵🇰</Text>
-              <Ionicons name="chevron-down" size={16} color="#666" />
+              <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
             </TouchableOpacity>
 
             {/* Phone Input */}
             <View style={[
               styles.phoneInputBox,
-              isFocused && styles.phoneInputBoxFocused,
+              { backgroundColor: colors.inputBackground, borderColor: 'transparent' },
+              isFocused && { borderColor: colors.primary, backgroundColor: colors.background },
             ]}>
               <TextInput
-                style={styles.phoneInput}
+                style={[styles.phoneInput, { color: colors.text }]}
                 value={phone}
                 onChangeText={(t) => setPhone(t.replace(/[^0-9]/g, '').slice(0, 11))}
                 placeholder="Phone number"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.textTertiary}
                 keyboardType="phone-pad"
                 editable={!loading}
                 maxLength={11}
@@ -146,7 +148,7 @@ const PhoneScreen = ({ navigation }) => {
             style={[
               styles.continueButton,
               {
-                backgroundColor: isValidPhone ? PRIMARY_COLOR : '#F3F4F6',
+                backgroundColor: isValidPhone ? colors.primary : colors.inputBackground,
                 shadowOpacity: isValidPhone ? 0.15 : 0,
               },
             ]}
@@ -159,7 +161,7 @@ const PhoneScreen = ({ navigation }) => {
             ) : (
               <Text style={[
                 styles.continueText,
-                { color: isValidPhone ? '#000' : '#9CA3AF' }
+                { color: isValidPhone ? '#000' : colors.textTertiary }
               ]}>
                 Send verification code
               </Text>
@@ -167,10 +169,10 @@ const PhoneScreen = ({ navigation }) => {
           </TouchableOpacity>
 
           {/* Terms */}
-          <Text style={styles.termsText}>
+          <Text style={[styles.termsText, { color: colors.textTertiary }]}>
             By continuing, you agree to our{' '}
-            <Text style={styles.linkText}>Terms</Text> &{' '}
-            <Text style={styles.linkText}>Privacy Policy</Text>
+            <Text style={[styles.linkText, { color: colors.primary }]}>Terms</Text> &{' '}
+            <Text style={[styles.linkText, { color: colors.primary }]}>Privacy Policy</Text>
           </Text>
         </View>
       </KeyboardAvoidingView>
@@ -181,14 +183,12 @@ const PhoneScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   keyboardView: {
     flex: 1,
   },
   // Dark top section
   darkSection: {
-    backgroundColor: '#1A1A2E',
     paddingHorizontal: 20,
     paddingBottom: 28,
     borderBottomLeftRadius: 28,
@@ -198,7 +198,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
@@ -213,7 +212,6 @@ const styles = StyleSheet.create({
   },
   tagline: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.5)',
     fontWeight: '500',
   },
   content: {
@@ -224,12 +222,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#000',
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 15,
-    color: '#6B7280',
     lineHeight: 22,
     marginBottom: 32,
   },
@@ -244,11 +240,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
     gap: 6,
-  },
-  countryBoxFocused: {
-    borderColor: PRIMARY_COLOR,
   },
   flag: {
     fontSize: 20,
@@ -257,19 +249,12 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     borderRadius: 12,
-    backgroundColor: '#F9FAFB',
     justifyContent: 'center',
     paddingHorizontal: 16,
     borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  phoneInputBoxFocused: {
-    borderColor: PRIMARY_COLOR,
-    backgroundColor: '#FFFFFF',
   },
   phoneInput: {
     fontSize: 16,
-    color: '#000',
   },
   bottomSection: {
     paddingHorizontal: 24,
@@ -290,14 +275,11 @@ const styles = StyleSheet.create({
   },
   termsText: {
     fontSize: 12,
-    color: '#9CA3AF',
     textAlign: 'center',
     marginTop: 16,
     lineHeight: 18,
   },
-  linkText: {
-    color: PRIMARY_COLOR,
-  },
+  linkText: {},
 });
 
 export default PhoneScreen;

@@ -138,7 +138,7 @@ const RatingsScreen = ({ navigation }) => {
           <>
             {/* Overall Rating */}
             <View style={[styles.overallCard, { backgroundColor: colors.surface }]}>
-              <View style={styles.overallLeft}>
+              <View style={[styles.overallLeft, { borderRightColor: colors.border }]}>
                 <Text style={[styles.overallRating, { color: colors.text }]}>
                   {ratingStats.average.toFixed(1)}
                 </Text>
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingRight: spacing.xl,
     borderRightWidth: 1,
-    borderRightColor: '#e5e5e5',
+    borderRightColor: '#e5e5e5', // overridden inline
   },
   overallRating: {
     fontSize: 48,

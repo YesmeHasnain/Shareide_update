@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import Header from '../../components/Header';
@@ -36,6 +37,7 @@ const VehicleDetailsScreen = ({ navigation }) => {
   const driver = user?.driver;
 
   const [loading, setLoading] = useState(false);
+  const [insuranceUploaded, setInsuranceUploaded] = useState(false);
   const [formData, setFormData] = useState({
     vehicle_type: driver?.vehicle_type || 'car',
     vehicle_make: driver?.vehicle_make || '',
@@ -51,6 +53,50 @@ const VehicleDetailsScreen = ({ navigation }) => {
     { key: 'car', label: 'Car' },
     { key: 'ac_car', label: 'AC Car' },
   ];
+
+  const handleUploadInsurance = async () => {
+    Alert.alert('Upload Insurance', 'Choose an option', [
+      {
+        text: 'Camera',
+        onPress: async () => {
+          const { status } = await ImagePicker.requestCameraPermissionsAsync();
+          if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Camera permission is required');
+            return;
+          }
+          const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.8,
+          });
+          if (!result.canceled && result.assets?.[0]) {
+            setInsuranceUploaded(true);
+            Alert.alert('Success', 'Insurance document uploaded successfully!');
+          }
+        },
+      },
+      {
+        text: 'Gallery',
+        onPress: async () => {
+          const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Gallery permission is required');
+            return;
+          }
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.8,
+          });
+          if (!result.canceled && result.assets?.[0]) {
+            setInsuranceUploaded(true);
+            Alert.alert('Success', 'Insurance document uploaded successfully!');
+          }
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -205,16 +251,22 @@ const VehicleDetailsScreen = ({ navigation }) => {
             </View>
           </View>
 
-          <View style={styles.docRow}>
+          <View style={[styles.docRow, { borderBottomColor: colors.border }]}>
             <View style={styles.docInfo}>
               <View style={[styles.docIconBg, { backgroundColor: DOC_ICONS.insurance.bg }]}>
                 <Ionicons name={DOC_ICONS.insurance.name} size={18} color={DOC_ICONS.insurance.color} />
               </View>
               <Text style={[styles.docLabel, { color: colors.text }]}>Insurance</Text>
             </View>
-            <TouchableOpacity style={[styles.docStatus, { backgroundColor: colors.primary }]}>
-              <Text style={[styles.docStatusText, { color: '#000' }]}>Upload</Text>
-            </TouchableOpacity>
+            {insuranceUploaded ? (
+              <View style={[styles.docStatus, { backgroundColor: '#22c55e20' }]}>
+                <Text style={[styles.docStatusText, { color: '#22c55e' }]}>Uploaded</Text>
+              </View>
+            ) : (
+              <TouchableOpacity style={[styles.docStatus, { backgroundColor: colors.primary }]} onPress={handleUploadInsurance}>
+                <Text style={[styles.docStatusText, { color: '#000' }]}>Upload</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </Card>
 

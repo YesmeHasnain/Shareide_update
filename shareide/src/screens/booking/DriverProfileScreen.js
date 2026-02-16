@@ -126,7 +126,7 @@ const DriverProfileScreen = ({ route, navigation }) => {
               name={driver?.name}
               size="xlarge"
             />
-            <View style={[styles.verifiedBadge, { backgroundColor: colors.primary }]}>
+            <View style={[styles.verifiedBadge, { backgroundColor: colors.primary, borderColor: colors.background }]}>
               <Ionicons name="checkmark" size={16} color="#000" />
             </View>
           </View>
@@ -317,7 +317,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#FFFFFF',
   },
   driverName: {
     fontSize: typography.h4,

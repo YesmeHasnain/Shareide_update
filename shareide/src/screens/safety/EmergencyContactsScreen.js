@@ -142,7 +142,7 @@ const EmergencyContactsScreen = ({ navigation }) => {
         <View style={styles.modalOverlay}>
           <TouchableOpacity style={styles.modalBackdrop} onPress={() => setShowAdd(false)} />
           <View style={[styles.modalSheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + 16 }]}>
-            <View style={styles.modalHandle} />
+            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
             <Text style={[styles.modalTitle, { color: colors.text }]}>Add Emergency Contact</Text>
             <TextInput
               style={[styles.modalInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   modalOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'flex-end' },
   modalBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
   modalSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12 },
-  modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginBottom: 16 },
+  modalHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
   modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
   modalInput: { borderWidth: 1, borderRadius: 12, padding: 14, fontSize: 16, marginBottom: 12 },
   modalBtn: { paddingVertical: 16, borderRadius: 14, alignItems: 'center', marginTop: 4 },

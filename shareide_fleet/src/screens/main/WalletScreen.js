@@ -29,7 +29,7 @@ const ACCENT_COLORS = {
 };
 
 const WalletScreen = () => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
   const [loading, setLoading] = useState(false);
@@ -318,7 +318,7 @@ const WalletScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -740,7 +740,7 @@ const WithdrawButton = ({ onPress }) => {
       onPressOut={handlePressOut}
       activeOpacity={1}
     >
-      <Ionicons name="arrow-down-circle" size={20} color="#1A1A2E" />
+      <Ionicons name="arrow-down-circle" size={20} color="#000" />
       <Text style={styles.withdrawButtonText}>
         Withdraw Money
       </Text>
@@ -1082,7 +1082,7 @@ const styles = StyleSheet.create({
   withdrawButtonText: {
     fontSize: typography.body,
     fontWeight: '700',
-    color: '#1A1A2E',
+    color: '#000',
   },
   earningsSection: {
     paddingHorizontal: spacing.lg,

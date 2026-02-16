@@ -145,7 +145,7 @@ const EarningsScreen = ({ navigation }) => {
                   <Text style={[styles.barValue, { color: colors.textSecondary }]}>
                     {(day.earnings / 1000).toFixed(1)}k
                   </Text>
-                  <View style={styles.barWrapper}>
+                  <View style={[styles.barWrapper, { backgroundColor: colors.border }]}>
                     <View
                       style={[
                         styles.bar,

@@ -18,8 +18,6 @@ import * as Location from 'expo-location';
 import { useTheme } from '../../context/ThemeContext';
 import client from '../../api/client';
 
-const PRIMARY_COLOR = '#FCC014';
-
 const AvailableRidesScreen = ({ navigation }) => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -167,13 +165,13 @@ const AvailableRidesScreen = ({ navigation }) => {
       <View style={[styles.rideCard, { backgroundColor: colors.card }]}>
         {/* Driver Info */}
         <View style={styles.driverRow}>
-          <View style={[styles.avatar, { backgroundColor: PRIMARY_COLOR + '20' }]}>
-            <Ionicons name="person" size={20} color={PRIMARY_COLOR} />
+          <View style={[styles.avatar, { backgroundColor: colors.primary + '20' }]}>
+            <Ionicons name="person" size={20} color={colors.primary} />
           </View>
           <View style={styles.driverInfo}>
             <Text style={[styles.driverName, { color: colors.text }]}>{item.driver?.name || 'Driver'}</Text>
             <View style={styles.ratingRow}>
-              <Ionicons name="star" size={14} color={PRIMARY_COLOR} />
+              <Ionicons name="star" size={14} color={colors.primary} />
               <Text style={[styles.rating, { color: colors.textSecondary }]}>
                 {item.driver?.rating || '5.0'} • {item.driver?.vehicle_model || 'Car'}
               </Text>
@@ -189,12 +187,12 @@ const AvailableRidesScreen = ({ navigation }) => {
         {/* Route */}
         <View style={styles.routeSection}>
           <View style={styles.routeRow}>
-            <View style={[styles.dot, { backgroundColor: PRIMARY_COLOR }]} />
+            <View style={[styles.dot, { backgroundColor: colors.primary }]} />
             <Text style={[styles.routeText, { color: colors.text }]} numberOfLines={1}>{item.pickup_address}</Text>
           </View>
           <View style={[styles.routeLine, { backgroundColor: colors.border }]} />
           <View style={styles.routeRow}>
-            <View style={[styles.pin, { backgroundColor: PRIMARY_COLOR }]} />
+            <View style={[styles.pin, { backgroundColor: colors.primary }]} />
             <Text style={[styles.routeText, { color: colors.text }]} numberOfLines={1}>{item.dropoff_address}</Text>
           </View>
         </View>
@@ -209,7 +207,7 @@ const AvailableRidesScreen = ({ navigation }) => {
             <Ionicons name="people-outline" size={16} color={colors.textSecondary} />
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>{item.available_seats} seats</Text>
           </View>
-          <View style={styles.priceTag}>
+          <View style={[styles.priceTag, { backgroundColor: colors.primary }]}>
             <Text style={styles.priceText}>Rs. {item.price_per_seat}</Text>
           </View>
         </View>
@@ -227,7 +225,7 @@ const AvailableRidesScreen = ({ navigation }) => {
             style={[styles.actionBtn, { backgroundColor: colors.inputBackground }]}
             onPress={() => openChat(item)}
           >
-            <Ionicons name="chatbubble-outline" size={18} color={PRIMARY_COLOR} />
+            <Ionicons name="chatbubble-outline" size={18} color={colors.primary} />
             <Text style={[styles.actionText, { color: colors.text }]}>Chat</Text>
           </TouchableOpacity>
 
@@ -240,7 +238,7 @@ const AvailableRidesScreen = ({ navigation }) => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.bidBtn}
+            style={[styles.bidBtn, { backgroundColor: colors.primary }]}
             onPress={() => openBidModal(item)}
           >
             <Text style={styles.bidBtnText}>Place Bid</Text>
@@ -274,8 +272,8 @@ const AvailableRidesScreen = ({ navigation }) => {
       </View>
 
       {/* Info Banner */}
-      <View style={[styles.infoBanner, { backgroundColor: PRIMARY_COLOR + '15' }]}>
-        <Ionicons name="information-circle" size={20} color={PRIMARY_COLOR} />
+      <View style={[styles.infoBanner, { backgroundColor: colors.primary + '15' }]}>
+        <Ionicons name="information-circle" size={20} color={colors.primary} />
         <Text style={[styles.infoText, { color: colors.text, marginLeft: 8, flex: 1 }]}>
           Showing rides within 5km of your location
         </Text>
@@ -283,7 +281,7 @@ const AvailableRidesScreen = ({ navigation }) => {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={PRIMARY_COLOR} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -292,7 +290,7 @@ const AvailableRidesScreen = ({ navigation }) => {
           renderItem={renderRide}
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY_COLOR} />
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
           }
           ListEmptyComponent={renderEmpty}
           showsVerticalScrollIndicator={false}
@@ -323,7 +321,7 @@ const AvailableRidesScreen = ({ navigation }) => {
 
                 <Text style={[styles.inputLabel, { color: colors.text }]}>Your Bid Amount (per seat)</Text>
                 <View style={[styles.bidInputBox, { backgroundColor: colors.inputBackground }]}>
-                  <Text style={[styles.rsLabel, { color: PRIMARY_COLOR }]}>Rs.</Text>
+                  <Text style={[styles.rsLabel, { color: colors.primary }]}>Rs.</Text>
                   <TextInput
                     style={[styles.bidInput, { color: colors.text }]}
                     value={bidAmount}
@@ -341,7 +339,7 @@ const AvailableRidesScreen = ({ navigation }) => {
                       key={num}
                       style={[
                         styles.seatBtn,
-                        { backgroundColor: bidSeats === num ? PRIMARY_COLOR : colors.inputBackground },
+                        { backgroundColor: bidSeats === num ? colors.primary : colors.inputBackground },
                       ]}
                       onPress={() => setBidSeats(num)}
                     >
@@ -353,7 +351,7 @@ const AvailableRidesScreen = ({ navigation }) => {
                 </View>
 
                 <TouchableOpacity
-                  style={[styles.submitBidBtn, { opacity: bidding ? 0.7 : 1 }]}
+                  style={[styles.submitBidBtn, { backgroundColor: colors.primary, opacity: bidding ? 0.7 : 1 }]}
                   onPress={submitBid}
                   disabled={bidding}
                 >
@@ -414,13 +412,13 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   infoItem: { flexDirection: 'row', alignItems: 'center', marginRight: 16 },
   infoText: { fontSize: 13, marginLeft: 4 },
-  priceTag: { backgroundColor: PRIMARY_COLOR, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8, marginLeft: 'auto' },
+  priceTag: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8, marginLeft: 'auto' },
   priceText: { fontSize: 14, fontWeight: '700', color: '#000' },
   notes: { fontSize: 13, marginBottom: 12 },
   actions: { flexDirection: 'row', gap: 10 },
   actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 40, borderRadius: 10, gap: 6 },
   actionText: { fontSize: 13, fontWeight: '600' },
-  bidBtn: { flex: 1.5, backgroundColor: PRIMARY_COLOR, alignItems: 'center', justifyContent: 'center', height: 40, borderRadius: 10 },
+  bidBtn: { flex: 1.5, alignItems: 'center', justifyContent: 'center', height: 40, borderRadius: 10 },
   bidBtnText: { fontSize: 14, fontWeight: '700', color: '#000' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
   emptyTitle: { fontSize: 18, fontWeight: '600', marginTop: 16 },
@@ -439,7 +437,7 @@ const styles = StyleSheet.create({
   seatsRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
   seatBtn: { flex: 1, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   seatBtnText: { fontSize: 16, fontWeight: '600' },
-  submitBidBtn: { backgroundColor: PRIMARY_COLOR, height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  submitBidBtn: { height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
   submitBidText: { fontSize: 16, fontWeight: '700', color: '#000' },
 });
 

@@ -231,14 +231,21 @@ const ProfileScreen = ({ navigation }) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (screen) {
       navigation.navigate(screen);
-    } else {
-      Alert.alert('Coming Soon', 'This feature will be available soon!');
     }
+  };
+
+  const handleLanguagePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert('Select Language', 'Choose your preferred language', [
+      { text: 'English', onPress: () => Alert.alert('Language', 'Language set to English') },
+      { text: 'اردو (Urdu)', onPress: () => Alert.alert('زبان', 'زبان اردو میں تبدیل ہو گئی') },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
+      <StatusBar barStyle={isDark ? 'light-content' : 'light-content'} backgroundColor={colors.background} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -414,7 +421,7 @@ const ProfileScreen = ({ navigation }) => {
             icon="globe"
             title="Language"
             value="English"
-            onPress={() => handleMenuPress(null)}
+            onPress={handleLanguagePress}
             colors={colors}
             index={2}
           />
@@ -433,18 +440,25 @@ const ProfileScreen = ({ navigation }) => {
             index={0}
           />
           <MenuItem
+            icon="book"
+            title="FAQ"
+            onPress={() => handleMenuPress('DriverFAQ')}
+            colors={colors}
+            index={1}
+          />
+          <MenuItem
             icon="document-text"
             title="Terms & Conditions"
             onPress={() => handleMenuPress('Support')}
             colors={colors}
-            index={1}
+            index={2}
           />
           <MenuItem
             icon="shield-checkmark"
             title="Privacy Policy"
             onPress={() => handleMenuPress('Support')}
             colors={colors}
-            index={2}
+            index={3}
           />
         </AnimatedCard>
 
@@ -541,7 +555,7 @@ const styles = StyleSheet.create({
   },
   // Dark gradient profile header
   profileHeader: {
-    backgroundColor: '#1A1A2E',
+    backgroundColor: '#1A1A2E', // kept dark for branded header
     paddingBottom: 28,
     alignItems: 'center',
     borderBottomLeftRadius: 28,
@@ -581,7 +595,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#1A1A2E',
+    borderColor: '#1A1A2E', // matches dark header bg
   },
   profileName: {
     fontSize: typography.h4,

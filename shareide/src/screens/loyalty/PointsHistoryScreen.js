@@ -13,10 +13,10 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { loyaltyAPI } from '../../api/loyalty';
-
-const PRIMARY_COLOR = '#FCC014';
+import { useTheme } from '../../context/ThemeContext';
 
 const PointsHistoryScreen = ({ navigation }) => {
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -77,23 +77,8 @@ const PointsHistoryScreen = ({ navigation }) => {
     return `${day} ${month} ${year}, ${hour12}:${mins} ${ampm}`;
   };
 
-  const getTransactionIcon = (type) => {
-    switch (type) {
-      case 'earned':
-        return 'add-circle';
-      case 'redeemed':
-        return 'gift';
-      case 'expired':
-        return 'time';
-      case 'bonus':
-        return 'star';
-      default:
-        return 'swap-horizontal';
-    }
-  };
-
   const renderItem = ({ item }) => (
-    <View style={styles.historyItem}>
+    <View style={[styles.historyItem, { backgroundColor: colors.card }]}>
       <View
         style={[
           styles.historyIcon,
@@ -107,10 +92,10 @@ const PointsHistoryScreen = ({ navigation }) => {
         />
       </View>
       <View style={styles.historyInfo}>
-        <Text style={styles.historyTitle}>{item.description}</Text>
-        <Text style={styles.historyDate}>{formatDate(item.created_at)}</Text>
+        <Text style={[styles.historyTitle, { color: colors.text }]}>{item.description}</Text>
+        <Text style={[styles.historyDate, { color: colors.textSecondary }]}>{formatDate(item.created_at)}</Text>
         {item.reference_type && (
-          <Text style={styles.historyRef}>
+          <Text style={[styles.historyRef, { color: colors.textTertiary }]}>
             {item.reference_type === 'ride' ? 'Ride' : item.reference_type}
             {item.reference_id ? ` #${item.reference_id}` : ''}
           </Text>
@@ -126,18 +111,18 @@ const PointsHistoryScreen = ({ navigation }) => {
           {item.points > 0 ? '+' : ''}
           {item.points}
         </Text>
-        <Text style={styles.pointsLabel}>pts</Text>
+        <Text style={[styles.pointsLabel, { color: colors.textTertiary }]}>pts</Text>
       </View>
     </View>
   );
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <View style={styles.emptyIconCircle}>
-        <Ionicons name="time-outline" size={48} color="#9CA3AF" />
+      <View style={[styles.emptyIconCircle, { backgroundColor: colors.inputBackground }]}>
+        <Ionicons name="time-outline" size={48} color={colors.textTertiary} />
       </View>
-      <Text style={styles.emptyTitle}>No History Yet</Text>
-      <Text style={styles.emptyMessage}>
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>No History Yet</Text>
+      <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
         Your points history will appear here as you earn and redeem points.
       </Text>
     </View>
@@ -147,45 +132,45 @@ const PointsHistoryScreen = ({ navigation }) => {
     if (!loadingMore) return null;
     return (
       <View style={styles.loadingMore}>
-        <ActivityIndicator size="small" color={PRIMARY_COLOR} />
+        <ActivityIndicator size="small" color={colors.primary} />
       </View>
     );
   };
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
         <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
           <TouchableOpacity
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: colors.inputBackground }]}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={20} color="#000" />
+            <Ionicons name="arrow-back" size={20} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Points History</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Points History</Text>
           <View style={styles.placeholder} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={PRIMARY_COLOR} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: colors.inputBackground }]}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={20} color="#000" />
+          <Ionicons name="arrow-back" size={20} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Points History</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Points History</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -201,8 +186,8 @@ const PointsHistoryScreen = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={PRIMARY_COLOR}
-            colors={[PRIMARY_COLOR]}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
         onEndReached={loadMore}
@@ -215,7 +200,6 @@ const PointsHistoryScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
@@ -228,14 +212,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
   },
   placeholder: {
     width: 40,
@@ -253,7 +235,6 @@ const styles = StyleSheet.create({
   historyItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
@@ -272,16 +253,13 @@ const styles = StyleSheet.create({
   historyTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#000',
   },
   historyDate: {
     fontSize: 12,
-    color: '#6B7280',
     marginTop: 2,
   },
   historyRef: {
     fontSize: 11,
-    color: '#9CA3AF',
     marginTop: 2,
   },
   pointsContainer: {
@@ -293,7 +271,6 @@ const styles = StyleSheet.create({
   },
   pointsLabel: {
     fontSize: 11,
-    color: '#9CA3AF',
     marginTop: 1,
   },
   emptyContainer: {
@@ -307,7 +284,6 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
@@ -315,12 +291,10 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#000',
     marginBottom: 8,
   },
   emptyMessage: {
     fontSize: 15,
-    color: '#6B7280',
     textAlign: 'center',
     lineHeight: 22,
   },

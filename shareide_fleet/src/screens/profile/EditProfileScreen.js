@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import Input from '../../components/Input';
@@ -22,6 +23,7 @@ const EditProfileScreen = ({ navigation }) => {
   const { user, updateUser } = useAuth();
 
   const [loading, setLoading] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState(user?.profile_picture || null);
   const [formData, setFormData] = useState({
     first_name: user?.first_name || '',
     last_name: user?.last_name || '',
@@ -31,6 +33,50 @@ const EditProfileScreen = ({ navigation }) => {
     address: user?.address || '',
     city: user?.city || 'Karachi',
   });
+
+  const handleChangePhoto = async () => {
+    Alert.alert('Change Photo', 'Choose an option', [
+      {
+        text: 'Camera',
+        onPress: async () => {
+          const { status } = await ImagePicker.requestCameraPermissionsAsync();
+          if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Camera permission is required');
+            return;
+          }
+          const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.8,
+          });
+          if (!result.canceled && result.assets?.[0]) {
+            setProfilePhoto(result.assets[0].uri);
+          }
+        },
+      },
+      {
+        text: 'Gallery',
+        onPress: async () => {
+          const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Gallery permission is required');
+            return;
+          }
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.8,
+          });
+          if (!result.canceled && result.assets?.[0]) {
+            setProfilePhoto(result.assets[0].uri);
+          }
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -75,8 +121,10 @@ const EditProfileScreen = ({ navigation }) => {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Avatar */}
         <View style={styles.avatarSection}>
-          <TouchableOpacity style={[styles.avatarContainer, { borderColor: colors.primary }]}>
-            {user?.profile_picture ? (
+          <TouchableOpacity style={[styles.avatarContainer, { borderColor: colors.primary }]} onPress={handleChangePhoto}>
+            {profilePhoto ? (
+              <Image source={{ uri: profilePhoto }} style={styles.avatar} />
+            ) : user?.profile_picture ? (
               <Image source={{ uri: user.profile_picture }} style={styles.avatar} />
             ) : (
               <Image
@@ -85,7 +133,7 @@ const EditProfileScreen = ({ navigation }) => {
               />
             )}
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.changePhotoBtn, { borderColor: colors.primary }]}>
+          <TouchableOpacity style={[styles.changePhotoBtn, { borderColor: colors.primary }]} onPress={handleChangePhoto}>
             <Text style={[styles.changePhotoText, { color: colors.primary }]}>Change Photo</Text>
           </TouchableOpacity>
         </View>
@@ -157,7 +205,7 @@ const EditProfileScreen = ({ navigation }) => {
         {user?.driver && (
           <View style={[styles.statusCard, { backgroundColor: colors.surface }]}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Driver Status</Text>
-            <View style={styles.statusRow}>
+            <View style={[styles.statusRow, { borderBottomColor: colors.border }]}>
               <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>Status</Text>
               <View style={[
                 styles.statusBadge,
@@ -171,13 +219,13 @@ const EditProfileScreen = ({ navigation }) => {
                 </Text>
               </View>
             </View>
-            <View style={styles.statusRow}>
+            <View style={[styles.statusRow, { borderBottomColor: colors.border }]}>
               <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>Total Rides</Text>
               <Text style={[styles.statusValue, { color: colors.text }]}>
                 {user.driver.total_rides || 0}
               </Text>
             </View>
-            <View style={styles.statusRow}>
+            <View style={[styles.statusRow, { borderBottomColor: colors.border }]}>
               <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>Rating</Text>
               <Text style={[styles.statusValue, { color: colors.text }]}>
                 {user.driver.rating?.toFixed(1) || '0.0'} ⭐
@@ -272,7 +320,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
+    borderBottomColor: '#e5e5e5', // overridden inline
   },
   statusLabel: {
     fontSize: 14,

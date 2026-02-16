@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { rideAPI } from '../../api/ride';
 import locationService from '../../utils/locationService';
@@ -23,10 +24,9 @@ import SideDrawer from '../../components/SideDrawer';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PRIMARY = '#FCC014';
-const DARK = '#0F0F1E';
-const DARK2 = '#1A1A2E';
 
 const DashboardScreen = ({ navigation }) => {
+  const { colors, isDark } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
 
@@ -216,7 +216,7 @@ const DashboardScreen = ({ navigation }) => {
   <div id="map"></div>
   <script>
     const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([${lat}, ${lng}], 16);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/${isDark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
     const icon = L.divIcon({
       html: '<div class="marker-wrapper"><div class="pulse-fill"></div><div class="pulse-ring"></div><div class="marker"></div></div>',
       className: '', iconSize: [52, 52], iconAnchor: [26, 26]
@@ -228,8 +228,8 @@ const DashboardScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+    <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor="transparent" />
 
       {/* Full Screen Map */}
       <View style={styles.mapContainer}>
@@ -246,19 +246,19 @@ const DashboardScreen = ({ navigation }) => {
         <View style={[styles.topHeader, { paddingTop: insets.top + 8 }]}>
           {/* Left: Menu */}
           <TouchableOpacity
-            style={styles.headerBtn}
+            style={[styles.headerBtn, { backgroundColor: colors.card || colors.surface }]}
             onPress={() => setDrawerOpen(true)}
             activeOpacity={0.7}
           >
-            <Ionicons name="menu" size={22} color={DARK} />
+            <Ionicons name="menu" size={22} color={colors.text} />
           </TouchableOpacity>
 
           {/* Center: Greeting + Status */}
           <View style={styles.headerCenter}>
-            <Text style={styles.greetingText}>Hi, {getUserName()}</Text>
+            <Text style={[styles.greetingText, { color: colors.text }]}>Hi, {getUserName()}</Text>
             <View style={styles.headerStatusRow}>
               <View style={[styles.headerStatusDot, { backgroundColor: isOnline ? '#10B981' : '#EF4444' }]} />
-              <Text style={[styles.headerStatusText, { color: isOnline ? '#10B981' : '#9CA3AF' }]}>
+              <Text style={[styles.headerStatusText, { color: isOnline ? '#10B981' : colors.textTertiary }]}>
                 {isOnline ? 'Online' : 'Offline'}
               </Text>
             </View>
@@ -266,11 +266,11 @@ const DashboardScreen = ({ navigation }) => {
 
           {/* Right: Notifications */}
           <TouchableOpacity
-            style={styles.headerBtn}
+            style={[styles.headerBtn, { backgroundColor: colors.card || colors.surface }]}
             onPress={() => navigation.navigate('Notifications')}
             activeOpacity={0.7}
           >
-            <Ionicons name="notifications-outline" size={22} color={DARK} />
+            <Ionicons name="notifications-outline" size={22} color={colors.text} />
             <View style={styles.notifDot} />
           </TouchableOpacity>
         </View>
@@ -296,7 +296,7 @@ const DashboardScreen = ({ navigation }) => {
 
         {/* Center Location Button */}
         <TouchableOpacity
-          style={[styles.centerBtn, { bottom: 310 + insets.bottom }]}
+          style={[styles.centerBtn, { bottom: 310 + insets.bottom, backgroundColor: colors.card || colors.surface }]}
           onPress={initializeLocation}
           activeOpacity={0.7}
         >
@@ -306,9 +306,9 @@ const DashboardScreen = ({ navigation }) => {
         {/* Logo + Toggle */}
         <View style={[styles.logoToggleContainer, { bottom: 250 + insets.bottom }]}>
           {/* Logo */}
-          <View style={styles.logoBg}>
+          <View style={[styles.logoBg, { backgroundColor: colors.background }]}>
             <Image
-              source={require('../../../assets/logodarkmode.png')}
+              source={isDark ? require('../../../assets/logodarkmode.png') : require('../../../assets/logolightmode.png')}
               style={styles.logoImage}
               resizeMode="contain"
             />
@@ -366,6 +366,7 @@ const DashboardScreen = ({ navigation }) => {
       <Animated.View style={[
         styles.bottomPanel,
         {
+          backgroundColor: colors.card || colors.surface,
           paddingBottom: insets.bottom + 80,
           transform: [{
             translateY: bottomSlide.interpolate({
@@ -378,8 +379,8 @@ const DashboardScreen = ({ navigation }) => {
         {/* Earnings Row */}
         <View style={styles.earningsRow}>
           <View>
-            <Text style={styles.earningsLabel}>Today's Earnings</Text>
-            <Text style={styles.earningsAmount}>Rs. {stats.today_earnings.toLocaleString()}</Text>
+            <Text style={[styles.earningsLabel, { color: colors.textTertiary }]}>Today's Earnings</Text>
+            <Text style={[styles.earningsAmount, { color: colors.text }]}>Rs. {stats.today_earnings.toLocaleString()}</Text>
           </View>
           <TouchableOpacity
             style={styles.earningsDetailBtn}
@@ -403,7 +404,7 @@ const DashboardScreen = ({ navigation }) => {
             activeOpacity={0.7}
           >
             <LinearGradient
-              colors={[DARK, DARK2]}
+              colors={isDark ? ['#1E1E2E', '#2A2A3E'] : ['#0F0F1E', '#1A1A2E']}
               style={styles.actionCardGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -429,7 +430,7 @@ const DashboardScreen = ({ navigation }) => {
             activeOpacity={0.7}
           >
             <LinearGradient
-              colors={[DARK, DARK2]}
+              colors={isDark ? ['#1E1E2E', '#2A2A3E'] : ['#0F0F1E', '#1A1A2E']}
               style={styles.actionCardGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -446,7 +447,7 @@ const DashboardScreen = ({ navigation }) => {
         {/* Quick Links */}
         <View style={styles.quickLinksRow}>
           <TouchableOpacity
-            style={styles.quickLink}
+            style={[styles.quickLink, { backgroundColor: colors.backgroundSecondary }]}
             onPress={() => {
               if (handleRestrictedAction('view available requests')) return;
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -454,32 +455,32 @@ const DashboardScreen = ({ navigation }) => {
             }}
           >
             <Ionicons name="list" size={18} color={PRIMARY} />
-            <Text style={styles.quickLinkText}>Bid on Rides</Text>
+            <Text style={[styles.quickLinkText, { color: colors.text }]}>Bid on Rides</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.quickLink}
+            style={[styles.quickLink, { backgroundColor: colors.backgroundSecondary }]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               navigation.navigate('IntercityOffers');
             }}
           >
             <Ionicons name="bus" size={18} color="#3B82F6" />
-            <Text style={styles.quickLinkText}>Intercity</Text>
+            <Text style={[styles.quickLinkText, { color: colors.text }]}>Intercity</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.quickLink}
+            style={[styles.quickLink, { backgroundColor: colors.backgroundSecondary }]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               navigation.navigate('DriverFAQ');
             }}
           >
             <Ionicons name="help-circle" size={18} color="#8B5CF6" />
-            <Text style={styles.quickLinkText}>Help</Text>
+            <Text style={[styles.quickLinkText, { color: colors.text }]}>Help</Text>
           </TouchableOpacity>
         </View>
 
         {/* Stats Row */}
-        <View style={styles.statsRow}>
+        <View style={[styles.statsRow, { backgroundColor: colors.backgroundSecondary }]}>
           <TouchableOpacity
             style={styles.statCard}
             onPress={() => navigation.navigate('Wallet')}
@@ -493,11 +494,11 @@ const DashboardScreen = ({ navigation }) => {
             >
               <Ionicons name="wallet" size={16} color="#000" />
             </LinearGradient>
-            <Text style={styles.statValue}>Rs. {stats.today_earnings}</Text>
-            <Text style={styles.statLabel}>Earned</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>Rs. {stats.today_earnings}</Text>
+            <Text style={[styles.statLabel, { color: colors.textTertiary }]}>Earned</Text>
           </TouchableOpacity>
 
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
 
           <TouchableOpacity
             style={styles.statCard}
@@ -512,11 +513,11 @@ const DashboardScreen = ({ navigation }) => {
             >
               <Ionicons name="flame" size={16} color="#FFF" />
             </LinearGradient>
-            <Text style={styles.statValue}>Demand</Text>
-            <Text style={styles.statLabel}>Heatmap</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>Demand</Text>
+            <Text style={[styles.statLabel, { color: colors.textTertiary }]}>Heatmap</Text>
           </TouchableOpacity>
 
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
 
           <TouchableOpacity
             style={styles.statCard}
@@ -531,8 +532,8 @@ const DashboardScreen = ({ navigation }) => {
             >
               <Ionicons name="star" size={16} color="#FFF" />
             </LinearGradient>
-            <Text style={styles.statValue}>{stats.rating.toFixed(1)}</Text>
-            <Text style={styles.statLabel}>Rating</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>{stats.rating.toFixed(1)}</Text>
+            <Text style={[styles.statLabel, { color: colors.textTertiary }]}>Rating</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -550,7 +551,6 @@ const DashboardScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
   },
   mapContainer: {
     flex: 1,
@@ -575,7 +575,6 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -591,7 +590,6 @@ const styles = StyleSheet.create({
   greetingText: {
     fontSize: 17,
     fontWeight: '700',
-    color: DARK,
   },
   headerStatusRow: {
     flexDirection: 'row',
@@ -655,7 +653,6 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -673,7 +670,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   logoBg: {
-    backgroundColor: DARK,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 16,
@@ -750,7 +746,6 @@ const styles = StyleSheet.create({
 
   // Bottom Panel
   bottomPanel: {
-    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingTop: 24,
@@ -771,7 +766,6 @@ const styles = StyleSheet.create({
   },
   earningsLabel: {
     fontSize: 12,
-    color: '#9CA3AF',
     fontWeight: '500',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
@@ -780,7 +774,6 @@ const styles = StyleSheet.create({
   earningsAmount: {
     fontSize: 30,
     fontWeight: '800',
-    color: DARK,
     letterSpacing: -0.5,
   },
   earningsDetailBtn: {
@@ -838,7 +831,6 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
     borderRadius: 18,
     paddingVertical: 18,
     paddingHorizontal: 8,
@@ -858,18 +850,15 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 16,
     fontWeight: '800',
-    color: DARK,
     marginBottom: 2,
   },
   statLabel: {
     fontSize: 11,
-    color: '#9CA3AF',
     fontWeight: '500',
   },
   statDivider: {
     width: 1,
     height: 40,
-    backgroundColor: '#E5E7EB',
   },
   quickLinksRow: {
     flexDirection: 'row',
@@ -883,7 +872,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F9FAFB',
     paddingVertical: 12,
     paddingHorizontal: 10,
     borderRadius: 12,
@@ -892,7 +880,6 @@ const styles = StyleSheet.create({
   quickLinkText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#374151',
   },
 });
 

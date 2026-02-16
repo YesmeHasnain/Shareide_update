@@ -15,13 +15,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { authAPI } from '../../api/auth';
 
-const PRIMARY_COLOR = '#FCC014';
 const OTP_LENGTH = 6;
 
 const OTPScreen = ({ route, navigation }) => {
+  const { colors, isDark } = useTheme();
   const { login } = useAuth();
   const insets = useSafeAreaInsets();
   const phone = route?.params?.phone || '';
@@ -169,8 +170,8 @@ const OTPScreen = ({ route, navigation }) => {
   const isComplete = otp.every(digit => digit !== '');
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
@@ -179,18 +180,18 @@ const OTPScreen = ({ route, navigation }) => {
         {/* Header */}
         <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
           <TouchableOpacity
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: colors.inputBackground }]}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={20} color="#000" />
+            <Ionicons name="arrow-back" size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
 
         {/* Content */}
         <View style={styles.content}>
           {/* Title */}
-          <Text style={styles.title}>We sent you a WhatsApp</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, { color: colors.text }]}>We sent you a WhatsApp</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Please enter the code we just{'\n'}sent to {phone}
           </Text>
 
@@ -202,13 +203,14 @@ const OTPScreen = ({ route, navigation }) => {
                   key={index}
                   style={[
                     styles.otpBox,
-                    digit && styles.otpBoxFilled,
-                    focusedIndex === index && !digit && styles.otpBoxActive,
+                    { backgroundColor: colors.inputBackground },
+                    digit && { backgroundColor: colors.background, borderWidth: 2, borderColor: colors.primary },
+                    focusedIndex === index && !digit && { borderWidth: 2, borderColor: colors.text, backgroundColor: colors.background },
                   ]}
                 >
                   <TextInput
                     ref={(ref) => (inputRefs.current[index] = ref)}
-                    style={styles.otpInput}
+                    style={[styles.otpInput, { color: colors.text }]}
                     value={digit}
                     onChangeText={(value) => handleOtpChange(value, index)}
                     onKeyPress={(e) => handleKeyPress(e, index)}
@@ -232,7 +234,7 @@ const OTPScreen = ({ route, navigation }) => {
               </Text>
             ) : (
               <TouchableOpacity onPress={handleResendOTP} disabled={resending}>
-                <Text style={styles.resendText}>
+                <Text style={[styles.resendText, { color: colors.primary }]}>
                   {resending ? 'Sending...' : 'Resend code'}
                 </Text>
               </TouchableOpacity>
@@ -246,7 +248,7 @@ const OTPScreen = ({ route, navigation }) => {
             style={[
               styles.verifyButton,
               {
-                backgroundColor: isComplete ? PRIMARY_COLOR : '#F3F4F6',
+                backgroundColor: isComplete ? colors.primary : colors.inputBackground,
                 shadowOpacity: isComplete ? 0.15 : 0,
               },
             ]}
@@ -259,7 +261,7 @@ const OTPScreen = ({ route, navigation }) => {
             ) : (
               <Text style={[
                 styles.verifyText,
-                { color: isComplete ? '#000' : '#9CA3AF' }
+                { color: isComplete ? '#000' : colors.textTertiary }
               ]}>
                 Verify code
               </Text>
@@ -274,7 +276,6 @@ const OTPScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   keyboardView: {
     flex: 1,
@@ -287,7 +288,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -298,12 +298,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#000',
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 15,
-    color: '#6B7280',
     lineHeight: 22,
     marginBottom: 40,
   },
@@ -320,24 +318,12 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 60,
     borderRadius: 14,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  otpBoxFilled: {
-    backgroundColor: '#FFF',
-    borderWidth: 2,
-    borderColor: PRIMARY_COLOR,
-  },
-  otpBoxActive: {
-    borderWidth: 2,
-    borderColor: '#1A1A2E',
-    backgroundColor: '#FFF',
   },
   otpInput: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#000',
     textAlign: 'center',
     width: '100%',
     height: '100%',
@@ -353,7 +339,6 @@ const styles = StyleSheet.create({
   resendText: {
     fontSize: 15,
     fontWeight: '600',
-    color: PRIMARY_COLOR,
   },
   bottomSection: {
     paddingHorizontal: 24,

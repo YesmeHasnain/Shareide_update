@@ -10,11 +10,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const PRIMARY_COLOR = '#FCC014';
+import { useTheme } from '../../context/ThemeContext';
 
 const GenderScreen = ({ route, navigation }) => {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
   const params = route?.params || {};
   const { phone, verificationToken, token, user, isNewUser } = params;
   const [gender, setGender] = useState(user?.gender || null);
@@ -40,24 +40,24 @@ const GenderScreen = ({ route, navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: colors.borderLight }]}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={20} color="#000" />
+          <Ionicons name="arrow-back" size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
 
       {/* Content */}
       <View style={styles.content}>
         {/* Title */}
-        <Text style={styles.title}>Select your Gender</Text>
-        <Text style={styles.subtitle}>Please select your gender</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Select your Gender</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Please select your gender</Text>
 
         {/* Gender Cards */}
         <View style={styles.genderRow}>
@@ -65,30 +65,32 @@ const GenderScreen = ({ route, navigation }) => {
           <TouchableOpacity
             style={[
               styles.genderCard,
-              gender === 'female' && styles.genderCardSelected,
+              { backgroundColor: colors.card, borderColor: colors.border },
+              gender === 'female' && { borderWidth: 2, borderColor: colors.primary, backgroundColor: colors.warningLight },
             ]}
             onPress={() => handleSelect('female')}
             activeOpacity={0.8}
           >
-            <View style={[styles.iconCircle, { backgroundColor: '#FFE4E6' }]}>
-              <Ionicons name="female" size={32} color="#FB7185" />
+            <View style={[styles.iconCircle, { backgroundColor: colors.genderFemaleLight }]}>
+              <Ionicons name="female" size={32} color={colors.genderFemale} />
             </View>
-            <Text style={styles.genderLabel}>Female</Text>
+            <Text style={[styles.genderLabel, { color: colors.text }]}>Female</Text>
           </TouchableOpacity>
 
           {/* Male Card */}
           <TouchableOpacity
             style={[
               styles.genderCard,
-              gender === 'male' && styles.genderCardSelected,
+              { backgroundColor: colors.card, borderColor: colors.border },
+              gender === 'male' && { borderWidth: 2, borderColor: colors.primary, backgroundColor: colors.warningLight },
             ]}
             onPress={() => handleSelect('male')}
             activeOpacity={0.8}
           >
-            <View style={[styles.iconCircle, { backgroundColor: '#DBEAFE' }]}>
-              <Ionicons name="male" size={32} color="#60A5FA" />
+            <View style={[styles.iconCircle, { backgroundColor: colors.genderMaleLight }]}>
+              <Ionicons name="male" size={32} color={colors.genderMale} />
             </View>
-            <Text style={styles.genderLabel}>Male</Text>
+            <Text style={[styles.genderLabel, { color: colors.text }]}>Male</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -98,7 +100,7 @@ const GenderScreen = ({ route, navigation }) => {
         <TouchableOpacity
           style={[
             styles.continueButton,
-            { backgroundColor: gender ? PRIMARY_COLOR : '#F3F4F6' },
+            { backgroundColor: gender ? colors.primary : colors.borderLight },
           ]}
           onPress={handleContinue}
           disabled={!gender || loading}
@@ -109,7 +111,7 @@ const GenderScreen = ({ route, navigation }) => {
           ) : (
             <Text style={[
               styles.continueText,
-              { color: gender ? '#000' : '#9CA3AF' }
+              { color: gender ? '#000' : colors.textTertiary }
             ]}>
               Continue
             </Text>
@@ -123,7 +125,6 @@ const GenderScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     paddingHorizontal: 20,
@@ -133,7 +134,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -144,12 +144,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#000',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
-    color: '#6B7280',
     marginBottom: 48,
   },
   genderRow: {
@@ -159,18 +157,11 @@ const styles = StyleSheet.create({
   genderCard: {
     flex: 1,
     aspectRatio: 1,
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-  },
-  genderCardSelected: {
-    borderWidth: 2,
-    borderColor: PRIMARY_COLOR,
-    backgroundColor: '#FFFBEB',
   },
   iconCircle: {
     width: 64,
@@ -183,7 +174,6 @@ const styles = StyleSheet.create({
   genderLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
   },
   bottomSection: {
     paddingHorizontal: 24,

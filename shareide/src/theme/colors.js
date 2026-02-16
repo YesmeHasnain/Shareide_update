@@ -96,6 +96,15 @@ export const lightColors = {
   genderFemaleLight: '#FDF2F8',
   genderMale: '#3B82F6',
   genderMaleLight: '#EFF6FF',
+
+  // Gradients
+  gradients: {
+    premium: ['#FFD700', '#FFA500'],
+    primary: ['#FCC014', '#F5A623'],
+    dark: ['#1A1A2E', '#0F0F1A'],
+    success: ['#10B981', '#059669'],
+    danger: ['#EF4444', '#DC2626'],
+  },
 };
 
 export const darkColors = {
@@ -195,6 +204,15 @@ export const darkColors = {
   genderFemaleLight: '#831843',
   genderMale: '#3B82F6',
   genderMaleLight: '#1E3A8A',
+
+  // Gradients
+  gradients: {
+    premium: ['#FFD700', '#FFA500'],
+    primary: ['#FCC014', '#F5A623'],
+    dark: ['#0F0F1A', '#1A1A2E'],
+    success: ['#34D399', '#10B981'],
+    danger: ['#F87171', '#EF4444'],
+  },
 };
 
 // Typography scale

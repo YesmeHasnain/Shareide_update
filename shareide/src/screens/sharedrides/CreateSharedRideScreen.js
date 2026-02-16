@@ -173,7 +173,7 @@ const CreateSharedRideScreen = ({ navigation }) => {
 
           {/* Pickup */}
           <TouchableOpacity
-            style={styles.locationInput}
+            style={[styles.locationInput, { backgroundColor: colors.inputBackground }]}
             onPress={() => handleLocationSelect('from')}
           >
             <View style={[styles.dot, { backgroundColor: colors.primary }]} />
@@ -185,7 +185,7 @@ const CreateSharedRideScreen = ({ navigation }) => {
 
           {/* Drop-off */}
           <TouchableOpacity
-            style={styles.locationInput}
+            style={[styles.locationInput, { backgroundColor: colors.inputBackground }]}
             onPress={() => handleLocationSelect('to')}
           >
             <View style={[styles.dot, { backgroundColor: colors.success }]} />
@@ -201,14 +201,14 @@ const CreateSharedRideScreen = ({ navigation }) => {
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Departure</Text>
           <View style={styles.dateTimeRow}>
             <TouchableOpacity
-              style={styles.dateTimeBtn}
+              style={[styles.dateTimeBtn, { backgroundColor: colors.inputBackground }]}
               onPress={() => setShowDatePicker(true)}
             >
               <Ionicons name="calendar" size={20} color={colors.primary} />
               <Text style={[styles.dateTimeText, { color: colors.text }]}>{formatDate(formData.departure_time)}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.dateTimeBtn}
+              style={[styles.dateTimeBtn, { backgroundColor: colors.inputBackground }]}
               onPress={() => setShowTimePicker(true)}
             >
               <Ionicons name="time" size={20} color={colors.primary} />
@@ -242,7 +242,7 @@ const CreateSharedRideScreen = ({ navigation }) => {
           {/* Seats */}
           <View style={styles.seatsRow}>
             <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Available Seats</Text>
-            <View style={styles.seatSelector}>
+            <View style={[styles.seatSelector, { backgroundColor: colors.inputBackground }]}>
               <TouchableOpacity
                 style={styles.seatBtn}
                 onPress={() => setFormData({ ...formData, total_seats: Math.max(1, formData.total_seats - 1) })}
@@ -263,7 +263,7 @@ const CreateSharedRideScreen = ({ navigation }) => {
           <View style={styles.inputGroup}>
             <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Price per Seat (Rs.)</Text>
             <TextInput
-              style={[styles.textInput, { color: colors.text }]}
+              style={[styles.textInput, { color: colors.text, backgroundColor: colors.inputBackground, borderColor: colors.border }]}
               placeholder="Enter price"
               placeholderTextColor={colors.textMuted}
               keyboardType="numeric"
@@ -284,6 +284,7 @@ const CreateSharedRideScreen = ({ navigation }) => {
                 key={type.key}
                 style={[
                   styles.vehicleTypeBtn,
+                  { backgroundColor: colors.inputBackground },
                   formData.vehicle_type === type.key && { borderColor: colors.primary },
                 ]}
                 onPress={() => setFormData({ ...formData, vehicle_type: type.key })}
@@ -308,7 +309,7 @@ const CreateSharedRideScreen = ({ navigation }) => {
           <View style={styles.inputGroup}>
             <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Vehicle Model</Text>
             <TextInput
-              style={[styles.textInput, { color: colors.text }]}
+              style={[styles.textInput, { color: colors.text, backgroundColor: colors.inputBackground, borderColor: colors.border }]}
               placeholder="e.g., Honda City"
               placeholderTextColor={colors.textMuted}
               value={formData.vehicle_model}
@@ -320,7 +321,7 @@ const CreateSharedRideScreen = ({ navigation }) => {
             <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
               <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Color</Text>
               <TextInput
-                style={[styles.textInput, { color: colors.text }]}
+                style={[styles.textInput, { color: colors.text, backgroundColor: colors.inputBackground, borderColor: colors.border }]}
                 placeholder="e.g., White"
                 placeholderTextColor={colors.textMuted}
                 value={formData.vehicle_color}
@@ -330,7 +331,7 @@ const CreateSharedRideScreen = ({ navigation }) => {
             <View style={[styles.inputGroup, { flex: 1 }]}>
               <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Plate Number</Text>
               <TextInput
-                style={[styles.textInput, { color: colors.text }]}
+                style={[styles.textInput, { color: colors.text, backgroundColor: colors.inputBackground, borderColor: colors.border }]}
                 placeholder="e.g., ABC-123"
                 placeholderTextColor={colors.textMuted}
                 value={formData.plate_number}
@@ -344,7 +345,7 @@ const CreateSharedRideScreen = ({ navigation }) => {
         <Card style={styles.card}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Preferences</Text>
 
-          <View style={styles.preferenceItem}>
+          <View style={[styles.preferenceItem, { borderBottomColor: colors.border }]}>
             <View style={styles.preferenceInfo}>
               <Ionicons name="female" size={22} color="#FF69B4" />
               <Text style={[styles.preferenceText, { color: colors.text }]}>Women Only</Text>
@@ -352,12 +353,12 @@ const CreateSharedRideScreen = ({ navigation }) => {
             <Switch
               value={formData.women_only}
               onValueChange={(value) => setFormData({ ...formData, women_only: value })}
-              trackColor={{ false: 'rgba(255,255,255,0.2)', true: colors.primary + '50' }}
-              thumbColor={formData.women_only ? colors.primary : '#f4f3f4'}
+              trackColor={{ false: colors.border, true: colors.primary + '50' }}
+              thumbColor={formData.women_only ? colors.primary : colors.inputBackground}
             />
           </View>
 
-          <View style={styles.preferenceItem}>
+          <View style={[styles.preferenceItem, { borderBottomColor: colors.border }]}>
             <View style={styles.preferenceInfo}>
               <Ionicons name="snow" size={22} color={colors.info} />
               <Text style={[styles.preferenceText, { color: colors.text }]}>AC Available</Text>
@@ -365,12 +366,12 @@ const CreateSharedRideScreen = ({ navigation }) => {
             <Switch
               value={formData.ac_available}
               onValueChange={(value) => setFormData({ ...formData, ac_available: value })}
-              trackColor={{ false: 'rgba(255,255,255,0.2)', true: colors.primary + '50' }}
-              thumbColor={formData.ac_available ? colors.primary : '#f4f3f4'}
+              trackColor={{ false: colors.border, true: colors.primary + '50' }}
+              thumbColor={formData.ac_available ? colors.primary : colors.inputBackground}
             />
           </View>
 
-          <View style={styles.preferenceItem}>
+          <View style={[styles.preferenceItem, { borderBottomColor: colors.border }]}>
             <View style={styles.preferenceInfo}>
               <Ionicons name="briefcase" size={22} color={colors.warning} />
               <Text style={[styles.preferenceText, { color: colors.text }]}>Luggage Allowed</Text>
@@ -378,12 +379,12 @@ const CreateSharedRideScreen = ({ navigation }) => {
             <Switch
               value={formData.luggage_allowed}
               onValueChange={(value) => setFormData({ ...formData, luggage_allowed: value })}
-              trackColor={{ false: 'rgba(255,255,255,0.2)', true: colors.primary + '50' }}
-              thumbColor={formData.luggage_allowed ? colors.primary : '#f4f3f4'}
+              trackColor={{ false: colors.border, true: colors.primary + '50' }}
+              thumbColor={formData.luggage_allowed ? colors.primary : colors.inputBackground}
             />
           </View>
 
-          <View style={styles.preferenceItem}>
+          <View style={[styles.preferenceItem, { borderBottomColor: colors.border }]}>
             <View style={styles.preferenceInfo}>
               <Ionicons name="flame" size={22} color={colors.error} />
               <Text style={[styles.preferenceText, { color: colors.text }]}>Smoking Allowed</Text>
@@ -391,12 +392,12 @@ const CreateSharedRideScreen = ({ navigation }) => {
             <Switch
               value={formData.smoking_allowed}
               onValueChange={(value) => setFormData({ ...formData, smoking_allowed: value })}
-              trackColor={{ false: 'rgba(255,255,255,0.2)', true: colors.primary + '50' }}
-              thumbColor={formData.smoking_allowed ? colors.primary : '#f4f3f4'}
+              trackColor={{ false: colors.border, true: colors.primary + '50' }}
+              thumbColor={formData.smoking_allowed ? colors.primary : colors.inputBackground}
             />
           </View>
 
-          <View style={styles.preferenceItem}>
+          <View style={[styles.preferenceItem, { borderBottomColor: colors.border }]}>
             <View style={styles.preferenceInfo}>
               <Ionicons name="paw" size={22} color={colors.success} />
               <Text style={[styles.preferenceText, { color: colors.text }]}>Pets Allowed</Text>
@@ -404,8 +405,8 @@ const CreateSharedRideScreen = ({ navigation }) => {
             <Switch
               value={formData.pets_allowed}
               onValueChange={(value) => setFormData({ ...formData, pets_allowed: value })}
-              trackColor={{ false: 'rgba(255,255,255,0.2)', true: colors.primary + '50' }}
-              thumbColor={formData.pets_allowed ? colors.primary : '#f4f3f4'}
+              trackColor={{ false: colors.border, true: colors.primary + '50' }}
+              thumbColor={formData.pets_allowed ? colors.primary : colors.inputBackground}
             />
           </View>
         </Card>
@@ -414,7 +415,7 @@ const CreateSharedRideScreen = ({ navigation }) => {
         <Card style={styles.card}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Additional Notes</Text>
           <TextInput
-            style={[styles.textInput, styles.notesInput, { color: colors.text }]}
+            style={[styles.textInput, styles.notesInput, { color: colors.text, backgroundColor: colors.inputBackground, borderColor: colors.border }]}
             placeholder="Any special instructions or notes for passengers..."
             placeholderTextColor={colors.textMuted}
             multiline
@@ -473,7 +474,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 10,
     marginBottom: 10,
   },
@@ -501,7 +501,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 10,
     gap: 8,
   },
@@ -521,7 +520,6 @@ const styles = StyleSheet.create({
   seatSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 10,
     paddingHorizontal: 5,
   },
@@ -537,12 +535,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   textInput: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 10,
     padding: 12,
     fontSize: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
   },
   inputRow: {
     flexDirection: 'row',
@@ -557,7 +553,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
     marginHorizontal: 3,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 10,
     borderWidth: 1,
     borderColor: 'transparent',
@@ -572,7 +567,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
   },
   preferenceInfo: {
     flexDirection: 'row',

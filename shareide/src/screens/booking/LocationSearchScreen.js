@@ -17,20 +17,33 @@ import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../../context/ThemeContext';
 
-const PRIMARY = '#FCC014';
-const DARK = '#1A1A2E';
-const GRAY = '#6B7280';
-const GREEN = '#22c55e';
-const RED = '#EF4444';
-const LIGHT_BG = '#F7F8FA';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const GOOGLE_API_KEY = 'AIzaSyC3D7EgF9_N8jzEYubmJr0uIGbyzGdjOqU';
 const RECENT_SEARCHES_KEY = 'recent_searches';
 const SAVED_PLACES_KEY = 'saved_places';
 
+// Default colors fallback
+const defaultColors = {
+  primary: '#FCC014',
+  background: '#FFFFFF',
+  card: '#FFFFFF',
+  surface: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  inputBackground: '#F5F5F5',
+  border: '#E5E7EB',
+  success: '#22c55e',
+  error: '#EF4444',
+};
+
 const LocationSearchScreen = ({ route, navigation }) => {
+  const theme = useTheme();
+  const colors = theme?.colors || defaultColors;
+  const isDark = theme?.isDark || false;
   const insets = useSafeAreaInsets();
   const pickupRef = useRef(null);
   const dropoffRef = useRef(null);
@@ -372,7 +385,7 @@ const LocationSearchScreen = ({ route, navigation }) => {
 
     return (
       <View style={styles.savedSection}>
-        <Text style={styles.sectionLabel}>SAVED PLACES</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>SAVED PLACES</Text>
         {defaultPlaces.map((place) => {
           const saved = savedPlaces.find(s => s.type === place.id);
           return (
@@ -392,12 +405,12 @@ const LocationSearchScreen = ({ route, navigation }) => {
                 <Ionicons name={place.icon} size={18} color={place.color} />
               </View>
               <View style={styles.savedInfo}>
-                <Text style={styles.savedLabel}>{place.label}</Text>
-                <Text style={styles.savedAddr} numberOfLines={1}>
+                <Text style={[styles.savedLabel, { color: colors.text }]}>{place.label}</Text>
+                <Text style={[styles.savedAddr, { color: colors.textSecondary }]} numberOfLines={1}>
                   {saved?.address || `Set your ${place.label.toLowerCase()} address`}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
+              <Ionicons name="chevron-forward" size={16} color={colors.border} />
             </TouchableOpacity>
           );
         })}
@@ -406,29 +419,29 @@ const LocationSearchScreen = ({ route, navigation }) => {
   };
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <StatusBar barStyle="dark-content" />
+    <Animated.View style={[styles.container, { opacity: fadeAnim, backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Header with Two Fields */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: colors.background }]}>
         <TouchableOpacity
-          style={styles.backBtn}
+          style={[styles.backBtn, { backgroundColor: colors.inputBackground || colors.backgroundSecondary || '#F5F5F5' }]}
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={22} color={DARK} />
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
 
         <View style={styles.fieldsContainer}>
           {/* Timeline Dots */}
           <View style={styles.timelineDots}>
-            <View style={[styles.dot, { backgroundColor: GREEN }]} />
+            <View style={[styles.dot, { backgroundColor: colors.success || '#22c55e' }]} />
             <View style={styles.dotLine}>
-              <View style={styles.dotLineSegment} />
-              <View style={styles.dotLineSegment} />
-              <View style={styles.dotLineSegment} />
+              <View style={[styles.dotLineSegment, { backgroundColor: colors.border }]} />
+              <View style={[styles.dotLineSegment, { backgroundColor: colors.border }]} />
+              <View style={[styles.dotLineSegment, { backgroundColor: colors.border }]} />
             </View>
-            <View style={[styles.dot, { backgroundColor: RED }]} />
+            <View style={[styles.dot, { backgroundColor: colors.error || '#EF4444' }]} />
           </View>
 
           {/* Fields */}
@@ -436,19 +449,20 @@ const LocationSearchScreen = ({ route, navigation }) => {
             <TouchableOpacity
               style={[
                 styles.inputField,
-                activeField === 'pickup' && styles.inputFieldActive,
+                { backgroundColor: colors.inputBackground || colors.backgroundSecondary || '#F5F5F5', borderColor: 'transparent' },
+                activeField === 'pickup' && { borderColor: colors.primary, backgroundColor: isDark ? colors.primary + '15' : '#FFFEF5' },
               ]}
               onPress={() => focusField('pickup')}
               activeOpacity={0.9}
             >
               <TextInput
                 ref={pickupRef}
-                style={styles.inputText}
+                style={[styles.inputText, { color: colors.text }]}
                 value={pickupText}
                 onChangeText={handleTextChange}
                 onFocus={() => setActiveField('pickup')}
                 placeholder="Pickup location"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.textTertiary}
                 returnKeyType="next"
                 autoCorrect={false}
               />
@@ -457,7 +471,7 @@ const LocationSearchScreen = ({ route, navigation }) => {
                   onPress={() => clearField('pickup')}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <Ionicons name="close-circle" size={18} color="#D1D5DB" />
+                  <Ionicons name="close-circle" size={18} color={colors.border} />
                 </TouchableOpacity>
               )}
             </TouchableOpacity>
@@ -465,19 +479,20 @@ const LocationSearchScreen = ({ route, navigation }) => {
             <TouchableOpacity
               style={[
                 styles.inputField,
-                activeField === 'dropoff' && styles.inputFieldActive,
+                { backgroundColor: colors.inputBackground || colors.backgroundSecondary || '#F5F5F5', borderColor: 'transparent' },
+                activeField === 'dropoff' && { borderColor: colors.primary, backgroundColor: isDark ? colors.primary + '15' : '#FFFEF5' },
               ]}
               onPress={() => focusField('dropoff')}
               activeOpacity={0.9}
             >
               <TextInput
                 ref={dropoffRef}
-                style={styles.inputText}
+                style={[styles.inputText, { color: colors.text }]}
                 value={dropoffText}
                 onChangeText={handleTextChange}
                 onFocus={() => setActiveField('dropoff')}
                 placeholder="Where to?"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.textTertiary}
                 returnKeyType="search"
                 autoCorrect={false}
               />
@@ -486,7 +501,7 @@ const LocationSearchScreen = ({ route, navigation }) => {
                   onPress={() => clearField('dropoff')}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <Ionicons name="close-circle" size={18} color="#D1D5DB" />
+                  <Ionicons name="close-circle" size={18} color={colors.border} />
                 </TouchableOpacity>
               )}
             </TouchableOpacity>
@@ -494,16 +509,16 @@ const LocationSearchScreen = ({ route, navigation }) => {
 
           {/* Swap Button */}
           <TouchableOpacity
-            style={styles.swapBtn}
+            style={[styles.swapBtn, { backgroundColor: colors.inputBackground || colors.backgroundSecondary || '#F5F5F5' }]}
             onPress={switchFields}
             activeOpacity={0.7}
           >
-            <Ionicons name="swap-vertical" size={20} color={GRAY} />
+            <Ionicons name="swap-vertical" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
       </View>
 
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: colors.inputBackground || colors.backgroundSecondary || '#F5F5F5' }]} />
 
       {/* Content */}
       <FlatList
@@ -520,12 +535,12 @@ const LocationSearchScreen = ({ route, navigation }) => {
                 onPress={useCurrentLocation}
                 activeOpacity={0.7}
               >
-                <View style={styles.currentLocIcon}>
-                  <Ionicons name="locate" size={20} color={PRIMARY} />
+                <View style={[styles.currentLocIcon, { backgroundColor: colors.primary + '15' }]}>
+                  <Ionicons name="locate" size={20} color={colors.primary} />
                 </View>
                 <View style={styles.currentLocInfo}>
-                  <Text style={styles.currentLocTitle}>Current Location</Text>
-                  <Text style={styles.currentLocAddr} numberOfLines={1}>
+                  <Text style={[styles.currentLocTitle, { color: colors.text }]}>Current Location</Text>
+                  <Text style={[styles.currentLocAddr, { color: colors.textSecondary }]} numberOfLines={1}>
                     {currentLocation?.address || 'Using GPS'}
                   </Text>
                 </View>
@@ -535,10 +550,10 @@ const LocationSearchScreen = ({ route, navigation }) => {
             {showSaved && renderSavedPlaces()}
 
             {showRecent && (
-              <Text style={styles.sectionLabel}>RECENT</Text>
+              <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>RECENT</Text>
             )}
             {searchResults.length > 0 && (
-              <Text style={styles.sectionLabel}>RESULTS</Text>
+              <Text style={[styles.sectionLabel, { color: colors.textTertiary }]}>RESULTS</Text>
             )}
           </>
         }
@@ -550,27 +565,28 @@ const LocationSearchScreen = ({ route, navigation }) => {
           >
             <View style={[
               styles.placeIcon,
-              searchResults.length > 0 && { backgroundColor: RED + '10' },
+              { backgroundColor: colors.inputBackground || colors.backgroundSecondary || '#F5F5F5' },
+              searchResults.length > 0 && { backgroundColor: (colors.error || '#EF4444') + '10' },
             ]}>
               <Ionicons
                 name={searchResults.length > 0 ? 'location' : 'time-outline'}
                 size={18}
-                color={searchResults.length > 0 ? RED : GRAY}
+                color={searchResults.length > 0 ? (colors.error || '#EF4444') : colors.textSecondary}
               />
             </View>
             <View style={styles.placeInfo}>
-              <Text style={styles.placeName} numberOfLines={1}>{item.name}</Text>
-              <Text style={styles.placeAddr} numberOfLines={1}>{item.address}</Text>
+              <Text style={[styles.placeName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+              <Text style={[styles.placeAddr, { color: colors.textSecondary }]} numberOfLines={1}>{item.address}</Text>
             </View>
-            <Ionicons name="arrow-forward" size={16} color="#D1D5DB" />
+            <Ionicons name="arrow-forward" size={16} color={colors.border} />
           </TouchableOpacity>
         )}
         ListEmptyComponent={
           activeText.length > 2 && !searching ? (
             <View style={styles.emptyBox}>
-              <Ionicons name="search-outline" size={40} color="#D1D5DB" />
-              <Text style={styles.emptyText}>No results found</Text>
-              <Text style={styles.emptySubtext}>Try a different search term</Text>
+              <Ionicons name="search-outline" size={40} color={colors.border} />
+              <Text style={[styles.emptyText, { color: colors.text }]}>No results found</Text>
+              <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Try a different search term</Text>
             </View>
           ) : null
         }
@@ -578,16 +594,16 @@ const LocationSearchScreen = ({ route, navigation }) => {
 
       {/* Loading Indicators */}
       {searching && (
-        <View style={styles.searchingBar}>
-          <ActivityIndicator size="small" color={PRIMARY} />
-          <Text style={styles.searchingText}>Searching...</Text>
+        <View style={[styles.searchingBar, { backgroundColor: colors.card || colors.background }]}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={[styles.searchingText, { color: colors.textSecondary }]}>Searching...</Text>
         </View>
       )}
       {selecting && (
         <View style={styles.selectingOverlay}>
-          <View style={styles.selectingBox}>
-            <ActivityIndicator size="small" color={PRIMARY} />
-            <Text style={styles.selectingText}>Getting location...</Text>
+          <View style={[styles.selectingBox, { backgroundColor: colors.card || colors.background }]}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={[styles.selectingText, { color: colors.text }]}>Getting location...</Text>
           </View>
         </View>
       )}
@@ -598,12 +614,10 @@ const LocationSearchScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
 
   // Header
   header: {
-    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
@@ -611,7 +625,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: LIGHT_BG,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -641,7 +654,6 @@ const styles = StyleSheet.create({
   dotLineSegment: {
     width: 2,
     height: 4,
-    backgroundColor: '#D1D5DB',
     borderRadius: 1,
   },
 
@@ -652,23 +664,16 @@ const styles = StyleSheet.create({
   },
   inputField: {
     height: 46,
-    backgroundColor: LIGHT_BG,
     borderRadius: 12,
     paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  inputFieldActive: {
-    borderColor: PRIMARY,
-    backgroundColor: '#FFFEF5',
   },
   inputText: {
     flex: 1,
     fontSize: 15,
     fontWeight: '500',
-    color: DARK,
   },
 
   // Swap Button
@@ -676,7 +681,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: LIGHT_BG,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
@@ -685,7 +689,6 @@ const styles = StyleSheet.create({
   // Divider
   divider: {
     height: 6,
-    backgroundColor: LIGHT_BG,
   },
 
   // Current Location
@@ -699,7 +702,6 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: PRIMARY + '15',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -710,12 +712,10 @@ const styles = StyleSheet.create({
   currentLocTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: DARK,
   },
   currentLocAddr: {
     fontSize: 12,
     fontWeight: '400',
-    color: GRAY,
     marginTop: 1,
   },
 
@@ -743,12 +743,10 @@ const styles = StyleSheet.create({
   savedLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: DARK,
   },
   savedAddr: {
     fontSize: 12,
     fontWeight: '400',
-    color: GRAY,
     marginTop: 1,
   },
 
@@ -757,7 +755,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1,
-    color: '#9CA3AF',
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
@@ -777,7 +774,6 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: LIGHT_BG,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -788,13 +784,11 @@ const styles = StyleSheet.create({
   placeName: {
     fontSize: 15,
     fontWeight: '500',
-    color: DARK,
     marginBottom: 2,
   },
   placeAddr: {
     fontSize: 12,
     fontWeight: '400',
-    color: GRAY,
   },
 
   // Empty State
@@ -806,11 +800,9 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontWeight: '600',
-    color: DARK,
   },
   emptySubtext: {
     fontSize: 13,
-    color: GRAY,
   },
 
   // Searching
@@ -820,7 +812,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 24,
@@ -834,7 +825,6 @@ const styles = StyleSheet.create({
   searchingText: {
     fontSize: 13,
     fontWeight: '600',
-    color: GRAY,
   },
 
   // Selecting overlay
@@ -847,7 +837,6 @@ const styles = StyleSheet.create({
   selectingBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 16,
@@ -861,7 +850,6 @@ const styles = StyleSheet.create({
   selectingText: {
     fontSize: 14,
     fontWeight: '600',
-    color: DARK,
   },
 });
 

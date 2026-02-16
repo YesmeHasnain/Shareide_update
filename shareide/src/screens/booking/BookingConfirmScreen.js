@@ -295,7 +295,7 @@ const BookingConfirmScreen = ({ route, navigation }) => {
             Promo Code
           </Text>
           <View style={styles.promoRow}>
-            <View style={styles.promoInputContainer}>
+            <View style={[styles.promoInputContainer, { backgroundColor: colors.inputBackground || '#F5F5F5' }]}>
               <Ionicons
                 name="pricetag-outline"
                 size={20}
@@ -541,7 +541,6 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
   },

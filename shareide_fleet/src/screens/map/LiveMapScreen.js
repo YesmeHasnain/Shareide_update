@@ -269,14 +269,14 @@ const LiveMapScreen = ({ navigation }) => {
             {isOnline ? 'Online' : 'Offline'}
           </Text>
         </View>
-        <View style={styles.statusDivider} />
+        <View style={[styles.statusDivider, { backgroundColor: colors.border }]} />
         <View style={styles.statusItem}>
           <Ionicons name="people" size={16} color={PRIMARY_COLOR} />
           <Text style={[styles.statusText, { color: colors.text }]}>
             {nearbyUsers.length} nearby
           </Text>
         </View>
-        <View style={styles.statusDivider} />
+        <View style={[styles.statusDivider, { backgroundColor: colors.border }]} />
         <View style={styles.statusItem}>
           <Ionicons name="location" size={16} color={PRIMARY_COLOR} />
           <Text style={[styles.statusText, { color: colors.text }]}>

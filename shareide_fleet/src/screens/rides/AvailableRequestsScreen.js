@@ -135,7 +135,7 @@ const AvailableRequestsScreen = ({ navigation }) => {
         )}
 
         {/* Bid Input */}
-        <View style={styles.bidSection}>
+        <View style={[styles.bidSection, { borderTopColor: colors.border }]}>
           <Text style={[styles.bidLabel, { color: colors.textSecondary }]}>Your Offer</Text>
           <View style={styles.bidInputRow}>
             <Text style={[styles.bidPrefix, { color: colors.text }]}>Rs.</Text>
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   riderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   riderName: { flex: 1, fontSize: 14, fontWeight: '500' },
   riderRating: { fontSize: 13 },
-  bidSection: { borderTopWidth: 1, borderTopColor: '#E5E7EB', paddingTop: 12 },
+  bidSection: { borderTopWidth: 1, paddingTop: 12 },
   bidLabel: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
   bidInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   bidPrefix: { fontSize: 18, fontWeight: '700' },

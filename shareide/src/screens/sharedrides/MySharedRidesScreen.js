@@ -170,10 +170,10 @@ const MySharedRidesScreen = ({ navigation }) => {
         </View>
 
         {/* Route */}
-        <View style={styles.routeSection}>
+        <View style={[styles.routeSection, { borderBottomColor: colors.border }]}>
           <View style={styles.routeLine}>
             <View style={[styles.dot, { backgroundColor: colors.primary }]} />
-            <View style={styles.line} />
+            <View style={[styles.line, { backgroundColor: colors.border }]} />
             <View style={[styles.dot, styles.dotEnd, { backgroundColor: colors.success }]} />
           </View>
           <View style={styles.routeDetails}>
@@ -188,7 +188,7 @@ const MySharedRidesScreen = ({ navigation }) => {
         </View>
 
         {/* Stats */}
-        <View style={styles.statsRow}>
+        <View style={[styles.statsRow, { backgroundColor: colors.inputBackground }]}>
           <View style={styles.statItem}>
             <Ionicons name="people" size={18} color={colors.primary} />
             <Text style={[styles.statValue, { color: colors.text }]}>
@@ -225,7 +225,7 @@ const MySharedRidesScreen = ({ navigation }) => {
                 />
               ))}
               {item.confirmed_bookings.length > 5 && (
-                <View style={styles.morePassengers}>
+                <View style={[styles.morePassengers, { backgroundColor: colors.inputBackground }]}>
                   <Text style={[styles.moreText, { color: colors.textSecondary }]}>+{item.confirmed_bookings.length - 5}</Text>
                 </View>
               )}
@@ -295,7 +295,7 @@ const MySharedRidesScreen = ({ navigation }) => {
             )}
             {item.status === 'completed' && (
               <TouchableOpacity
-                style={styles.viewBtn}
+                style={[styles.viewBtn, { backgroundColor: colors.inputBackground }]}
                 onPress={() => navigation.navigate('SharedRideDetails', { rideId: item.id })}
               >
                 <Ionicons name="eye" size={18} color={colors.textSecondary} />
@@ -329,13 +329,13 @@ const MySharedRidesScreen = ({ navigation }) => {
       />
 
       {/* Filters */}
-      <View style={styles.filtersContainer}>
+      <View style={[styles.filtersContainer, { borderBottomColor: colors.border }]}>
         <FlatList
           horizontal
           data={filters}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={[styles.filterChip, activeFilter === item.key && { backgroundColor: colors.primary }]}
+              style={[styles.filterChip, { backgroundColor: colors.inputBackground }, activeFilter === item.key && { backgroundColor: colors.primary }]}
               onPress={() => setActiveFilter(item.key)}
             >
               <Text style={[styles.filterText, { color: colors.textSecondary }, activeFilter === item.key && styles.filterTextActive]}>
@@ -392,7 +392,6 @@ const styles = StyleSheet.create({
   filtersContainer: {
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   filtersList: {
     paddingHorizontal: 20,
@@ -402,7 +401,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     marginRight: 10,
   },
   filterText: {
@@ -410,7 +408,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   filterTextActive: {
-    color: '#fff',
+    color: '#000',
   },
   listContent: {
     padding: 20,
@@ -448,7 +446,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   routeLine: {
     alignItems: 'center',
@@ -463,7 +460,6 @@ const styles = StyleSheet.create({
   line: {
     width: 2,
     height: 25,
-    backgroundColor: 'rgba(255,255,255,0.2)',
     marginVertical: 3,
   },
   dotEnd: {},
@@ -488,7 +484,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 10,
     marginBottom: 10,
   },
@@ -522,7 +517,6 @@ const styles = StyleSheet.create({
     width: 35,
     height: 35,
     borderRadius: 17.5,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: -8,
@@ -593,7 +587,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     gap: 6,
   },
 });

@@ -16,8 +16,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../context/ThemeContext';
 import client from '../../api/client';
 
-const PRIMARY_COLOR = '#FCC014';
-
 const PostRideRequestScreen = ({ navigation, route }) => {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
@@ -105,7 +103,7 @@ const PostRideRequestScreen = ({ navigation, route }) => {
           style={[styles.locationBox, { backgroundColor: colors.card }]}
           onPress={() => selectLocation('pickup')}
         >
-          <View style={[styles.dot, { backgroundColor: PRIMARY_COLOR }]} />
+          <View style={[styles.dot, { backgroundColor: colors.primary }]} />
           <Text style={[styles.locationText, { color: pickup ? colors.text : colors.textSecondary }]} numberOfLines={1}>
             {pickup?.name || pickup?.address || 'Select pickup location'}
           </Text>
@@ -118,7 +116,7 @@ const PostRideRequestScreen = ({ navigation, route }) => {
           style={[styles.locationBox, { backgroundColor: colors.card }]}
           onPress={() => selectLocation('dropoff')}
         >
-          <View style={[styles.pin, { backgroundColor: PRIMARY_COLOR }]} />
+          <View style={[styles.pin, { backgroundColor: colors.primary }]} />
           <Text style={[styles.locationText, { color: dropoff ? colors.text : colors.textSecondary }]} numberOfLines={1}>
             {dropoff?.name || dropoff?.address || 'Select dropoff location'}
           </Text>
@@ -131,7 +129,7 @@ const PostRideRequestScreen = ({ navigation, route }) => {
           style={[styles.locationBox, { backgroundColor: colors.card }]}
           onPress={() => setShowDatePicker(true)}
         >
-          <Ionicons name="time-outline" size={20} color={PRIMARY_COLOR} />
+          <Ionicons name="time-outline" size={20} color={colors.primary} />
           <Text style={[styles.locationText, { color: colors.text }]}>
             {departureTime.toLocaleString()}
           </Text>
@@ -159,7 +157,7 @@ const PostRideRequestScreen = ({ navigation, route }) => {
               key={num}
               style={[
                 styles.seatBtn,
-                { backgroundColor: seats === num ? PRIMARY_COLOR : colors.card },
+                { backgroundColor: seats === num ? colors.primary : colors.card },
               ]}
               onPress={() => setSeats(num)}
             >
@@ -173,7 +171,7 @@ const PostRideRequestScreen = ({ navigation, route }) => {
         {/* Offered Price */}
         <Text style={[styles.label, { color: colors.text }]}>Your Offered Price (Rs.)</Text>
         <View style={[styles.priceBox, { backgroundColor: colors.card }]}>
-          <Text style={[styles.rsLabel, { color: PRIMARY_COLOR }]}>Rs.</Text>
+          <Text style={[styles.rsLabel, { color: colors.primary }]}>Rs.</Text>
           <TextInput
             style={[styles.priceInput, { color: colors.text }]}
             value={offeredPrice}
@@ -198,7 +196,7 @@ const PostRideRequestScreen = ({ navigation, route }) => {
 
         {/* Submit Button */}
         <TouchableOpacity
-          style={[styles.submitBtn, { opacity: loading ? 0.7 : 1 }]}
+          style={[styles.submitBtn, { backgroundColor: colors.primary, opacity: loading ? 0.7 : 1 }]}
           onPress={handleSubmit}
           disabled={loading}
         >
@@ -263,7 +261,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: PRIMARY_COLOR,
     height: 56,
     borderRadius: 14,
     marginTop: 30,

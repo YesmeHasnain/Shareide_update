@@ -145,7 +145,7 @@ const MySharedBookingsScreen = ({ navigation }) => {
           </View>
 
           {/* Driver Info */}
-          <View style={styles.driverSection}>
+          <View style={[styles.driverSection, { borderBottomColor: colors.border }]}>
             <Avatar
               source={ride?.driver?.avatar ? { uri: ride.driver.avatar } : null}
               name={ride?.driver?.name}
@@ -168,7 +168,7 @@ const MySharedBookingsScreen = ({ navigation }) => {
           <View style={styles.routeSection}>
             <View style={styles.routeLine}>
               <View style={[styles.dot, { backgroundColor: colors.primary }]} />
-              <View style={styles.line} />
+              <View style={[styles.line, { backgroundColor: colors.border }]} />
               <View style={[styles.dot, styles.dotEnd, { backgroundColor: colors.success }]} />
             </View>
             <View style={styles.routeDetails}>
@@ -178,7 +178,7 @@ const MySharedBookingsScreen = ({ navigation }) => {
           </View>
 
           {/* Booking Details */}
-          <View style={styles.bookingDetails}>
+          <View style={[styles.bookingDetails, { backgroundColor: colors.inputBackground }]}>
             <View style={styles.detailItem}>
               <Text style={[styles.detailLabel, { color: colors.textMuted }]}>Seats</Text>
               <Text style={[styles.detailValue, { color: colors.text }]}>{item.seats_booked}</Text>
@@ -259,13 +259,13 @@ const MySharedBookingsScreen = ({ navigation }) => {
       <Header title="My Bookings" onBack={() => navigation.goBack()} />
 
       {/* Filters */}
-      <View style={styles.filtersContainer}>
+      <View style={[styles.filtersContainer, { borderBottomColor: colors.border }]}>
         <FlatList
           horizontal
           data={filters}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={[styles.filterChip, activeFilter === item.key && { backgroundColor: colors.primary }]}
+              style={[styles.filterChip, { backgroundColor: colors.inputBackground }, activeFilter === item.key && { backgroundColor: colors.primary }]}
               onPress={() => setActiveFilter(item.key)}
             >
               <Text style={[styles.filterText, { color: colors.textSecondary }, activeFilter === item.key && styles.filterTextActive]}>
@@ -320,7 +320,6 @@ const styles = StyleSheet.create({
   filtersContainer: {
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   filtersList: {
     paddingHorizontal: 20,
@@ -330,7 +329,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     marginRight: 10,
   },
   filterText: {
@@ -338,7 +336,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   filterTextActive: {
-    color: '#fff',
+    color: '#000',
   },
   listContent: {
     padding: 20,
@@ -363,7 +361,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   driverInfo: {
     flex: 1,
@@ -407,7 +404,6 @@ const styles = StyleSheet.create({
   line: {
     width: 2,
     height: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
     marginVertical: 2,
   },
   dotEnd: {},
@@ -421,7 +417,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 10,
     marginBottom: 10,
   },

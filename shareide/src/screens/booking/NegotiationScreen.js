@@ -275,7 +275,7 @@ const NegotiationScreen = ({ route, navigation }) => {
             {dropoff?.address || 'Dropoff'}
           </Text>
         </View>
-        <View style={[styles.fareRow]}>
+        <View style={[styles.fareRow, { borderTopColor: colors.border }]}>
           <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Your offer</Text>
           <Text style={[styles.fareValue, { color: colors.primary }]}>Rs. {estimatedFare || '---'}</Text>
         </View>
@@ -326,7 +326,7 @@ const NegotiationScreen = ({ route, navigation }) => {
             onPress={() => setShowCounterInput(false)}
           />
           <View style={[styles.counterSheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + 16 }]}>
-            <View style={styles.counterHandle} />
+            <View style={[styles.counterHandle, { backgroundColor: colors.border }]} />
             <Text style={[styles.counterTitle, { color: colors.text }]}>
               Counter Offer to {selectedBid?.driver?.name}
             </Text>
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   routeText: { flex: 1, fontSize: typography.bodySmall },
   fareRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: '#E5E7EB',
+    marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1,
   },
   fareLabel: { fontSize: typography.bodySmall },
   fareValue: { fontSize: typography.h4, fontWeight: '800' },
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
   counterOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'flex-end' },
   counterBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
   counterSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12 },
-  counterHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginBottom: 16 },
+  counterHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
   counterTitle: { fontSize: 18, fontWeight: '700', marginBottom: 4 },
   counterSubtitle: { fontSize: 14, marginBottom: 16 },
   counterInputRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },

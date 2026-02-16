@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const PRIMARY = '#FCC014';
 const DARK = '#1A1A2E';
@@ -26,6 +27,7 @@ const ProfileScreen = ({ navigation }) => {
   const logout = auth?.logout;
   const refreshUser = auth?.refreshUser;
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
 
   useEffect(() => {
     if (refreshUser) refreshUser();
@@ -66,22 +68,22 @@ const ProfileScreen = ({ navigation }) => {
       activeOpacity={0.6}
     >
       <View style={[styles.menuIconBox, { backgroundColor: iconBg || '#FEF3C7' }]}>
-        <Ionicons name={icon} size={18} color={iconColor || PRIMARY} />
+        <Ionicons name={icon} size={18} color={iconColor || colors.primary} />
       </View>
-      <Text style={styles.menuLabel}>{label}</Text>
+      <Text style={[styles.menuLabel, { color: colors.text }]}>{label}</Text>
       {badge ? (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{badge}</Text>
         </View>
       ) : (
-        <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
+        <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
       )}
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.backgroundSecondary} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -89,98 +91,98 @@ const ProfileScreen = ({ navigation }) => {
       >
         {/* Profile Header */}
         <TouchableOpacity
-          style={styles.profileHeader}
+          style={[styles.profileHeader, { backgroundColor: colors.card }]}
           onPress={() => navigation.navigate('EditProfile')}
           activeOpacity={0.8}
         >
-          <View style={styles.avatarLarge}>
+          <View style={[styles.avatarLarge, { backgroundColor: colors.warningLight }]}>
             {user?.avatar ? (
               <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
             ) : (
-              <Text style={styles.avatarLargeText}>{getInitials()}</Text>
+              <Text style={[styles.avatarLargeText, { color: colors.text }]}>{getInitials()}</Text>
             )}
-            <View style={styles.editBadge}>
-              <Ionicons name="pencil" size={10} color="#FFF" />
+            <View style={[styles.editBadge, { backgroundColor: colors.text, borderColor: colors.card }]}>
+              <Ionicons name="pencil" size={10} color={colors.background} />
             </View>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{user?.name || 'Guest User'}</Text>
-            <Text style={styles.profilePhone}>{user?.phone || '+92 xxx xxxxxxx'}</Text>
+            <Text style={[styles.profileName, { color: colors.text }]}>{user?.name || 'Guest User'}</Text>
+            <Text style={[styles.profilePhone, { color: colors.textSecondary }]}>{user?.phone || '+92 xxx xxxxxxx'}</Text>
             <View style={styles.verifiedTag}>
               <Ionicons name="shield-checkmark" size={12} color="#10B981" />
               <Text style={styles.verifiedTagText}>Verified</Text>
             </View>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
+          <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
         </TouchableOpacity>
 
         {/* Stats Row */}
-        <View style={styles.statsRow}>
+        <View style={[styles.statsRow, { backgroundColor: colors.card }]}>
           <View style={styles.statBox}>
-            <Text style={styles.statNum}>{user?.rating?.toFixed(1) || '5.0'}</Text>
+            <Text style={[styles.statNum, { color: colors.text }]}>{user?.rating?.toFixed(1) || '5.0'}</Text>
             <View style={styles.statStars}>
-              <Ionicons name="star" size={12} color={PRIMARY} />
+              <Ionicons name="star" size={12} color={colors.primary} />
             </View>
-            <Text style={styles.statLabel}>Rating</Text>
+            <Text style={[styles.statLabel, { color: colors.textTertiary }]}>Rating</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: colors.borderLight }]} />
           <View style={styles.statBox}>
-            <Text style={styles.statNum}>{user?.total_rides || 0}</Text>
-            <Text style={styles.statLabel}>Rides</Text>
+            <Text style={[styles.statNum, { color: colors.text }]}>{user?.total_rides || 0}</Text>
+            <Text style={[styles.statLabel, { color: colors.textTertiary }]}>Rides</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: colors.borderLight }]} />
           <View style={styles.statBox}>
-            <Text style={styles.statNum}>{user?.loyalty_points || 0}</Text>
-            <Text style={styles.statLabel}>Points</Text>
+            <Text style={[styles.statNum, { color: colors.text }]}>{user?.loyalty_points || 0}</Text>
+            <Text style={[styles.statLabel, { color: colors.textTertiary }]}>Points</Text>
           </View>
         </View>
 
         {/* Payments Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>PAYMENTS</Text>
-          <View style={styles.sectionCard}>
-            <MenuItem icon="wallet" label="Wallet" screen="Wallet" iconBg="#FEF3C7" iconColor={PRIMARY} />
-            <View style={styles.separator} />
+          <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>PAYMENTS</Text>
+          <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+            <MenuItem icon="wallet" label="Wallet" screen="Wallet" iconBg="#FEF3C7" iconColor={colors.primary} />
+            <View style={[styles.separator, { backgroundColor: colors.backgroundSecondary }]} />
             <MenuItem icon="card" label="Payment Methods" screen="PaymentMethods" iconBg="#EFF6FF" iconColor="#3B82F6" />
-            <View style={styles.separator} />
+            <View style={[styles.separator, { backgroundColor: colors.backgroundSecondary }]} />
             <MenuItem icon="pricetag" label="Promo Codes" screen="PromoCodes" iconBg="#F0FDF4" iconColor="#10B981" />
           </View>
         </View>
 
         {/* Activity Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>ACTIVITY</Text>
-          <View style={styles.sectionCard}>
-            <MenuItem icon="star" label="Loyalty Rewards" screen="Loyalty" iconBg="#FFFBEB" iconColor={PRIMARY} />
-            <View style={styles.separator} />
+          <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>ACTIVITY</Text>
+          <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+            <MenuItem icon="star" label="Loyalty Rewards" screen="Loyalty" iconBg="#FFFBEB" iconColor={colors.primary} />
+            <View style={[styles.separator, { backgroundColor: colors.backgroundSecondary }]} />
             <MenuItem icon="bookmark" label="Saved Places" screen="SavedPlaces" iconBg="#FEF3C7" iconColor="#F59E0B" />
-            <View style={styles.separator} />
+            <View style={[styles.separator, { backgroundColor: colors.backgroundSecondary }]} />
             <MenuItem icon="time" label="Scheduled Rides" screen="ScheduledRides" iconBg="#F0FDF4" iconColor="#10B981" />
-            <View style={styles.separator} />
+            <View style={[styles.separator, { backgroundColor: colors.backgroundSecondary }]} />
             <MenuItem icon="gift" label="Refer & Earn" screen="Referral" iconBg="#FDF2F8" iconColor="#EC4899" />
           </View>
         </View>
 
         {/* Settings Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>SETTINGS</Text>
-          <View style={styles.sectionCard}>
+          <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>SETTINGS</Text>
+          <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
             <MenuItem icon="notifications" label="Notifications" screen="Notifications" iconBg="#FEF2F2" iconColor="#EF4444" badge="3" />
-            <View style={styles.separator} />
+            <View style={[styles.separator, { backgroundColor: colors.backgroundSecondary }]} />
             <MenuItem icon="shield-checkmark" label="Emergency Contacts" screen="Emergency" iconBg="#F0FDF4" iconColor="#10B981" />
-            <View style={styles.separator} />
+            <View style={[styles.separator, { backgroundColor: colors.backgroundSecondary }]} />
             <MenuItem icon="settings" label="App Settings" screen="Settings" iconBg="#F3F4F6" iconColor="#6B7280" />
           </View>
         </View>
 
         {/* Support Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>SUPPORT</Text>
-          <View style={styles.sectionCard}>
+          <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>SUPPORT</Text>
+          <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
             <MenuItem icon="help-circle" label="Help Center" screen="Support" iconBg="#EFF6FF" iconColor="#3B82F6" />
-            <View style={styles.separator} />
+            <View style={[styles.separator, { backgroundColor: colors.backgroundSecondary }]} />
             <MenuItem icon="book" label="FAQ" screen="FAQ" iconBg="#FEF3C7" iconColor="#F59E0B" />
-            <View style={styles.separator} />
+            <View style={[styles.separator, { backgroundColor: colors.backgroundSecondary }]} />
             <MenuItem icon="chatbubble" label="Contact Us" screen="Support" iconBg="#F5F3FF" iconColor="#8B5CF6" />
           </View>
         </View>
@@ -210,15 +212,15 @@ const ProfileScreen = ({ navigation }) => {
 
         {/* Logout Button */}
         <TouchableOpacity
-          style={styles.logoutBtn}
+          style={[styles.logoutBtn, { backgroundColor: isDark ? colors.errorLight : '#FEF2F2' }]}
           onPress={handleLogout}
           activeOpacity={0.7}
         >
-          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-          <Text style={styles.logoutText}>Log Out</Text>
+          <Ionicons name="log-out-outline" size={20} color={colors.error} />
+          <Text style={[styles.logoutText, { color: colors.error }]}>Log Out</Text>
         </TouchableOpacity>
 
-        <Text style={styles.version}>ShareIDE v1.0.0</Text>
+        <Text style={[styles.version, { color: colors.textTertiary }]}>ShareIDE v1.0.0</Text>
         <View style={{ height: 100 }} />
       </ScrollView>
     </View>
@@ -228,7 +230,6 @@ const ProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -238,7 +239,6 @@ const styles = StyleSheet.create({
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 16,
     marginBottom: 16,
@@ -252,7 +252,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 20,
-    backgroundColor: '#FEF3C7',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
@@ -260,7 +259,6 @@ const styles = StyleSheet.create({
   avatarLargeText: {
     fontSize: 22,
     fontWeight: '800',
-    color: DARK,
   },
   avatarImage: {
     width: 60,
@@ -274,11 +272,9 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: DARK,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#FFF',
   },
   profileInfo: {
     flex: 1,
@@ -286,11 +282,9 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 18,
     fontWeight: '700',
-    color: DARK,
   },
   profilePhone: {
     fontSize: 13,
-    color: '#6B7280',
     marginTop: 2,
   },
   verifiedTag: {
@@ -308,7 +302,6 @@ const styles = StyleSheet.create({
   // Stats
   statsRow: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
@@ -325,20 +318,17 @@ const styles = StyleSheet.create({
   statNum: {
     fontSize: 22,
     fontWeight: '800',
-    color: DARK,
   },
   statStars: {
     marginTop: 2,
   },
   statLabel: {
     fontSize: 11,
-    color: '#9CA3AF',
     fontWeight: '500',
     marginTop: 2,
   },
   statDivider: {
     width: 1,
-    backgroundColor: '#F3F4F6',
   },
 
   // Sections
@@ -348,13 +338,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#9CA3AF',
     letterSpacing: 1,
     marginBottom: 8,
     marginLeft: 4,
   },
   sectionCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -383,7 +371,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '500',
-    color: DARK,
   },
   badge: {
     backgroundColor: '#EF4444',
@@ -401,7 +388,6 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: '#F9FAFB',
     marginLeft: 62,
   },
 
@@ -444,18 +430,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: '#FEF2F2',
     gap: 8,
     marginBottom: 16,
   },
   logoutText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#EF4444',
   },
   version: {
     fontSize: 11,
-    color: '#D1D5DB',
     textAlign: 'center',
     marginBottom: 16,
   },

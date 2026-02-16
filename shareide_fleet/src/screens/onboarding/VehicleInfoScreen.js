@@ -219,7 +219,7 @@ const VehicleInfoScreen = ({ navigation }) => {
       <ScrollView showsVerticalScrollIndicator={false} style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.progressBar}>
+          <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
             <View style={[styles.progressFill, { backgroundColor: colors.primary, width: '40%' }]} />
           </View>
           <Text style={[styles.stepText, { color: colors.textSecondary }]}>

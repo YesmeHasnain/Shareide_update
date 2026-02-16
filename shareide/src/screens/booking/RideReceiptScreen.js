@@ -27,6 +27,7 @@ const defaultColors = {
 const RideReceiptScreen = ({ route, navigation }) => {
   const theme = useTheme();
   const colors = theme?.colors || defaultColors;
+  const isDark = theme?.isDark || false;
   const insets = useSafeAreaInsets();
   const { ride, driver, fare, pickup, dropoff } = route?.params || {};
 
@@ -95,23 +96,23 @@ const RideReceiptScreen = ({ route, navigation }) => {
 
         <Animated.View style={{ opacity: contentAnim, transform: [{ translateY: contentAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }}>
           {/* Total Fare Card */}
-          <View style={[styles.totalCard, { backgroundColor: '#1A1A2E' }]}>
-            <Text style={styles.totalLabel}>Total Fare</Text>
-            <Text style={styles.totalAmount}>Rs. {totalFare}</Text>
+          <View style={[styles.totalCard, { backgroundColor: isDark ? colors.card : '#1A1A2E' }]}>
+            <Text style={[styles.totalLabel, isDark && { color: colors.textSecondary }]}>Total Fare</Text>
+            <Text style={[styles.totalAmount, isDark && { color: colors.primary }]}>Rs. {totalFare}</Text>
             <View style={styles.totalMeta}>
               <View style={styles.totalMetaItem}>
-                <Ionicons name="navigate-outline" size={14} color="rgba(255,255,255,0.6)" />
-                <Text style={styles.totalMetaText}>{distance} km</Text>
+                <Ionicons name="navigate-outline" size={14} color={isDark ? colors.textTertiary : 'rgba(255,255,255,0.6)'} />
+                <Text style={[styles.totalMetaText, isDark && { color: colors.textTertiary }]}>{distance} km</Text>
               </View>
-              <View style={styles.totalMetaDot} />
+              <View style={[styles.totalMetaDot, isDark && { backgroundColor: colors.border }]} />
               <View style={styles.totalMetaItem}>
-                <Ionicons name="time-outline" size={14} color="rgba(255,255,255,0.6)" />
-                <Text style={styles.totalMetaText}>{duration} min</Text>
+                <Ionicons name="time-outline" size={14} color={isDark ? colors.textTertiary : 'rgba(255,255,255,0.6)'} />
+                <Text style={[styles.totalMetaText, isDark && { color: colors.textTertiary }]}>{duration} min</Text>
               </View>
-              <View style={styles.totalMetaDot} />
+              <View style={[styles.totalMetaDot, isDark && { backgroundColor: colors.border }]} />
               <View style={styles.totalMetaItem}>
-                <Ionicons name={getPaymentIcon()} size={14} color="rgba(255,255,255,0.6)" />
-                <Text style={styles.totalMetaText}>{paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)}</Text>
+                <Ionicons name={getPaymentIcon()} size={14} color={isDark ? colors.textTertiary : 'rgba(255,255,255,0.6)'} />
+                <Text style={[styles.totalMetaText, isDark && { color: colors.textTertiary }]}>{paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)}</Text>
               </View>
             </View>
           </View>

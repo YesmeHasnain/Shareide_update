@@ -689,8 +689,8 @@ const RideOptionsScreen = ({ navigation, route }) => {
                 <Ionicons name="flash" size={20} color="#F59E0B" />
               </View>
               <View style={styles.surgeTextContainer}>
-                <Text style={styles.surgeTitle}>Surge Pricing Active</Text>
-                <Text style={styles.surgeDesc}>{surgeReason || 'High demand in your area'}</Text>
+                <Text style={[styles.surgeTitle, { color: '#92400E' }]}>Surge Pricing Active</Text>
+                <Text style={[styles.surgeDesc, { color: '#B45309' }]}>{surgeReason || 'High demand in your area'}</Text>
               </View>
             </View>
             <View style={styles.surgeMultiplierBadge}>
@@ -721,7 +721,7 @@ const RideOptionsScreen = ({ navigation, route }) => {
 
           {/* Scheduled Ride Date/Time Picker */}
           {rideType === 'scheduled' && (
-            <View style={styles.scheduledContainer}>
+            <View style={[styles.scheduledContainer, { borderTopColor: colors.border }]}>
               <View style={styles.dateTimeRow}>
                 <TouchableOpacity
                   style={[styles.dateTimeButton, { backgroundColor: colors.surface }]}
@@ -780,7 +780,7 @@ const RideOptionsScreen = ({ navigation, route }) => {
 
           {/* Multi-Day Package Date Range Picker */}
           {rideType === 'package' && (
-            <View style={styles.packageContainer}>
+            <View style={[styles.packageContainer, { borderTopColor: colors.border }]}>
               <View style={[styles.packageInfoBanner, { backgroundColor: colors.infoLight }]}>
                 <Ionicons name="information-circle" size={18} color={colors.info} />
                 <Text style={[styles.packageInfoText, { color: colors.info }]}>
@@ -1132,11 +1132,9 @@ const styles = StyleSheet.create({
   surgeTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#92400E',
   },
   surgeDesc: {
     fontSize: 11,
-    color: '#B45309',
     marginTop: 2,
   },
   surgeMultiplierBadge: {
@@ -1178,7 +1176,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     paddingTop: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
   },
   dateTimeRow: {
     flexDirection: 'row',
@@ -1205,7 +1202,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     paddingTop: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
     gap: spacing.md,
   },
   packageInfoBanner: {

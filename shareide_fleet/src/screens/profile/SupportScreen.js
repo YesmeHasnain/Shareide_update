@@ -73,10 +73,18 @@ const SupportScreen = ({ navigation }) => {
   ];
 
   const quickLinks = [
-    { key: 'terms', label: 'Terms & Conditions', screen: 'Terms' },
-    { key: 'privacy', label: 'Privacy Policy', screen: 'Privacy' },
-    { key: 'about', label: 'About Shareide', screen: 'About' },
-    { key: 'updates', label: 'App Updates', screen: 'Updates' },
+    { key: 'terms', label: 'Terms & Conditions', action: () => {
+      Alert.alert('Terms & Conditions', 'By using the Shareide platform, you agree to our terms of service.\n\n• Drivers must maintain a rating above 4.0\n• Commission rate is 20% per ride\n• Tips go 100% to the driver\n• Cancellation fees apply after driver arrival\n• Drivers must keep valid documents\n• Violations may result in account suspension\n\nFull terms at: shareide.com/terms');
+    }},
+    { key: 'privacy', label: 'Privacy Policy', action: () => {
+      Alert.alert('Privacy Policy', 'Your privacy is important to us.\n\n• We collect location data only during active rides\n• Personal data is encrypted and stored securely\n• We never sell your data to third parties\n• You can request data deletion at any time\n• Ride history is retained for 12 months\n• Payment info is handled by Bank Alfalah\n\nFull policy at: shareide.com/privacy');
+    }},
+    { key: 'about', label: 'About Shareide', action: () => {
+      Alert.alert('About Shareide', 'Shareide is Pakistan\'s ride-hailing platform built for drivers and riders.\n\n🚗 Fair commissions for drivers\n💰 Fare negotiation system\n🛡️ Safety-first approach\n📍 Available in major cities\n\nVersion: 1.0.0\nMade with ❤️ in Pakistan');
+    }},
+    { key: 'updates', label: 'App Updates', action: () => {
+      Alert.alert('App Updates', 'You are running the latest version!\n\nShareide Fleet v1.0.0\n\nRecent updates:\n• Fare negotiation with riders\n• Demand heatmap\n• Intercity ride offers\n• Enhanced earnings dashboard\n• Driver FAQ section');
+    }},
   ];
 
   const handleSubmitQuery = () => {
@@ -185,7 +193,7 @@ const SupportScreen = ({ navigation }) => {
                     borderBottomColor: colors.border,
                   },
                 ]}
-                onPress={() => Alert.alert(link.label, 'This feature is coming soon!')}
+                onPress={() => link.action ? link.action() : null}
                 activeOpacity={0.7}
               >
                 <View style={styles.linkLeft}>

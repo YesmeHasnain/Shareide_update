@@ -440,6 +440,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
+    backgroundColor: 'transparent',
   },
   filterTabText: {
     fontSize: typography.bodySmall,
