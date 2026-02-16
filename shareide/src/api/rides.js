@@ -103,6 +103,19 @@ export const ridesAPI = {
     return response.data;
   },
 
+  // Estimate fare before booking
+  estimateFare: async (pickup, dropoff, vehicleType = 'car') => {
+    const params = {
+      pickup_lat: pickup.latitude,
+      pickup_lng: pickup.longitude,
+      dropoff_lat: dropoff.latitude,
+      dropoff_lng: dropoff.longitude,
+      vehicle_type: vehicleType,
+    };
+    const response = await apiClient.get('/rides/fare-estimate', { params });
+    return response.data;
+  },
+
   // Get available vehicle types with dynamic seat counts from drivers
   getVehicleTypes: async (pickupLat = null, pickupLng = null) => {
     const params = {};

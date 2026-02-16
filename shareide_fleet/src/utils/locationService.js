@@ -103,6 +103,9 @@ class LocationService {
         }
       );
 
+      // Also start background tracking for when app is minimized
+      this.startBackgroundTracking();
+
       console.log('Location tracking started');
       return true;
     } catch (error) {
@@ -111,7 +114,56 @@ class LocationService {
     }
   }
 
-  // Stop location tracking
+  // Start background location tracking (works when app is minimized)
+  async startBackgroundTracking() {
+    try {
+      const { status } = await Location.requestBackgroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Background location permission not granted');
+        return false;
+      }
+
+      const isRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME);
+      if (isRegistered) {
+        console.log('Background location task already registered');
+        return true;
+      }
+
+      await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+        accuracy: Location.Accuracy.Balanced,
+        timeInterval: 15000, // 15 seconds
+        distanceInterval: 20, // 20 meters minimum movement
+        deferredUpdatesInterval: 15000,
+        showsBackgroundLocationIndicator: true,
+        foregroundService: {
+          notificationTitle: 'Shareide Fleet',
+          notificationBody: 'Tracking your location for active rides',
+          notificationColor: '#FCC014',
+        },
+      });
+
+      console.log('Background location tracking started');
+      return true;
+    } catch (error) {
+      console.log('Background tracking start error:', error.message);
+      return false;
+    }
+  }
+
+  // Stop background location tracking
+  async stopBackgroundTracking() {
+    try {
+      const isRegistered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME);
+      if (isRegistered) {
+        await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+        console.log('Background location tracking stopped');
+      }
+    } catch (error) {
+      console.log('Background tracking stop error:', error.message);
+    }
+  }
+
+  // Stop location tracking (foreground + background)
   async stopTracking() {
     try {
       if (this.watchId) {
@@ -121,6 +173,9 @@ class LocationService {
 
       this.isTracking = false;
       this.onLocationUpdate = null;
+
+      // Stop background tracking too
+      await this.stopBackgroundTracking();
 
       // Update backend that driver is offline
       await this.updateDriverStatus(false);

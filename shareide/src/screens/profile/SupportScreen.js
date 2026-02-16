@@ -14,8 +14,10 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
+import apiClient from '../../api/client';
 
 // Default colors fallback
 const defaultColors = {
@@ -30,12 +32,24 @@ const defaultColors = {
   gradients: { premium: ['#FFD700', '#FFA500'] },
 };
 
+const CATEGORIES = [
+  { id: 'ride_issue', label: 'Ride Issue', icon: 'car' },
+  { id: 'payment', label: 'Payment', icon: 'card' },
+  { id: 'driver_behavior', label: 'Driver', icon: 'person' },
+  { id: 'app_bug', label: 'App Bug', icon: 'bug' },
+  { id: 'account', label: 'Account', icon: 'person-circle' },
+  { id: 'other', label: 'Other', icon: 'ellipsis-horizontal' },
+];
+
 const SupportScreen = ({ navigation }) => {
   const theme = useTheme();
   const colors = theme?.colors || defaultColors;
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const [expandedFaq, setExpandedFaq] = useState(null);
   const [message, setMessage] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('other');
+  const [sending, setSending] = useState(false);
 
   const faqs = [
     {
@@ -111,19 +125,36 @@ const SupportScreen = ({ navigation }) => {
     { icon: 'information-circle', label: 'About Shareide' },
   ];
 
-  const handleSubmitQuery = () => {
+  const handleSubmitQuery = async () => {
     if (!message.trim()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Error', 'Please enter your message');
       return;
     }
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert(
-      'Message Sent',
-      'Thank you for reaching out! Our support team will respond within 24 hours.',
-      [{ text: 'OK', onPress: () => setMessage('') }]
-    );
+    setSending(true);
+    try {
+      await apiClient.post('/contact', {
+        name: user?.name || 'App User',
+        email: user?.email || 'noemail@shareide.com',
+        phone: user?.phone || '',
+        subject: `[App] ${CATEGORIES.find(c => c.id === selectedCategory)?.label || 'Support'} Issue`,
+        message: message.trim(),
+        category: selectedCategory,
+        source: 'contact_form',
+      });
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert(
+        'Message Sent',
+        'Thank you for reaching out! Our support team will respond within 24 hours.',
+        [{ text: 'OK', onPress: () => { setMessage(''); setSelectedCategory('other'); } }]
+      );
+    } catch (e) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Error', 'Failed to send message. Please try again.');
+    }
+    setSending(false);
   };
 
   const toggleFaq = (id) => {
@@ -255,6 +286,24 @@ const SupportScreen = ({ navigation }) => {
             </Text>
           </View>
           <View style={[styles.messageCard, { backgroundColor: colors.surface }, shadows.sm]}>
+            <Text style={[styles.categoryLabel, { color: colors.textSecondary }]}>Category</Text>
+            <View style={styles.categoryGrid}>
+              {CATEGORIES.map((cat) => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={[
+                    styles.categoryChip,
+                    { backgroundColor: selectedCategory === cat.id ? colors.primary : colors.background, borderColor: selectedCategory === cat.id ? colors.primary : colors.border },
+                  ]}
+                  onPress={() => { Haptics.selectionAsync(); setSelectedCategory(cat.id); }}
+                >
+                  <Ionicons name={cat.icon} size={14} color={selectedCategory === cat.id ? '#000' : colors.textSecondary} />
+                  <Text style={[styles.categoryChipText, { color: selectedCategory === cat.id ? '#000' : colors.textSecondary }]}>
+                    {cat.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
             <TextInput
               style={[
                 styles.messageInput,
@@ -269,12 +318,13 @@ const SupportScreen = ({ navigation }) => {
               textAlignVertical="top"
             />
             <Button
-              title="Send Message"
+              title={sending ? 'Sending...' : 'Send Message'}
               onPress={handleSubmitQuery}
               variant="primary"
               size="large"
               icon="send"
               fullWidth
+              disabled={sending}
             />
           </View>
         </View>
@@ -475,6 +525,29 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     borderRadius: borderRadius.xl,
     gap: spacing.md,
+  },
+  categoryLabel: {
+    fontSize: typography.caption,
+    fontWeight: '600',
+    marginBottom: -4,
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 6,
+  },
+  categoryChipText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   messageInput: {
     borderRadius: borderRadius.lg,

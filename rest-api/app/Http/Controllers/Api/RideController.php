@@ -278,6 +278,15 @@ class RideController extends Controller
             // Broadcast ride status change for realtime updates
             broadcast(new RideStatusChanged($ride))->toOthers();
 
+            // Send push notification to driver
+            PushNotificationController::sendToUser(
+                $driver->user_id,
+                'New Ride Request!',
+                'You have a new ride request from ' . ($user->name ?? 'a rider') . '. Pickup: ' . $request->pickup_address,
+                ['ride_id' => $ride->id, 'type' => 'new_ride', 'channel' => 'rides'],
+                'ride_request'
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Ride request sent to driver',
@@ -344,7 +353,10 @@ class RideController extends Controller
             $perPage = $request->get('per_page', 20);
             $status = $request->get('status'); // completed, cancelled
 
-            $rides = RideRequest::where('rider_id', $user->id)
+            $rides = RideRequest::where(function ($q) use ($user) {
+                    $q->where('rider_id', $user->id)
+                      ->orWhere('driver_id', $user->id);
+                })
                 ->when($status, function ($query, $status) {
                     return $query->where('status', $status);
                 })
@@ -408,6 +420,129 @@ class RideController extends Controller
         $fare = $rates['base'] + ($rates['per_km'] * $distance);
 
         return ceil($fare / 10) * 10; // Round to nearest 10
+    }
+
+    /**
+     * Estimate fare before booking
+     */
+    public function estimateFare(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'pickup_lat' => 'required|numeric|between:-90,90',
+            'pickup_lng' => 'required|numeric|between:-180,180',
+            'dropoff_lat' => 'required|numeric|between:-90,90',
+            'dropoff_lng' => 'required|numeric|between:-180,180',
+            'vehicle_type' => 'sometimes|in:bike,rickshaw,car,car_economy,car_premium,ac_car,van',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        try {
+            $distance = $this->calculateDistance(
+                $request->pickup_lat, $request->pickup_lng,
+                $request->dropoff_lat, $request->dropoff_lng
+            );
+            $durationEstimate = ceil($distance * 2.5);
+            $vehicleType = $request->vehicle_type ?? 'car';
+
+            // Try FareSetting model first
+            $fareSetting = \App\Models\FareSetting::where('vehicle_type', $vehicleType)
+                ->where('is_active', true)
+                ->first();
+
+            if ($fareSetting) {
+                $baseFare = (float) $fareSetting->base_fare;
+                $distanceCharge = $distance * (float) $fareSetting->per_km_rate;
+                $timeCharge = $durationEstimate * (float) $fareSetting->per_minute_rate;
+                $bookingFee = (float) $fareSetting->booking_fee;
+                $cancellationFee = (float) $fareSetting->cancellation_fee;
+                $subtotal = $baseFare + $distanceCharge + $timeCharge + $bookingFee;
+                $minimumFare = (float) $fareSetting->minimum_fare;
+            } else {
+                $subtotal = $this->calculateFare($vehicleType, $distance);
+                $baseFare = $subtotal * 0.4;
+                $distanceCharge = $subtotal * 0.5;
+                $timeCharge = $subtotal * 0.1;
+                $bookingFee = 0;
+                $cancellationFee = 50;
+                $minimumFare = 80;
+            }
+
+            // Check surge pricing
+            $surgeMultiplier = 1.0;
+            $surgeAmount = 0;
+            $surge = \App\Models\SurgePricing::active()->first();
+            if ($surge) {
+                $surgeMultiplier = (float) $surge->multiplier;
+                $surgeAmount = round($subtotal * ($surgeMultiplier - 1));
+            }
+
+            $totalFare = max(ceil(($subtotal + $surgeAmount) / 10) * 10, $minimumFare ?? 80);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'distance_km' => round($distance, 1),
+                    'duration_minutes' => $durationEstimate,
+                    'total_fare' => $totalFare,
+                    'vehicle_type' => $vehicleType,
+                    'breakdown' => [
+                        'base_fare' => round($baseFare),
+                        'distance_charge' => round($distanceCharge),
+                        'time_charge' => round($timeCharge),
+                        'booking_fee' => round($bookingFee),
+                        'surge_multiplier' => $surgeMultiplier,
+                        'surge_amount' => round($surgeAmount),
+                        'surge_reason' => $surge ? $surge->reason : null,
+                        'cancellation_fee' => round($cancellationFee ?? 50),
+                    ],
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to estimate fare', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get driver location for a rider during an active ride
+     */
+    public function getDriverLocationForRider($id)
+    {
+        try {
+            $ride = RideRequest::where('id', $id)
+                ->where('rider_id', auth()->id())
+                ->whereIn('status', ['accepted', 'arrived', 'started', 'driver_assigned'])
+                ->firstOrFail();
+
+            $driver = Driver::where('user_id', $ride->driver_id)->first();
+
+            if (!$driver || !$driver->current_lat || !$driver->current_lng) {
+                return response()->json([
+                    'success' => true,
+                    'data' => null
+                ]);
+            }
+
+            // Calculate ETA from driver to pickup/dropoff
+            $targetLat = in_array($ride->status, ['started']) ? $ride->drop_lat : $ride->pickup_lat;
+            $targetLng = in_array($ride->status, ['started']) ? $ride->drop_lng : $ride->pickup_lng;
+            $distanceToTarget = $this->calculateDistance($driver->current_lat, $driver->current_lng, $targetLat, $targetLng);
+            $eta = max(1, ceil($distanceToTarget * 3));
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'latitude' => $driver->current_lat,
+                    'longitude' => $driver->current_lng,
+                    'eta' => $eta,
+                    'updated_at' => $driver->updated_at,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to get driver location'], 404);
+        }
     }
 
     // Find matching rides

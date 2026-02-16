@@ -30,6 +30,7 @@ import DriverProfileScreen from '../screens/booking/DriverProfileScreen';
 import BookingConfirmScreen from '../screens/booking/BookingConfirmScreen';
 import RideTrackingScreen from '../screens/booking/RideTrackingScreen';
 import RateRideScreen from '../screens/booking/RateRideScreen';
+import RideReceiptScreen from '../screens/booking/RideReceiptScreen';
 import BookingDetailsScreen from '../screens/booking/BookingDetailsScreen';
 
 // Wallet screens
@@ -47,6 +48,7 @@ import NotificationsScreen from '../screens/profile/NotificationsScreen';
 import EmergencyScreen from '../screens/profile/EmergencyScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
 import SupportScreen from '../screens/profile/SupportScreen';
+import ReferralScreen from '../screens/profile/ReferralScreen';
 
 // Scheduled Rides screens
 import ScheduledRidesScreen from '../screens/scheduled/ScheduledRidesScreen';
@@ -324,6 +326,7 @@ const AppNavigator = () => {
               component={RideTrackingScreen}
               options={{ gestureEnabled: false }}
             />
+            <Stack.Screen name="RideReceipt" component={RideReceiptScreen} options={{ gestureEnabled: false }} />
             <Stack.Screen name="RateRide" component={RateRideScreen} />
             <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
 
@@ -351,6 +354,7 @@ const AppNavigator = () => {
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="Support" component={SupportScreen} />
+            <Stack.Screen name="Referral" component={ReferralScreen} />
 
             {/* Scheduled Rides */}
             <Stack.Screen name="ScheduledRides" component={ScheduledRidesScreen} />

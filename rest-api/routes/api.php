@@ -380,6 +380,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/active', [RideController::class, 'getActiveRide']);
         Route::get('/history', [RideController::class, 'getRideHistory']);
 
+        // Fare estimation (before {id} wildcard)
+        Route::get('/fare-estimate', [RideController::class, 'estimateFare']);
+
         // ============================================
         // BIDDING / UPSALE FEATURE (must be before {id} routes)
         // ============================================
@@ -391,6 +394,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/cancel', [RideController::class, 'cancel']);
         Route::get('/{id}/bid-options', [RideController::class, 'getBidOptions']);
         Route::post('/{id}/increase-bid', [RideController::class, 'increaseBid']);
+        Route::get('/{id}/driver-location', [RideController::class, 'getDriverLocationForRider']);
     });
 });
 

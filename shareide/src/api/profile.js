@@ -7,12 +7,12 @@ export const profileAPI = {
   },
 
   updateProfile: async (data) => {
-    const response = await apiClient.put('/profile/update', data);
+    const response = await apiClient.put('/profile', data);
     return response.data;
   },
 
   updateProfilePicture: async (formData) => {
-    const response = await apiClient.post('/profile/picture', formData, {
+    const response = await apiClient.post('/profile', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

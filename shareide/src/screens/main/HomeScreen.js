@@ -22,7 +22,9 @@ const LIGHT_BG = '#F7F8FA';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const getGreeting = () => {
-  const hour = new Date().getHours();
+  // Use Pakistan Standard Time (UTC+5)
+  const pkTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Karachi' }));
+  const hour = pkTime.getHours();
   if (hour < 12) return { text: 'Good Morning', icon: 'sunny', color: '#F59E0B' };
   if (hour < 17) return { text: 'Good Afternoon', icon: 'partly-sunny', color: '#F97316' };
   if (hour < 21) return { text: 'Good Evening', icon: 'moon', color: '#8B5CF6' };

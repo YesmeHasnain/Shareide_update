@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Alert,
   Animated,
+  Linking,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -128,6 +130,44 @@ const RideRequestScreen = ({ route, navigation }) => {
   const handleOpenChat = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate('Chat', { rideId });
+  };
+
+  const handleNavigate = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Navigate to pickup when accepted, dropoff when ride started
+    const isStarted = ride?.status === 'started';
+    const lat = isStarted ? ride?.dropoff_lat : ride?.pickup_lat;
+    const lng = isStarted ? ride?.dropoff_lng : ride?.pickup_lng;
+    const label = isStarted ? 'Dropoff' : 'Pickup';
+
+    if (!lat || !lng) {
+      Alert.alert('Error', 'Location coordinates not available');
+      return;
+    }
+
+    const googleMapsUrl = Platform.select({
+      ios: `comgooglemaps://?daddr=${lat},${lng}&directionsmode=driving`,
+      android: `google.navigation:q=${lat},${lng}&mode=d`,
+    });
+    const appleMapsUrl = `maps://app?daddr=${lat},${lng}&dirflg=d`;
+    const wazeMapsUrl = `waze://?ll=${lat},${lng}&navigate=yes`;
+    const webMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+
+    Alert.alert('Open Navigation', `Navigate to ${label} location`, [
+      {
+        text: 'Google Maps',
+        onPress: () => Linking.openURL(googleMapsUrl).catch(() => Linking.openURL(webMapsUrl)),
+      },
+      {
+        text: 'Waze',
+        onPress: () => Linking.openURL(wazeMapsUrl).catch(() => Linking.openURL(webMapsUrl)),
+      },
+      ...(Platform.OS === 'ios' ? [{
+        text: 'Apple Maps',
+        onPress: () => Linking.openURL(appleMapsUrl).catch(() => Linking.openURL(webMapsUrl)),
+      }] : []),
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const getStatusConfig = () => {
@@ -315,6 +355,14 @@ const RideRequestScreen = ({ route, navigation }) => {
         <View style={styles.actionsContainer}>
           {ride.status === 'accepted' && (
             <>
+              <TouchableOpacity
+                style={[styles.navigateButton, { backgroundColor: '#1A73E8' }]}
+                onPress={handleNavigate}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="navigate" size={20} color="#FFF" />
+                <Text style={styles.navigateButtonText}>Navigate to Pickup</Text>
+              </TouchableOpacity>
               <Button
                 title="Start Ride"
                 onPress={handleStartRide}
@@ -332,6 +380,14 @@ const RideRequestScreen = ({ route, navigation }) => {
 
           {ride.status === 'started' && (
             <>
+              <TouchableOpacity
+                style={[styles.navigateButton, { backgroundColor: '#1A73E8' }]}
+                onPress={handleNavigate}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="navigate" size={20} color="#FFF" />
+                <Text style={styles.navigateButtonText}>Navigate to Dropoff</Text>
+              </TouchableOpacity>
               <Button
                 title="Complete Ride"
                 onPress={handleCompleteRide}
@@ -532,6 +588,20 @@ const styles = StyleSheet.create({
   actionsContainer: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  navigateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 52,
+    borderRadius: borderRadius.md || 12,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  navigateButtonText: {
+    color: '#FFF',
+    fontSize: typography.body || 15,
+    fontWeight: '700',
   },
   actionButton: {
     marginBottom: spacing.md,

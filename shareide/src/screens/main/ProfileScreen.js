@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -24,7 +24,12 @@ const ProfileScreen = ({ navigation }) => {
   const auth = useAuth();
   const user = auth?.user;
   const logout = auth?.logout;
+  const refreshUser = auth?.refreshUser;
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    if (refreshUser) refreshUser();
+  }, [refreshUser]);
 
   const handleLogout = () => {
     Alert.alert(
@@ -151,6 +156,8 @@ const ProfileScreen = ({ navigation }) => {
             <MenuItem icon="bookmark" label="Saved Places" screen="SavedPlaces" iconBg="#FEF3C7" iconColor="#F59E0B" />
             <View style={styles.separator} />
             <MenuItem icon="time" label="Scheduled Rides" screen="ScheduledRides" iconBg="#F0FDF4" iconColor="#10B981" />
+            <View style={styles.separator} />
+            <MenuItem icon="gift" label="Refer & Earn" screen="Referral" iconBg="#FDF2F8" iconColor="#EC4899" />
           </View>
         </View>
 

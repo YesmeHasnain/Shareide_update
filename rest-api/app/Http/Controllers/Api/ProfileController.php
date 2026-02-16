@@ -25,7 +25,10 @@ class ProfileController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
+            'name' => 'nullable|string|max:255',
             'full_name' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'gender' => 'nullable|in:male,female,other',
             'default_city' => 'nullable|string|max:255',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
@@ -47,11 +50,21 @@ class ProfileController extends Controller
             ]);
         }
 
-        // Update fields
-        if ($request->has('full_name')) {
-            $profile->full_name = $request->full_name;
-            $user->name = $request->full_name;
+        // Update name (accept both 'name' and 'full_name')
+        $newName = $request->input('name') ?? $request->input('full_name');
+        if ($newName) {
+            $profile->full_name = $newName;
+            $user->name = $newName;
             $user->save();
+        }
+
+        if ($request->has('email')) {
+            $user->email = $request->email;
+            $user->save();
+        }
+
+        if ($request->has('gender')) {
+            $profile->gender = $request->gender;
         }
 
         if ($request->has('default_city')) {

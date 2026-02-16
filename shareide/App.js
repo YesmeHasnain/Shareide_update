@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider } from './src/context/AuthContext';
 import { ThemeProvider } from './src/context/ThemeContext';
+import { I18nProvider } from './src/i18n';
 import AppNavigator from './src/navigation/AppNavigator';
 
 LogBox.ignoreLogs(['Non-serializable values', 'Reanimated', 'Worklets']);
@@ -13,12 +14,14 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <StatusBar style='auto' />
-            <AppNavigator />
-          </AuthProvider>
-        </ThemeProvider>
+        <I18nProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <StatusBar style='auto' />
+              <AppNavigator />
+            </AuthProvider>
+          </ThemeProvider>
+        </I18nProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

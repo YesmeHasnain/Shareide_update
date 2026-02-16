@@ -104,12 +104,9 @@ const EditProfileScreen = ({ navigation }) => {
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
-      // Mock success for demo
-      await updateUser({ name: name.trim(), email: email.trim() });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Success', 'Profile updated successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      const message = error.response?.data?.message || 'Failed to update profile. Please try again.';
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }

@@ -339,6 +339,11 @@ const RideOptionsScreen = ({ navigation, route }) => {
   const [femaleDriverPreferred, setFemaleDriverPreferred] = useState(false);
   const [luggageSpace, setLuggageSpace] = useState(false);
 
+  // Surge pricing state
+  const [surgeMultiplier, setSurgeMultiplier] = useState(1.0);
+  const [surgeReason, setSurgeReason] = useState('');
+  const [fareEstimate, setFareEstimate] = useState(null);
+
   // Animation for fare
   const [fareAnimation] = useState(new Animated.Value(1));
 
@@ -403,9 +408,10 @@ const RideOptionsScreen = ({ navigation, route }) => {
     },
   ];
 
-  // Fetch dynamic vehicle types from API
+  // Fetch dynamic vehicle types and fare estimate from API
   useEffect(() => {
     fetchVehicleTypes();
+    fetchFareEstimate();
   }, []);
 
   const fetchVehicleTypes = async () => {
@@ -449,6 +455,21 @@ const RideOptionsScreen = ({ navigation, route }) => {
     }
   };
 
+  // Fetch fare estimate (includes surge info)
+  const fetchFareEstimate = async () => {
+    if (!pickup?.latitude || !dropoff?.latitude) return;
+    try {
+      const res = await ridesAPI.estimateFare(pickup, dropoff, 'car');
+      if (res.success && res.data) {
+        setFareEstimate(res.data);
+        if (res.data.breakdown?.surge_multiplier > 1) {
+          setSurgeMultiplier(res.data.breakdown.surge_multiplier);
+          setSurgeReason(res.data.breakdown.surge_reason || 'High demand in your area');
+        }
+      }
+    } catch (e) { /* silent */ }
+  };
+
   // Get selected vehicle data
   const getSelectedVehicle = () => {
     const activeVehicleTypes = vehicleTypes.length > 0 ? vehicleTypes : defaultVehicleTypes;
@@ -481,6 +502,11 @@ const RideOptionsScreen = ({ navigation, route }) => {
       if (selectedSeats > 1 && (vehicle.id === 'van' || vehicle.id === 'high_roof')) {
         baseFare = Math.round(baseFare * (1 + (selectedSeats - 1) * 0.25));
       }
+    }
+
+    // Apply surge multiplier
+    if (surgeMultiplier > 1) {
+      baseFare = Math.round(baseFare * surgeMultiplier);
     }
 
     // Package discount
@@ -578,6 +604,7 @@ const RideOptionsScreen = ({ navigation, route }) => {
       femaleDriverPreferred,
       luggageSpace,
       estimatedFare: calculateFare(),
+      surgeMultiplier,
     };
 
     // Add schedule info for scheduled rides
@@ -653,6 +680,24 @@ const RideOptionsScreen = ({ navigation, route }) => {
             </View>
           </View>
         </Card>
+
+        {/* Surge Pricing Banner */}
+        {surgeMultiplier > 1 && (
+          <View style={[styles.surgeBanner, { backgroundColor: '#FEF3C7', borderColor: '#F59E0B' }]}>
+            <View style={styles.surgeLeft}>
+              <View style={styles.surgeIconBg}>
+                <Ionicons name="flash" size={20} color="#F59E0B" />
+              </View>
+              <View style={styles.surgeTextContainer}>
+                <Text style={styles.surgeTitle}>Surge Pricing Active</Text>
+                <Text style={styles.surgeDesc}>{surgeReason || 'High demand in your area'}</Text>
+              </View>
+            </View>
+            <View style={styles.surgeMultiplierBadge}>
+              <Text style={styles.surgeMultiplierText}>{surgeMultiplier.toFixed(1)}x</Text>
+            </View>
+          </View>
+        )}
 
         {/* Ride Type Selection */}
         <Card style={styles.section} shadow="md">
@@ -929,6 +974,12 @@ const RideOptionsScreen = ({ navigation, route }) => {
             >
               Rs. {calculateFare()}
             </Animated.Text>
+            {surgeMultiplier > 1 && (
+              <View style={[styles.discountBadge, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="flash" size={12} color="#F59E0B" />
+                <Text style={[styles.discountText, { color: '#F59E0B' }]}>{surgeMultiplier.toFixed(1)}x Surge</Text>
+              </View>
+            )}
             {rideType === 'package' && (
               <View style={[styles.discountBadge, { backgroundColor: colors.successLight }]}>
                 <Ionicons name="pricetag" size={12} color={colors.success} />
@@ -1049,6 +1100,55 @@ const styles = StyleSheet.create({
   routeDash: {
     width: 2,
     height: 6,
+  },
+
+  // Surge pricing styles
+  surgeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+  },
+  surgeLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.sm,
+  },
+  surgeIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FEF3C7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  surgeTextContainer: {
+    flex: 1,
+  },
+  surgeTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#92400E',
+  },
+  surgeDesc: {
+    fontSize: 11,
+    color: '#B45309',
+    marginTop: 2,
+  },
+  surgeMultiplierBadge: {
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  surgeMultiplierText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '800',
   },
 
   // Ride type styles

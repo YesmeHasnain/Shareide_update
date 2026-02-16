@@ -12,6 +12,7 @@ class RiderProfile extends Model
     protected $fillable = [
         'user_id',
         'full_name',
+        'gender',
         'avatar_path',
         'default_city',
     ];

@@ -195,8 +195,7 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
 
         // Check if profile is complete
-        $profile = $user->riderProfile;
-        $isProfileComplete = $profile && $profile->full_name && $profile->gender;
+        $isProfileComplete = $user->riderProfile && $user->riderProfile->full_name && $user->riderProfile->gender;
 
         // Create wallet if not exists
         RiderWallet::firstOrCreate(
@@ -204,32 +203,8 @@ class AuthController extends Controller
             ['balance' => 0, 'total_spent' => 0, 'total_topped_up' => 0]
         );
 
-        // Build user data with driver info for driver app
-        $userData = [
-            'id' => (string) $user->id,
-            'name' => $user->name,
-            'phone' => $user->phone,
-            'email' => $user->email,
-            'avatar' => $profile?->avatar_path ? url('storage/' . $profile->avatar_path) : null,
-            'gender' => $profile?->gender,
-            'profile_complete' => $isProfileComplete,
-        ];
-
-        // Include driver info if user is a driver (for shareide_fleet app)
-        if ($user->driver) {
-            $userData['driver'] = [
-                'id' => (string) $user->driver->id,
-                'vehicle_type' => $user->driver->vehicle_type,
-                'vehicle_model' => $user->driver->vehicle_model,
-                'plate_number' => $user->driver->plate_number,
-                'seats' => $user->driver->seats,
-                'city' => $user->driver->city,
-                'status' => $user->driver->status,
-                'is_online' => $user->driver->is_online,
-                'rating_average' => $user->driver->rating_average,
-                'completed_rides_count' => $user->driver->completed_rides_count,
-            ];
-        }
+        // Reload relationships for complete data
+        $user->load(['riderProfile', 'riderWallet', 'driver']);
 
         return response()->json([
             'success' => true,
@@ -237,7 +212,7 @@ class AuthController extends Controller
             'needs_profile_setup' => !$isProfileComplete,
             'message' => $isProfileComplete ? 'Login successful' : 'Please complete your profile',
             'token' => $token,
-            'user' => $userData,
+            'user' => $this->buildUserData($user),
         ]);
     }
 
@@ -368,49 +343,43 @@ class AuthController extends Controller
         // Issue token
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        // Reload relationships for complete data
+        $user->load(['riderProfile', 'riderWallet', 'driver']);
+
         return response()->json([
             'success' => true,
             'message' => 'Registration completed successfully',
             'token' => $token,
-            'user' => [
-                'id' => (string) $user->id,
-                'name' => $user->name,
-                'phone' => $user->phone,
-                'email' => $user->email,
-                'avatar' => $user->riderProfile?->avatar_path ? url('storage/' . $user->riderProfile->avatar_path) : null,
-                'gender' => $user->riderProfile?->gender,
-                'profile_complete' => true,
-            ],
+            'user' => $this->buildUserData($user),
         ]);
     }
 
     /**
-     * Get current user
+     * Build complete user data array for API responses
      */
-    public function me(Request $request)
+    private function buildUserData(User $user): array
     {
-        $user = $request->user();
+        $profile = $user->riderProfile;
+        $wallet = $user->riderWallet;
 
         $userData = [
             'id' => (string) $user->id,
             'name' => $user->name,
             'phone' => $user->phone,
             'email' => $user->email,
-            'role' => $user->role,
-            'status' => $user->status,
+            'avatar' => $profile?->avatar_path ? url('storage/' . $profile->avatar_path) : null,
+            'gender' => $profile?->gender,
+            'rating' => (float) ($user->rating ?? 5.0),
+            'total_rides' => (int) ($user->total_rides ?? 0),
+            'loyalty_points' => (int) ($user->available_loyalty_points ?? 0),
+            'wallet_balance' => (float) ($wallet?->balance ?? 0),
+            'profile_complete' => $profile && $profile->full_name && $profile->gender,
         ];
 
-        if ($user->riderProfile) {
-            $userData['avatar'] = $user->riderProfile->avatar_path ? url('storage/' . $user->riderProfile->avatar_path) : null;
-            $userData['rider_profile'] = [
-                'full_name' => $user->riderProfile->full_name,
-                'avatar_url' => $user->riderProfile->avatar_path ? url('storage/' . $user->riderProfile->avatar_path) : null,
-                'default_city' => $user->riderProfile->default_city,
-            ];
-        }
-
+        // Include driver info if user is a driver (for shareide_fleet app)
         if ($user->driver) {
             $userData['driver'] = [
+                'id' => (string) $user->driver->id,
                 'vehicle_type' => $user->driver->vehicle_type,
                 'vehicle_model' => $user->driver->vehicle_model,
                 'plate_number' => $user->driver->plate_number,
@@ -423,9 +392,20 @@ class AuthController extends Controller
             ];
         }
 
+        return $userData;
+    }
+
+    /**
+     * Get current user
+     */
+    public function me(Request $request)
+    {
+        $user = $request->user();
+        $user->load(['riderProfile', 'riderWallet', 'driver']);
+
         return response()->json([
             'success' => true,
-            'user' => $userData,
+            'user' => $this->buildUserData($user),
         ]);
     }
 

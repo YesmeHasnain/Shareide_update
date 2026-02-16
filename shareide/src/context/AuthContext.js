@@ -1,6 +1,8 @@
-﻿import React, { createContext, useState, useContext, useEffect } from 'react';
+﻿import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import log from '../utils/logger';
+import notificationService from '../utils/notificationService';
+import apiClient from '../api/client';
 
 const AuthContext = createContext();
 
@@ -46,6 +48,16 @@ export const AuthProvider = ({ children }) => {
       if (storedToken && storedUser) {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
+        // Re-register push token on app restart
+        notificationService.registerToken().catch(() => {});
+        // Refresh user data from server in background
+        apiClient.get('/me').then(response => {
+          if (response.data?.success && response.data?.user) {
+            const freshUser = response.data.user;
+            AsyncStorage.setItem('user', JSON.stringify(freshUser));
+            setUser(freshUser);
+          }
+        }).catch(() => {});
       }
     } catch (error) {
       log.error('Error loading auth:', error);
@@ -60,6 +72,9 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.setItem('user', JSON.stringify(userData));
       setToken(authToken);
       setUser(userData);
+
+      // Register push notification token after login
+      notificationService.registerToken().catch(() => {});
     } catch (error) {
       log.error('Error saving auth:', error);
     }
@@ -67,6 +82,9 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      // Unregister push token before clearing auth
+      await notificationService.unregisterToken().catch(() => {});
+
       await AsyncStorage.removeItem('token');
       await AsyncStorage.removeItem('user');
       setToken(null);
@@ -86,10 +104,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const currentToken = await AsyncStorage.getItem('token');
+      if (!currentToken) return;
+      const response = await apiClient.get('/me');
+      if (response.data?.success && response.data?.user) {
+        const freshUser = response.data.user;
+        await AsyncStorage.setItem('user', JSON.stringify(freshUser));
+        setUser(freshUser);
+      }
+    } catch (error) {
+      log.error('Error refreshing user:', error);
+    }
+  }, []);
+
   const isAuthenticated = !!token && !!user;
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, isAuthenticated, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, token, loading, isAuthenticated, login, logout, updateUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

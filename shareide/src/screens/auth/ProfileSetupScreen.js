@@ -136,9 +136,16 @@ const ProfileSetupScreen = ({ route, navigation }) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
       if (token && !isNewUser) {
-        await login(user, token);
-        await apiClient.put('/profile', { name: name.trim(), gender });
-        if (profileImage) await uploadAvatar(token);
+        // Update profile on server first, then login with updated data
+        const updatedUser = { ...user, name: name.trim(), gender };
+        await apiClient.put('/profile', { name: name.trim(), gender }, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (profileImage) {
+          const avatarUrl = await uploadAvatar(token);
+          if (avatarUrl) updatedUser.avatar = avatarUrl;
+        }
+        await login(updatedUser, token);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else {
         if (!verificationToken) {

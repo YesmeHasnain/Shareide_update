@@ -127,10 +127,39 @@ class PushNotificationController extends Controller
             return $notification;
         }
 
-        // Send via Firebase FCM
-        self::sendFCM($tokens, $title, $body, $data);
+        // Separate Expo tokens from FCM tokens
+        $expoTokens = array_filter($tokens, fn($t) => str_starts_with($t, 'ExponentPushToken'));
+        $fcmTokens = array_filter($tokens, fn($t) => !str_starts_with($t, 'ExponentPushToken'));
+
+        if (!empty($expoTokens)) {
+            self::sendExpo(array_values($expoTokens), $title, $body, $data);
+        }
+        if (!empty($fcmTokens)) {
+            self::sendFCM(array_values($fcmTokens), $title, $body, $data);
+        }
 
         return $notification;
+    }
+
+    private static function sendExpo(array $tokens, string $title, string $body, array $data = [])
+    {
+        $messages = array_map(fn($token) => [
+            'to' => $token,
+            'sound' => 'default',
+            'title' => $title,
+            'body' => $body,
+            'data' => $data,
+            'channelId' => $data['channel'] ?? 'default',
+        ], $tokens);
+
+        try {
+            Http::withHeaders([
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ])->post('https://exp.host/--/api/v2/push/send', $messages);
+        } catch (\Exception $e) {
+            \Log::error('Expo push notification error: ' . $e->getMessage());
+        }
     }
 
     private static function sendFCM(array $tokens, string $title, string $body, array $data = [])
@@ -142,18 +171,22 @@ class PushNotificationController extends Controller
         }
 
         foreach ($tokens as $token) {
-            Http::withHeaders([
-                'Authorization' => 'key=' . $serverKey,
-                'Content-Type' => 'application/json',
-            ])->post('https://fcm.googleapis.com/fcm/send', [
-                'to' => $token,
-                'notification' => [
-                    'title' => $title,
-                    'body' => $body,
-                    'sound' => 'default',
-                ],
-                'data' => $data,
-            ]);
+            try {
+                Http::withHeaders([
+                    'Authorization' => 'key=' . $serverKey,
+                    'Content-Type' => 'application/json',
+                ])->post('https://fcm.googleapis.com/fcm/send', [
+                    'to' => $token,
+                    'notification' => [
+                        'title' => $title,
+                        'body' => $body,
+                        'sound' => 'default',
+                    ],
+                    'data' => $data,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('FCM push notification error: ' . $e->getMessage());
+            }
         }
     }
 }

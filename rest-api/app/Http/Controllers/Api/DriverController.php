@@ -9,6 +9,9 @@ use App\Events\DriverLocationUpdated;
 use App\Events\RideStatusChanged;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
+use App\Http\Controllers\Api\PushNotificationController;
+use App\Mail\RideCompletedMail;
 
 class DriverController extends Controller
 {
@@ -646,9 +649,19 @@ class DriverController extends Controller
 
         if ($newStatus === 'completed') {
             $ride->completed_at = now();
-            
+
             // Increment driver's completed rides count
             $driver->increment('completed_rides_count');
+
+            // Send ride receipt email to rider
+            try {
+                $rider = \App\Models\User::find($ride->rider_id);
+                if ($rider && $rider->email) {
+                    Mail::to($rider->email)->queue(new RideCompletedMail($ride, $rider));
+                }
+            } catch (\Exception $e) {
+                \Log::error('Failed to send ride receipt email: ' . $e->getMessage());
+            }
         }
 
         $ride->status = $newStatus;
@@ -656,6 +669,26 @@ class DriverController extends Controller
 
         // Broadcast ride status change
         broadcast(new RideStatusChanged($ride))->toOthers();
+
+        // Send push notification to rider
+        $riderId = $ride->rider_id;
+        if ($riderId) {
+            $notifMessages = [
+                'driver_arrived' => ['Driver Arrived', 'Your driver has arrived at the pickup location.'],
+                'in_progress' => ['Ride Started', 'Your ride has started. Enjoy your trip!'],
+                'completed' => ['Ride Completed', 'Your ride is complete. Total fare: Rs. ' . ($ride->fare ?? 0)],
+                'cancelled_by_driver' => ['Ride Cancelled', 'Your driver has cancelled the ride.'],
+            ];
+            if (isset($notifMessages[$newStatus])) {
+                PushNotificationController::sendToUser(
+                    $riderId,
+                    $notifMessages[$newStatus][0],
+                    $notifMessages[$newStatus][1],
+                    ['ride_id' => $ride->id, 'status' => $newStatus, 'channel' => 'rides'],
+                    'ride_status'
+                );
+            }
+        }
 
         return response()->json([
             'success' => true,

@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { useI18n, LANGUAGES } from '../../i18n';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
 // Default colors fallback
@@ -37,6 +38,7 @@ const SettingsScreen = ({ navigation }) => {
   const auth = useAuth();
   const logout = auth?.logout;
   const insets = useSafeAreaInsets();
+  const { locale, changeLanguage } = useI18n();
 
   const [settings, setSettings] = useState({
     locationServices: true,
@@ -107,7 +109,15 @@ const SettingsScreen = ({ navigation }) => {
       icon: 'color-palette',
       items: [
         { icon: isDark ? 'sunny' : 'moon', label: isDark ? 'Light Mode' : 'Dark Mode', type: 'toggle', value: isDark, action: toggleTheme },
-        { icon: 'globe', label: 'Language', type: 'value', value: 'English' },
+        { icon: 'globe', label: 'Language', type: 'value', value: LANGUAGES.find(l => l.code === locale)?.name || 'English', action: () => {
+          Alert.alert('Select Language', 'Choose your preferred language', [
+            ...LANGUAGES.map(l => ({
+              text: `${l.nativeName} (${l.name})`,
+              onPress: () => changeLanguage(l.code),
+            })),
+            { text: 'Cancel', style: 'cancel' },
+          ]);
+        }},
         { icon: 'cash', label: 'Currency', type: 'value', value: 'PKR' },
       ],
     },
@@ -166,7 +176,7 @@ const SettingsScreen = ({ navigation }) => {
             styles.settingItem,
             !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border },
           ]}
-          onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); item.action && item.action(); }}
         >
           <View style={styles.settingLeft}>
             <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>

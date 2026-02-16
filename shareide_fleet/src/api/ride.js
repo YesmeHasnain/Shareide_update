@@ -68,6 +68,14 @@ export const rideAPI = {
     return response.data;
   },
 
+  // Get ride history
+  getRideHistory: async (page = 1, status = null) => {
+    const params = { page };
+    if (status) params.status = status;
+    const response = await client.get('/rides/history', { params });
+    return response.data;
+  },
+
   // Rate a rider after completing a ride
   rateRider: async (rideId, rating, comment = '', tags = [], negativeReason = undefined) => {
     const body = { rating, comment, tags };
