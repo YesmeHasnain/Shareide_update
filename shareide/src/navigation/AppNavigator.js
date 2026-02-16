@@ -72,6 +72,12 @@ import AvailableRidesScreen from '../screens/rides/AvailableRidesScreen';
 import PostRideRequestScreen from '../screens/rides/PostRideRequestScreen';
 import RideChatScreen from '../screens/chat/RideChatScreen';
 
+// New Feature Screens
+import NegotiationScreen from '../screens/booking/NegotiationScreen';
+import FAQScreen from '../screens/support/FAQScreen';
+import IntercitySearchScreen from '../screens/intercity/IntercitySearchScreen';
+import EmergencyContactsScreen from '../screens/safety/EmergencyContactsScreen';
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -377,6 +383,18 @@ const AppNavigator = () => {
             <Stack.Screen name="AvailableRides" component={AvailableRidesScreen} />
             <Stack.Screen name="PostRideRequest" component={PostRideRequestScreen} />
             <Stack.Screen name="RideChat" component={RideChatScreen} />
+
+            {/* Fare Negotiation */}
+            <Stack.Screen name="Negotiation" component={NegotiationScreen} />
+
+            {/* Help & Support */}
+            <Stack.Screen name="FAQ" component={FAQScreen} />
+
+            {/* Intercity */}
+            <Stack.Screen name="IntercitySearch" component={IntercitySearchScreen} />
+
+            {/* Safety */}
+            <Stack.Screen name="EmergencyContacts" component={EmergencyContactsScreen} />
           </>
         )}
       </Stack.Navigator>

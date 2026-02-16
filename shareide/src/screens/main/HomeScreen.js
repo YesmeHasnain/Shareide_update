@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 import { useAuth } from '../../context/AuthContext';
 
 const PRIMARY = '#FCC014';
@@ -36,10 +38,31 @@ const getFirstName = (name) => {
   return name.trim().split(' ')[0];
 };
 
+const serviceTypes = [
+  { key: 'city', label: 'City', icon: 'car' },
+  { key: 'intercity', label: 'Intercity', icon: 'bus' },
+  { key: 'delivery', label: 'Delivery', icon: 'cube' },
+];
+
 const HomeScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const greeting = getGreeting();
+  const [activeService, setActiveService] = useState('city');
+  const [userLocation, setUserLocation] = useState(null);
+
+  // Get user location for map
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          setUserLocation(loc.coords);
+        }
+      } catch (e) { /* silent */ }
+    })();
+  }, []);
 
   // Staggered entrance animations
   const item1Anim = useRef(new Animated.Value(0)).current;
@@ -202,6 +225,66 @@ const HomeScreen = ({ navigation }) => {
           </View>
         </Animated.View>
 
+        {/* Service Type Tabs */}
+        <Animated.View style={[styles.serviceTypeTabs, staggerStyle(item4Anim)]}>
+          {serviceTypes.map((svc) => (
+            <TouchableOpacity
+              key={svc.key}
+              style={[
+                styles.serviceTypeTab,
+                activeService === svc.key && { backgroundColor: PRIMARY, borderColor: PRIMARY },
+              ]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setActiveService(svc.key);
+                if (svc.key === 'intercity') {
+                  navigation.navigate('IntercitySearch');
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={svc.icon}
+                size={18}
+                color={activeService === svc.key ? '#000' : GRAY}
+              />
+              <Text style={[
+                styles.serviceTypeLabel,
+                { color: activeService === svc.key ? '#000' : GRAY },
+              ]}>
+                {svc.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </Animated.View>
+
+        {/* Mini Map */}
+        {userLocation && (
+          <Animated.View style={[styles.miniMapContainer, staggerStyle(item4Anim)]}>
+            <WebView
+              source={{ html: `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><style>*{margin:0;padding:0}html,body,#map{width:100%;height:100%;border-radius:16px}</style></head><body><div id="map"></div><script>var map=L.map('map',{zoomControl:false,attributionControl:false}).setView([${userLocation.latitude},${userLocation.longitude}],15);L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);L.circleMarker([${userLocation.latitude},${userLocation.longitude}],{radius:8,fillColor:'#FCC014',color:'#fff',weight:3,fillOpacity:1}).addTo(map);</script></body></html>` }}
+              style={styles.miniMap}
+              scrollEnabled={false}
+              javaScriptEnabled
+              domStorageEnabled
+              originWhitelist={['*']}
+            />
+            <TouchableOpacity
+              style={styles.miniMapOverlay}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate('LocationSearch', { type: 'dropoff' });
+              }}
+              activeOpacity={0.9}
+            >
+              <View style={styles.miniMapBadge}>
+                <Ionicons name="location" size={16} color={PRIMARY} />
+                <Text style={styles.miniMapBadgeText}>Tap to set destination</Text>
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+
         {/* Services */}
         <Animated.View style={[styles.servicesSection, staggerStyle(item4Anim)]}>
           <Text style={styles.sectionTitle}>Services</Text>
@@ -240,6 +323,21 @@ const HomeScreen = ({ navigation }) => {
               style={styles.serviceCard}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate('IntercitySearch');
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.serviceIconBg, { backgroundColor: '#DBEAFE' }]}>
+                <Ionicons name="bus" size={22} color="#2563EB" />
+              </View>
+              <Text style={styles.serviceLabel}>Intercity</Text>
+              <Text style={styles.serviceDesc}>City to city</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.serviceCard}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 navigation.navigate('ScheduledRides');
               }}
               activeOpacity={0.7}
@@ -249,21 +347,6 @@ const HomeScreen = ({ navigation }) => {
               </View>
               <Text style={styles.serviceLabel}>Schedule</Text>
               <Text style={styles.serviceDesc}>Plan ahead</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.serviceCard}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                navigation.navigate('AvailableRides');
-              }}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.serviceIconBg, { backgroundColor: '#D1FAE5' }]}>
-                <Ionicons name="compass" size={22} color="#059669" />
-              </View>
-              <Text style={styles.serviceLabel}>Explore</Text>
-              <Text style={styles.serviceDesc}>Nearby rides</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -518,6 +601,69 @@ const styles = StyleSheet.create({
   },
   savedLabel: {
     fontSize: 12,
+    fontWeight: '600',
+    color: DARK,
+  },
+
+  /* Service Type Tabs */
+  serviceTypeTabs: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  serviceTypeTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+  },
+  serviceTypeLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  /* Mini Map */
+  miniMapContainer: {
+    height: 160,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 20,
+    position: 'relative',
+  },
+  miniMap: {
+    flex: 1,
+    borderRadius: 16,
+  },
+  miniMapOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 12,
+  },
+  miniMapBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFF',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  miniMapBadgeText: {
+    fontSize: 13,
     fontWeight: '600',
     color: DARK,
   },

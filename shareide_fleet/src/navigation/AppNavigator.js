@@ -94,6 +94,12 @@ import LiveMapScreen from '../screens/map/LiveMapScreen';
 import PostRideScreen from '../screens/rides/PostRideScreen';
 import RideRequestsScreen from '../screens/rides/RideRequestsScreen';
 import RateRiderScreen from '../screens/rides/RateRiderScreen';
+import AvailableRequestsScreen from '../screens/rides/AvailableRequestsScreen';
+
+// New Feature Screens
+import HeatMapScreen from '../screens/map/HeatMapScreen';
+import DriverFAQScreen from '../screens/support/DriverFAQScreen';
+import IntercityOffersScreen from '../screens/intercity/IntercityOffersScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -309,6 +315,12 @@ const AppNavigator = () => {
         <Stack.Screen name="PostRide" component={withApprovalGuard(PostRideScreen, 'Post Ride')} />
         <Stack.Screen name="RideRequests" component={withApprovalGuard(RideRequestsScreen, 'Ride Requests')} />
         <Stack.Screen name="RateRider" component={RateRiderScreen} />
+
+        {/* New Feature Screens */}
+        <Stack.Screen name="AvailableRequests" component={withApprovalGuard(AvailableRequestsScreen, 'Available Requests')} />
+        <Stack.Screen name="HeatMap" component={HeatMapScreen} />
+        <Stack.Screen name="DriverFAQ" component={DriverFAQScreen} />
+        <Stack.Screen name="IntercityOffers" component={withApprovalGuard(IntercityOffersScreen, 'Intercity Offers')} />
       </Stack.Navigator>
     </NavigationContainer>
   );

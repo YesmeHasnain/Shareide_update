@@ -37,44 +37,39 @@ const RideChatScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const flatListRef = useRef(null);
 
-  const { rideId, driverId } = route.params || {};
+  const { rideId, driverId, driverName } = route.params || {};
 
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState([]);
   const [rideInfo, setRideInfo] = useState(null);
   const [otherUser, setOtherUser] = useState(null);
+  const [chatId, setChatId] = useState(null);
 
   useEffect(() => {
     fetchChatData();
-    // Fallback polling (15s instead of 5s since we have real-time)
     const interval = setInterval(fetchMessages, 15000);
     return () => clearInterval(interval);
   }, []);
 
   // Real-time: subscribe to chat channel for instant messages
   useEffect(() => {
+    if (!chatId) return;
     let channel = null;
     const setupRealTime = async () => {
       try {
-        // We use rideId to get/create the chat, then subscribe to that chat's channel
-        const res = await client.get(`/shared-rides/${rideId}/chat`);
-        const chatId = res.data.chat_id || res.data.id;
-        if (chatId) {
-          channel = await pusherService.subscribe(`chat.${chatId}`);
-          if (channel) {
-            channel.bind('message.sent', (data) => {
-              // Only add if not from current user
-              if (data.sender_id !== user?.id) {
-                setMessages((prev) => {
-                  const exists = prev.some((m) => m.id === data.id);
-                  if (exists) return prev;
-                  return [...prev, data];
-                });
-                setTimeout(() => flatListRef.current?.scrollToEnd(), 100);
-              }
-            });
-          }
+        channel = await pusherService.subscribe(`chat.${chatId}`);
+        if (channel) {
+          channel.bind('message.sent', (data) => {
+            if (data.sender_id !== user?.id) {
+              setMessages((prev) => {
+                const exists = prev.some((m) => m.id === data.id);
+                if (exists) return prev;
+                return [...prev, data];
+              });
+              setTimeout(() => flatListRef.current?.scrollToEnd(), 100);
+            }
+          });
         }
       } catch (error) {
         console.log('Real-time setup failed, using polling:', error.message);
@@ -86,49 +81,60 @@ const RideChatScreen = ({ navigation, route }) => {
         channel.unbind_all();
       }
     };
-  }, [rideId]);
+  }, [chatId]);
 
   const fetchChatData = async () => {
     try {
-      const [chatRes, rideRes] = await Promise.all([
-        client.get(`/shared-rides/${rideId}/chat`),
-        client.get(`/shared-rides/${rideId}`),
-      ]);
+      // Use regular ride chat API (not shared-rides)
+      const chatRes = await client.get(`/chat/ride/${rideId}`);
 
       if (chatRes.data.success) {
-        setMessages(chatRes.data.messages || []);
-        setOtherUser(chatRes.data.other_user);
-      }
-      if (rideRes.data.success) {
-        setRideInfo(rideRes.data.ride || rideRes.data.data?.ride);
+        const chat = chatRes.data.data?.chat;
+        const other = chatRes.data.data?.other_user;
+        if (chat) {
+          setChatId(chat.id);
+          setOtherUser(other || { name: driverName || 'Driver' });
+          // Fetch messages for this chat
+          const msgRes = await client.get(`/chat/${chat.id}/messages`);
+          if (msgRes.data.success) {
+            setMessages(msgRes.data.data?.messages || []);
+          }
+        }
       }
     } catch (error) {
       console.log('Fetch chat error:', error.message);
+      setOtherUser({ name: driverName || 'Driver' });
     } finally {
       setLoading(false);
     }
   };
 
   const fetchMessages = async () => {
+    if (!chatId) return;
     try {
-      const response = await client.get(`/shared-rides/${rideId}/chat`);
+      const response = await client.get(`/chat/${chatId}/messages`);
       if (response.data.success) {
-        setMessages(response.data.messages || []);
+        setMessages(response.data.data?.messages || []);
       }
     } catch (error) {}
   };
 
   const sendPresetMessage = async (text) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!chatId) {
+      Alert.alert('Error', 'Chat not initialized yet');
+      return;
+    }
     setSending(true);
 
     try {
-      const response = await client.post(`/shared-rides/${rideId}/chat`, {
+      const response = await client.post(`/chat/${chatId}/send`, {
         message: text,
       });
 
       if (response.data.success) {
-        setMessages((prev) => [...prev, response.data.message]);
+        const newMsg = response.data.data?.message || response.data.message;
+        setMessages((prev) => [...prev, newMsg]);
         setTimeout(() => flatListRef.current?.scrollToEnd(), 100);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }

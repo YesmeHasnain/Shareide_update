@@ -443,6 +443,41 @@ const DashboardScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
+        {/* Quick Links */}
+        <View style={styles.quickLinksRow}>
+          <TouchableOpacity
+            style={styles.quickLink}
+            onPress={() => {
+              if (handleRestrictedAction('view available requests')) return;
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('AvailableRequests');
+            }}
+          >
+            <Ionicons name="list" size={18} color={PRIMARY} />
+            <Text style={styles.quickLinkText}>Bid on Rides</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickLink}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('IntercityOffers');
+            }}
+          >
+            <Ionicons name="bus" size={18} color="#3B82F6" />
+            <Text style={styles.quickLinkText}>Intercity</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickLink}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('DriverFAQ');
+            }}
+          >
+            <Ionicons name="help-circle" size={18} color="#8B5CF6" />
+            <Text style={styles.quickLinkText}>Help</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Stats Row */}
         <View style={styles.statsRow}>
           <TouchableOpacity
@@ -466,19 +501,19 @@ const DashboardScreen = ({ navigation }) => {
 
           <TouchableOpacity
             style={styles.statCard}
-            onPress={() => navigation.navigate('RideHistory')}
+            onPress={() => navigation.navigate('HeatMap')}
             activeOpacity={0.7}
           >
             <LinearGradient
-              colors={['#3B82F6', '#2563EB']}
+              colors={['#EF4444', '#DC2626']}
               style={styles.statIconCircle}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Ionicons name="car" size={16} color="#FFF" />
+              <Ionicons name="flame" size={16} color="#FFF" />
             </LinearGradient>
-            <Text style={styles.statValue}>{stats.today_rides}</Text>
-            <Text style={styles.statLabel}>Rides</Text>
+            <Text style={styles.statValue}>Demand</Text>
+            <Text style={styles.statLabel}>Heatmap</Text>
           </TouchableOpacity>
 
           <View style={styles.statDivider} />
@@ -835,6 +870,29 @@ const styles = StyleSheet.create({
     width: 1,
     height: 40,
     backgroundColor: '#E5E7EB',
+  },
+  quickLinksRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    gap: 10,
+  },
+  quickLink: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F9FAFB',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    gap: 6,
+  },
+  quickLinkText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#374151',
   },
 });
 

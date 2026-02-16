@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useRef, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
+  Dimensions,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,39 +14,9 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
-const BidOption = ({ percentage, label, bidAmount, newFare, isSelected, onSelect, colors }) => {
-  const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onSelect(percentage);
-  };
-
-  return (
-    <TouchableOpacity
-      onPress={handlePress}
-      activeOpacity={0.7}
-    >
-      {isSelected ? (
-        <LinearGradient
-          colors={colors.gradients?.premium || ['#FFD700', '#FFA500']}
-          style={[styles.bidOption, styles.bidOptionSelected]}
-        >
-          <Text style={styles.bidPercentageSelected}>+{percentage}%</Text>
-          <Text style={styles.bidAmountSelected}>+Rs. {bidAmount}</Text>
-          <Text style={styles.bidTotalSelected}>Rs. {newFare}</Text>
-          <View style={styles.checkIcon}>
-            <Ionicons name="checkmark-circle" size={18} color="#000" />
-          </View>
-        </LinearGradient>
-      ) : (
-        <View style={[styles.bidOption, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.bidPercentage, { color: colors.primary }]}>+{percentage}%</Text>
-          <Text style={[styles.bidAmount, { color: colors.textSecondary }]}>+Rs. {bidAmount}</Text>
-          <Text style={[styles.bidTotal, { color: colors.text }]}>Rs. {newFare}</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-};
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = SCREEN_WIDTH * 0.38;
+const CARD_SPACING = 10;
 
 const BiddingCard = ({
   baseFare,
@@ -54,221 +27,266 @@ const BiddingCard = ({
   style,
 }) => {
   const { colors } = useTheme();
+  const scrollRef = useRef(null);
+  const scrollX = useRef(new Animated.Value(0)).current;
 
   const bidOptions = [
-    { percentage: 0, label: 'Standard', description: 'Normal search' },
-    { percentage: 10, label: '+10%', description: 'More drivers' },
-    { percentage: 20, label: '+20%', description: 'Priority' },
-    { percentage: 30, label: '+30%', description: 'High Priority' },
-    { percentage: 50, label: '+50%', description: 'Instant Match' },
+    { percentage: 0, label: 'Standard', icon: 'car-outline', tag: null },
+    { percentage: 10, label: '+10%', icon: 'trending-up', tag: 'More drivers' },
+    { percentage: 20, label: '+20%', icon: 'flash-outline', tag: 'Priority' },
+    { percentage: 30, label: '+30%', icon: 'rocket-outline', tag: 'Fast Match' },
+    { percentage: 50, label: '+50%', icon: 'diamond-outline', tag: 'Instant' },
   ];
 
-  const calculateBidAmount = (percentage) => {
-    return Math.round(baseFare * (percentage / 100));
-  };
+  const calculateFare = (percentage) => Math.round(baseFare + baseFare * (percentage / 100));
+  const calculateExtra = (percentage) => Math.round(baseFare * (percentage / 100));
 
-  const calculateNewFare = (percentage) => {
-    return Math.round(baseFare + calculateBidAmount(percentage));
-  };
+  const handleSelect = useCallback((percentage, index) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onBidChange(percentage);
+    scrollRef.current?.scrollTo({
+      x: index * (CARD_WIDTH + CARD_SPACING) - (SCREEN_WIDTH - CARD_WIDTH) / 2 + CARD_WIDTH / 2,
+      animated: true,
+    });
+  }, [onBidChange]);
 
-  const getDescription = (percentage) => {
-    switch (percentage) {
-      case 0: return 'Standard fare';
-      case 10: return 'Show to more drivers nearby';
-      case 20: return 'Priority visibility to drivers';
-      case 30: return 'High priority - Faster matching';
-      case 50: return 'Maximum priority - Instant matching';
-      default: return '';
-    }
-  };
+  const selectedIndex = bidOptions.findIndex(o => o.percentage === selectedBid);
+  const currentFare = calculateFare(selectedBid);
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: colors.surface }, shadows.md, style]}
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
-            <Ionicons name="trending-up" size={20} color={colors.primary} />
-          </View>
-          <View>
-            <Text style={[styles.title, { color: colors.text }]}>Boost Your Ride</Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Increase fare to get more drivers
+    <View style={[styles.container, { backgroundColor: colors.surface || colors.card }, style]}>
+      {/* Fare Display */}
+      <View style={styles.fareDisplay}>
+        <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Offer your fare</Text>
+        <View style={styles.fareRow}>
+          <TouchableOpacity
+            style={[styles.fareBtn, { backgroundColor: colors.border || '#E5E7EB' }]}
+            onPress={() => {
+              const prevIdx = Math.max(0, selectedIndex - 1);
+              handleSelect(bidOptions[prevIdx].percentage, prevIdx);
+            }}
+          >
+            <Ionicons name="remove" size={22} color={colors.text} />
+          </TouchableOpacity>
+
+          <View style={styles.fareCenter}>
+            <Text style={[styles.fareAmount, { color: colors.text }]}>
+              Rs. {currentFare}
             </Text>
+            {selectedBid > 0 && (
+              <Text style={[styles.fareExtra, { color: '#10B981' }]}>
+                +Rs. {calculateExtra(selectedBid)} ({selectedBid}% boost)
+              </Text>
+            )}
+            {selectedBid === 0 && (
+              <Text style={[styles.fareExtra, { color: colors.textTertiary }]}>
+                Base fare
+              </Text>
+            )}
           </View>
+
+          <TouchableOpacity
+            style={[styles.fareBtn, { backgroundColor: '#FCC014' }]}
+            onPress={() => {
+              const nextIdx = Math.min(bidOptions.length - 1, selectedIndex + 1);
+              handleSelect(bidOptions[nextIdx].percentage, nextIdx);
+            }}
+          >
+            <Ionicons name="add" size={22} color="#000" />
+          </TouchableOpacity>
         </View>
-        {driversCount !== undefined && (
-          <View style={[styles.driversBadge, { backgroundColor: colors.success + '20' }]}>
-            <Ionicons name="car" size={14} color={colors.success} />
-            <Text style={[styles.driversCount, { color: colors.success }]}>{driversCount}</Text>
-          </View>
+      </View>
+
+      {/* Horizontal Scroll Bid Options */}
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        snapToInterval={CARD_WIDTH + CARD_SPACING}
+        decelerationRate="fast"
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+          { useNativeDriver: false }
         )}
-      </View>
+        scrollEventThrottle={16}
+      >
+        {bidOptions.map((option, index) => {
+          const isSelected = selectedBid === option.percentage;
+          const fare = calculateFare(option.percentage);
 
-      {/* Bid Options */}
-      <View style={styles.bidOptions}>
-        {bidOptions.map((option) => (
-          <BidOption
-            key={option.percentage}
-            percentage={option.percentage}
-            label={option.label}
-            bidAmount={calculateBidAmount(option.percentage)}
-            newFare={calculateNewFare(option.percentage)}
-            isSelected={selectedBid === option.percentage}
-            onSelect={onBidChange}
-            colors={colors}
-          />
-        ))}
-      </View>
+          return (
+            <TouchableOpacity
+              key={option.percentage}
+              activeOpacity={0.8}
+              onPress={() => handleSelect(option.percentage, index)}
+              style={{ width: CARD_WIDTH, marginRight: CARD_SPACING }}
+            >
+              {isSelected ? (
+                <LinearGradient
+                  colors={['#FCC014', '#FF9500']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.bidCard}
+                >
+                  <Ionicons name={option.icon} size={22} color="#000" />
+                  <Text style={styles.bidCardFareSelected}>Rs. {fare}</Text>
+                  <Text style={styles.bidCardLabelSelected}>{option.label}</Text>
+                  {option.tag && (
+                    <View style={styles.tagSelected}>
+                      <Text style={styles.tagTextSelected}>{option.tag}</Text>
+                    </View>
+                  )}
+                  <View style={styles.selectedDot} />
+                </LinearGradient>
+              ) : (
+                <View style={[styles.bidCard, { backgroundColor: colors.background || '#F5F5F5', borderColor: colors.border || '#E5E7EB', borderWidth: 1.5 }]}>
+                  <Ionicons name={option.icon} size={22} color={colors.textSecondary} />
+                  <Text style={[styles.bidCardFare, { color: colors.text }]}>Rs. {fare}</Text>
+                  <Text style={[styles.bidCardLabel, { color: colors.textSecondary }]}>{option.label}</Text>
+                  {option.tag && (
+                    <View style={[styles.tag, { backgroundColor: colors.primary + '15' }]}>
+                      <Text style={[styles.tagText, { color: colors.primary }]}>{option.tag}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
 
-      {/* Description */}
-      <View style={[styles.descriptionContainer, { backgroundColor: colors.primary + '10' }]}>
-        <Ionicons name="information-circle" size={18} color={colors.primary} />
-        <Text style={[styles.description, { color: colors.text }]}>
-          {getDescription(selectedBid)}
+      {/* Bottom hint */}
+      <View style={styles.hintRow}>
+        <Ionicons name="swap-horizontal" size={14} color={colors.textTertiary} />
+        <Text style={[styles.hintText, { color: colors.textTertiary }]}>
+          Swipe to see more options • Higher fare = faster match
         </Text>
       </View>
-
-      {/* Stats */}
-      {selectedBid > 0 && (
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Ionicons name="search" size={16} color={colors.textSecondary} />
-            <Text style={[styles.statText, { color: colors.textSecondary }]}>
-              Search radius: {searchRadius || 5 + (selectedBid / 5)}km
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Ionicons name="flash" size={16} color={colors.warning} />
-            <Text style={[styles.statText, { color: colors.textSecondary }]}>
-              Priority: {selectedBid >= 30 ? 'High' : selectedBid >= 20 ? 'Medium' : 'Low'}
-            </Text>
-          </View>
-        </View>
-      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
     borderRadius: 20,
+    paddingVertical: 16,
+    marginBottom: 12,
+    ...shadows.sm,
+  },
+  fareDisplay: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  fareLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 10,
+  },
+  fareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  fareBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  title: {
-    fontSize: typography.body,
-    fontWeight: '700',
-  },
-  subtitle: {
-    fontSize: typography.caption,
-  },
-  driversBadge: {
-    flexDirection: 'row',
+  fareCenter: {
     alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-  },
-  driversCount: {
-    fontSize: typography.bodySmall,
-    fontWeight: '700',
-  },
-  bidOptions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  bidOption: {
     flex: 1,
-    padding: spacing.sm,
-    borderRadius: borderRadius.lg,
+  },
+  fareAmount: {
+    fontSize: 32,
+    fontWeight: '800',
+    letterSpacing: -1,
+  },
+  fareExtra: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+  },
+  bidCard: {
+    borderRadius: 16,
+    padding: 14,
     alignItems: 'center',
-    borderWidth: 2,
+    justifyContent: 'center',
+    minHeight: 110,
+    gap: 4,
   },
-  bidOptionSelected: {
-    borderWidth: 0,
+  bidCardFare: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginTop: 4,
   },
-  bidPercentage: {
-    fontSize: typography.bodySmall,
-    fontWeight: '700',
+  bidCardFareSelected: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#000',
+    marginTop: 4,
   },
-  bidPercentageSelected: {
-    fontSize: typography.bodySmall,
-    fontWeight: '700',
+  bidCardLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  bidCardLabelSelected: {
+    fontSize: 12,
+    fontWeight: '600',
     color: '#000',
   },
-  bidAmount: {
-    fontSize: typography.tiny,
+  tag: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
     marginTop: 2,
   },
-  bidAmountSelected: {
-    fontSize: typography.tiny,
+  tagText: {
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  tagSelected: {
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
     marginTop: 2,
+  },
+  tagTextSelected: {
+    fontSize: 9,
+    fontWeight: '700',
     color: '#000',
-    opacity: 0.7,
+    textTransform: 'uppercase',
   },
-  bidTotal: {
-    fontSize: typography.caption,
-    fontWeight: '600',
-    marginTop: spacing.xs,
-  },
-  bidTotalSelected: {
-    fontSize: typography.caption,
-    fontWeight: '600',
-    marginTop: spacing.xs,
-    color: '#000',
-  },
-  checkIcon: {
+  selectedDot: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    bottom: 6,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#000',
   },
-  descriptionContainer: {
+  hintRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.md,
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 10,
+    paddingHorizontal: 20,
   },
-  description: {
-    flex: 1,
-    fontSize: typography.bodySmall,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  statText: {
-    fontSize: typography.caption,
+  hintText: {
+    fontSize: 11,
+    fontWeight: '500',
   },
 });
 

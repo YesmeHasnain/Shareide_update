@@ -29,3 +29,5 @@ export { default as CalendarPicker } from './CalendarPicker';
 export { default as StatusBadge } from './StatusBadge';
 export { default as VerificationChecklist } from './VerificationChecklist';
 export { default as ContactPermissionModal } from './ContactPermissionModal';
+export { default as TipCard } from './TipCard';
+export { default as RidePreferences } from './RidePreferences';

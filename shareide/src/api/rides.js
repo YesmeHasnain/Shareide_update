@@ -182,4 +182,44 @@ export const ridesAPI = {
     });
     return response.data;
   },
+
+  // ============================================
+  // MULTI-STOP, TIPS, SHARE TRIP
+  // ============================================
+
+  // Get stops for a ride
+  getRideStops: async (rideId) => {
+    const response = await apiClient.get(`/rides/${rideId}/stops`);
+    return response.data;
+  },
+
+  // Add a stop to a ride
+  addRideStop: async (rideId, stop) => {
+    const response = await apiClient.post(`/rides/${rideId}/stops`, {
+      address: stop.address,
+      lat: stop.latitude,
+      lng: stop.longitude,
+    });
+    return response.data;
+  },
+
+  // Remove a stop from a ride
+  removeRideStop: async (rideId, stopId) => {
+    const response = await apiClient.delete(`/rides/${rideId}/stops/${stopId}`);
+    return response.data;
+  },
+
+  // Tip the driver after a ride
+  tipDriver: async (rideId, amount) => {
+    const response = await apiClient.post(`/rides/${rideId}/tip`, {
+      amount,
+    });
+    return response.data;
+  },
+
+  // Generate a share token for live trip sharing
+  shareTrip: async (rideId) => {
+    const response = await apiClient.post(`/rides/${rideId}/share`);
+    return response.data;
+  },
 };

@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { ridesAPI } from '../../api/rides';
-import { Header, Card, Avatar, Button, Input } from '../../components/common';
+import { Header, Card, Avatar, Button, Input, RidePreferences } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
 // Default colors fallback
@@ -89,6 +89,7 @@ const BookingConfirmScreen = ({ route, navigation }) => {
   const [promoApplied, setPromoApplied] = useState(false);
   const [discount, setDiscount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [ridePrefs, setRidePrefs] = useState({});
 
   const paymentMethods = [
     { id: 'cash', icon: 'cash-outline', label: 'Cash' },
@@ -138,8 +139,13 @@ const BookingConfirmScreen = ({ route, navigation }) => {
         fare: totalFare,
         paymentMethod,
         promoCode: promoApplied ? promoCode : null,
+        is_ac_required: ridePrefs.is_ac_required || false,
+        is_pet_friendly: ridePrefs.is_pet_friendly || false,
+        is_luggage: ridePrefs.is_luggage || false,
+        special_requests: ridePrefs.special_requests || null,
       });
 
+      const rideData = response.data?.ride || response.ride || response;
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.reset({
         index: 0,
@@ -148,16 +154,17 @@ const BookingConfirmScreen = ({ route, navigation }) => {
           {
             name: 'RideTracking',
             params: {
-              ride: response.ride || { id: Date.now(), status: 'arriving' },
+              ride: rideData.id ? rideData : { id: Date.now(), status: 'driver_assigned' },
               driver,
               pickup,
               dropoff,
+              fare: totalFare,
             },
           },
         ],
       });
     } catch (error) {
-      // For demo purposes, navigate anyway with mock data
+      console.log('Booking error:', error.response?.data || error.message);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.reset({
         index: 0,
@@ -166,7 +173,7 @@ const BookingConfirmScreen = ({ route, navigation }) => {
           {
             name: 'RideTracking',
             params: {
-              ride: { id: Date.now(), status: 'arriving' },
+              ride: { id: 1, status: 'driver_assigned' },
               driver,
               pickup,
               dropoff,
@@ -325,6 +332,9 @@ const BookingConfirmScreen = ({ route, navigation }) => {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Ride Preferences */}
+        <RidePreferences onChange={setRidePrefs} colors={colors} />
 
         {/* Fare Breakdown */}
         <View>

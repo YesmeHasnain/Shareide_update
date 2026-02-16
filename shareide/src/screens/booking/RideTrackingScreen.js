@@ -47,6 +47,7 @@ const RideTrackingScreen = ({ route, navigation }) => {
     longitude: pickup?.longitude || 74.3587,
   });
   const [showCancelReasons, setShowCancelReasons] = useState(false);
+  const [stops, setStops] = useState(ride?.stops || []);
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const bottomSheetAnim = useRef(new Animated.Value(0)).current;
@@ -83,6 +84,19 @@ const RideTrackingScreen = ({ route, navigation }) => {
       } catch (e) { /* silent */ }
     })();
   }, []);
+
+  // Fetch multi-stops if ride has them
+  useEffect(() => {
+    if (!ride?.id) return;
+    (async () => {
+      try {
+        const response = await ridesAPI.getRideStops(ride.id);
+        if (response.data && Array.isArray(response.data)) {
+          setStops(response.data);
+        }
+      } catch (e) { /* no stops */ }
+    })();
+  }, [ride?.id]);
 
   // Real-time Pusher subscription for ride updates
   useEffect(() => {
@@ -181,8 +195,13 @@ const RideTrackingScreen = ({ route, navigation }) => {
   const handleShare = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
+      let shareUrl = '';
+      try {
+        const res = await ridesAPI.shareTrip(ride.id);
+        if (res.data?.share_url) shareUrl = `\nTrack live: ${res.data.share_url}`;
+      } catch (e) { /* continue without link */ }
       await Share.share({
-        message: `I'm on a Shareide ride!\nDriver: ${driver?.name || 'N/A'}\nVehicle: ${driver?.vehicle?.model || 'N/A'} - ${driver?.vehicle?.plate || 'N/A'}\nFrom: ${pickup?.address || 'Pickup'}\nTo: ${dropoff?.address || 'Dropoff'}\nETA: ~${eta} min`,
+        message: `I'm on a Shareide ride!\nDriver: ${driver?.name || 'N/A'}\nVehicle: ${driver?.vehicle?.model || 'N/A'} - ${driver?.vehicle?.plate || 'N/A'}\nFrom: ${pickup?.address || 'Pickup'}\nTo: ${dropoff?.address || 'Dropoff'}\nETA: ~${eta} min${shareUrl}`,
       });
     } catch (e) { /* cancelled */ }
   };
@@ -241,7 +260,7 @@ const RideTrackingScreen = ({ route, navigation }) => {
     navigation.navigate('RideReceipt', { ride, driver, fare, pickup, dropoff });
   };
 
-  // Live map HTML with driver, pickup and dropoff markers
+  // Live map HTML with driver, pickup, dropoff, and multi-stop markers
   const getMapHtml = () => {
     const dLat = driverLocation.latitude;
     const dLng = driverLocation.longitude;
@@ -249,6 +268,15 @@ const RideTrackingScreen = ({ route, navigation }) => {
     const pLng = pickup?.longitude || userLocation.longitude;
     const doLat = dropoff?.latitude || pLat + 0.01;
     const doLng = dropoff?.longitude || pLng + 0.01;
+
+    // Build waypoints for OSRM routing
+    const waypoints = [[pLng, pLat]];
+    const stopMarkers = stops.map((s, i) => {
+      waypoints.push([parseFloat(s.lng), parseFloat(s.lat)]);
+      return `var stopIcon${i}=L.divIcon({html:'<div class="stop-marker">${i+1}</div>',className:'',iconSize:[22,22],iconAnchor:[11,11]});L.marker([${s.lat},${s.lng}],{icon:stopIcon${i}}).addTo(map);`;
+    }).join('\n');
+    waypoints.push([doLng, doLat]);
+    const osrmCoords = waypoints.map(w => `${w[0]},${w[1]}`).join(';');
 
     return `<!DOCTYPE html>
 <html><head>
@@ -265,6 +293,7 @@ const RideTrackingScreen = ({ route, navigation }) => {
 @keyframes pulseFill{0%{transform:scale(0.5);opacity:0.3}100%{transform:scale(1.4);opacity:0}}
 .pickup-marker{width:14px;height:14px;background:#10B981;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(16,185,129,0.4)}
 .dropoff-marker{width:14px;height:14px;background:#EF4444;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(239,68,68,0.4)}
+.stop-marker{width:22px;height:22px;background:#F59E0B;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(245,158,11,0.4);color:#000;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:22px;text-align:center}
 </style></head><body>
 <div id="map"></div>
 <script>
@@ -276,8 +305,20 @@ var pickupIcon=L.divIcon({html:'<div class="pickup-marker"></div>',className:'',
 L.marker([${pLat},${pLng}],{icon:pickupIcon}).addTo(map);
 var dropoffIcon=L.divIcon({html:'<div class="dropoff-marker"></div>',className:'',iconSize:[14,14],iconAnchor:[7,7]});
 L.marker([${doLat},${doLng}],{icon:dropoffIcon}).addTo(map);
-L.polyline([[${pLat},${pLng}],[${doLat},${doLng}]],{color:'#3B82F6',weight:4,opacity:0.7,dashArray:'8,8'}).addTo(map);
+${stopMarkers}
+var routeLine=L.polyline([[${pLat},${pLng}],[${doLat},${doLng}]],{color:'#3B82F6',weight:5,opacity:0.8}).addTo(map);
 map.fitBounds([[${dLat},${dLng}],[${pLat},${pLng}],[${doLat},${doLng}]],{padding:[50,50]});
+fetch('https://router.project-osrm.org/route/v1/driving/${osrmCoords}?overview=full&geometries=geojson')
+.then(function(r){return r.json()})
+.then(function(data){
+  if(data.routes&&data.routes[0]){
+    var coords=data.routes[0].geometry.coordinates.map(function(c){return[c[1],c[0]]});
+    map.removeLayer(routeLine);
+    routeLine=L.polyline(coords,{color:'#3B82F6',weight:5,opacity:0.85,lineCap:'round',lineJoin:'round'}).addTo(map);
+    var allPts=coords.concat([[${dLat},${dLng}]]);
+    map.fitBounds(allPts,{padding:[50,50]});
+  }
+}).catch(function(){});
 function updateDriverLocation(lat,lng){driverMarker.setLatLng([lat,lng]);if(!map.getBounds().contains([lat,lng])){map.panTo([lat,lng],{animate:true,duration:1})}}
 </script></body></html>`;
   };
@@ -390,6 +431,17 @@ function updateDriverLocation(lat,lng){driverMarker.setLatLng([lat,lng]);if(!map
             <View style={[styles.routeDot, { backgroundColor: colors.success }]} />
             <Text style={[styles.routeText, { color: colors.text }]} numberOfLines={1}>{pickup?.address || 'Pickup'}</Text>
           </View>
+          {stops.map((stop, i) => (
+            <React.Fragment key={stop.id || i}>
+              <View style={[styles.routeLine, { backgroundColor: colors.border }]} />
+              <View style={styles.routeItem}>
+                <View style={[styles.routeDot, { backgroundColor: '#F59E0B' }]} />
+                <Text style={[styles.routeText, { color: colors.text }]} numberOfLines={1}>
+                  Stop {i + 1}: {stop.address || 'Stop'}
+                </Text>
+              </View>
+            </React.Fragment>
+          ))}
           <View style={[styles.routeLine, { backgroundColor: colors.border }]} />
           <View style={styles.routeItem}>
             <View style={[styles.routeDot, { backgroundColor: colors.error }]} />

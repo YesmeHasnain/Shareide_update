@@ -6,6 +6,7 @@ import {
   FlatList,
   RefreshControl,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -89,6 +90,10 @@ const DriverCard = ({ driver, colors, onPress }) => {
     return time;
   };
 
+  const displayFare = driver.fare || driver.base_fare || 350;
+  const baseFareAmount = driver.base_fare || driver.fare || 350;
+  const hasBid = driver.bid_amount > 0;
+
   return (
     <TouchableOpacity
       onPress={handlePress}
@@ -111,15 +116,28 @@ const DriverCard = ({ driver, colors, onPress }) => {
         <View style={styles.driverInfo}>
           <Text style={[styles.driverName, { color: colors.text }]}>{driver.name}</Text>
           <View style={styles.driverMeta}>
-            <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+            <Ionicons name="car-outline" size={14} color={colors.textSecondary} />
             <Text style={[styles.driverMetaText, { color: colors.textSecondary }]}>
-              {formatTime(driver.departure_time)} • {driver.distance || '2.5'} km away
+              {driver.vehicle_model || driver.vehicle?.model || 'Vehicle'} • {driver.plate_number || driver.vehicle?.plate || ''}
+            </Text>
+          </View>
+          <View style={styles.driverMeta}>
+            <Ionicons name="navigate-outline" size={14} color={colors.textSecondary} />
+            <Text style={[styles.driverMetaText, { color: colors.textSecondary }]}>
+              {driver.eta_minutes || Math.ceil((driver.distance_away || 2) * 3)} min away
             </Text>
           </View>
         </View>
-        <Text style={[styles.fareAmount, { color: colors.price || '#F5A623' }]}>
-          Rs. {driver.fare || 350}
-        </Text>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={[styles.fareAmount, { color: colors.price || '#F5A623' }]}>
+            Rs. {displayFare}
+          </Text>
+          {hasBid && (
+            <Text style={{ fontSize: 10, color: colors.textTertiary, textDecorationLine: 'line-through' }}>
+              Rs. {baseFareAmount}
+            </Text>
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -223,6 +241,29 @@ const SearchResultsScreen = ({ route, navigation }) => {
     });
   };
 
+  const handleNegotiate = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const response = await ridesAPI.createRide({
+        pickup,
+        dropoff,
+        rideType: 'rider',
+        seats: 1,
+      });
+      const rideRequestId = response.data?.id || response.id;
+      if (rideRequestId) {
+        navigation.navigate('Negotiation', {
+          rideRequestId,
+          pickup,
+          dropoff,
+          proposedFare: baseFare || 300,
+        });
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Could not create ride request. Please try again.');
+    }
+  };
+
   const renderDriver = ({ item }) => (
     <DriverCard
       driver={item}
@@ -282,13 +323,28 @@ const SearchResultsScreen = ({ route, navigation }) => {
           ListHeaderComponent={
             <>
               <RouteHeader pickup={pickup} dropoff={dropoff} colors={colors} />
+              <BiddingCard
+                baseFare={baseFare}
+                selectedBid={selectedBid}
+                onBidChange={handleBidChange}
+                searchRadius={searchRadius}
+              />
+              {/* Negotiate Fare Button */}
+              <TouchableOpacity
+                style={[styles.negotiateBtn, { backgroundColor: colors.primary }]}
+                onPress={handleNegotiate}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="swap-horizontal" size={20} color="#000" />
+                <Text style={styles.negotiateBtnText}>Negotiate Fare with Drivers</Text>
+              </TouchableOpacity>
               <FilterTabs
                 activeFilter={activeFilter}
                 onFilterChange={setActiveFilter}
                 colors={colors}
               />
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                AVAILABLE RIDES
+                AVAILABLE RIDES ({filteredDrivers.length})
               </Text>
             </>
           }
@@ -444,6 +500,20 @@ const styles = StyleSheet.create({
   fareAmount: {
     fontSize: typography.h5,
     fontWeight: '700',
+  },
+  negotiateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+    gap: 8,
+  },
+  negotiateBtnText: {
+    fontSize: typography.body,
+    fontWeight: '700',
+    color: '#000',
   },
 });
 

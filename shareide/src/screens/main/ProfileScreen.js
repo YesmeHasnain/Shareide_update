@@ -179,6 +179,8 @@ const ProfileScreen = ({ navigation }) => {
           <View style={styles.sectionCard}>
             <MenuItem icon="help-circle" label="Help Center" screen="Support" iconBg="#EFF6FF" iconColor="#3B82F6" />
             <View style={styles.separator} />
+            <MenuItem icon="book" label="FAQ" screen="FAQ" iconBg="#FEF3C7" iconColor="#F59E0B" />
+            <View style={styles.separator} />
             <MenuItem icon="chatbubble" label="Contact Us" screen="Support" iconBg="#F5F3FF" iconColor="#8B5CF6" />
           </View>
         </View>
