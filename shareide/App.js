@@ -8,7 +8,13 @@ import { ThemeProvider } from './src/context/ThemeContext';
 import { I18nProvider } from './src/i18n';
 import AppNavigator from './src/navigation/AppNavigator';
 
-LogBox.ignoreLogs(['Non-serializable values', 'Reanimated', 'Worklets']);
+LogBox.ignoreLogs([
+  'Non-serializable values',
+  'Reanimated',
+  'Worklets',
+  'expo-notifications',
+  'Android Push notifications',
+]);
 
 export default function App() {
   return (

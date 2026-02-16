@@ -1,18 +1,23 @@
-import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiClient from '../api/client';
 
-// Configure notification behavior
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+// Safe import - avoids crash in Expo Go for SDK 53+
+let Notifications = null;
+try {
+  Notifications = require('expo-notifications');
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+} catch (e) {
+  // expo-notifications not available (Expo Go limitation)
+}
 
 class NotificationService {
   constructor() {
@@ -21,8 +26,8 @@ class NotificationService {
     this.responseListener = null;
   }
 
-  // Initialize notifications and get push token
   async initialize() {
+    if (!Notifications) return null;
     try {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
@@ -32,26 +37,15 @@ class NotificationService {
         finalStatus = status;
       }
 
-      if (finalStatus !== 'granted') {
-        console.log('Push notification permission not granted');
-        return null;
-      }
+      if (finalStatus !== 'granted') return null;
 
-      // Get Expo push token
       if (Device.isDevice) {
         const projectId = Constants.expoConfig?.extra?.eas?.projectId || Constants.easConfig?.projectId;
-        if (!projectId) {
-          console.log('No projectId found, skipping push token registration');
-          return null;
-        }
+        if (!projectId) return null;
         const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
         this.expoPushToken = tokenData.data;
-        console.log('Expo Push Token:', this.expoPushToken);
-      } else {
-        console.log('Must use physical device for push notifications');
       }
 
-      // Setup Android notification channels
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
           name: 'Default',
@@ -59,7 +53,6 @@ class NotificationService {
           vibrationPattern: [0, 250, 250, 250],
           lightColor: '#FCC014',
         });
-
         await Notifications.setNotificationChannelAsync('rides', {
           name: 'Ride Updates',
           importance: Notifications.AndroidImportance.HIGH,
@@ -67,7 +60,6 @@ class NotificationService {
           lightColor: '#FCC014',
           sound: 'default',
         });
-
         await Notifications.setNotificationChannelAsync('promotions', {
           name: 'Promotions',
           importance: Notifications.AndroidImportance.DEFAULT,
@@ -77,18 +69,14 @@ class NotificationService {
 
       return this.expoPushToken;
     } catch (error) {
-      console.error('Notification initialization error:', error);
+      // Silently fail in Expo Go
       return null;
     }
   }
 
-  // Register device token with backend
   async registerToken() {
     try {
-      if (!this.expoPushToken) {
-        await this.initialize();
-      }
-
+      if (!this.expoPushToken) await this.initialize();
       if (!this.expoPushToken) return false;
 
       await apiClient.post('/notifications/register-token', {
@@ -100,12 +88,10 @@ class NotificationService {
       await AsyncStorage.setItem('pushToken', this.expoPushToken);
       return true;
     } catch (error) {
-      console.error('Token registration error:', error);
       return false;
     }
   }
 
-  // Unregister token on logout
   async unregisterToken() {
     try {
       const savedToken = await AsyncStorage.getItem('pushToken');
@@ -115,28 +101,21 @@ class NotificationService {
         });
         await AsyncStorage.removeItem('pushToken');
       }
-    } catch (error) {
-      console.error('Token unregistration error:', error);
-    }
+    } catch (error) {}
   }
 
-  // Add notification listeners
   addListeners(onNotification, onNotificationResponse) {
+    if (!Notifications) return;
     this.notificationListener = Notifications.addNotificationReceivedListener(
-      (notification) => {
-        if (onNotification) onNotification(notification);
-      }
+      (notification) => { if (onNotification) onNotification(notification); }
     );
-
     this.responseListener = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        if (onNotificationResponse) onNotificationResponse(response);
-      }
+      (response) => { if (onNotificationResponse) onNotificationResponse(response); }
     );
   }
 
-  // Remove listeners
   removeListeners() {
+    if (!Notifications) return;
     if (this.notificationListener) {
       Notifications.removeNotificationSubscription(this.notificationListener);
     }

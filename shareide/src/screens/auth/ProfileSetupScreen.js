@@ -136,16 +136,18 @@ const ProfileSetupScreen = ({ route, navigation }) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
       if (token && !isNewUser) {
-        // Update profile on server first, then login with updated data
+        // Login first to store token in AsyncStorage, then update profile
         const updatedUser = { ...user, name: name.trim(), gender };
-        await apiClient.put('/profile', { name: name.trim(), gender }, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await login(updatedUser, token);
+        // Now update on server (interceptor will use stored token)
+        await apiClient.put('/profile', { name: name.trim(), gender });
         if (profileImage) {
           const avatarUrl = await uploadAvatar(token);
-          if (avatarUrl) updatedUser.avatar = avatarUrl;
+          if (avatarUrl) {
+            updatedUser.avatar = avatarUrl;
+            await login(updatedUser, token);
+          }
         }
-        await login(updatedUser, token);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else {
         if (!verificationToken) {
@@ -160,16 +162,19 @@ const ProfileSetupScreen = ({ route, navigation }) => {
         });
 
         if (response.success) {
+          // Store token first so avatar upload can use it
+          await login(response.user, response.token);
           // Upload avatar if selected
           let avatarUrl = null;
           if (profileImage) {
             avatarUrl = await uploadAvatar(response.token);
           }
-          const userData = { ...response.user };
-          if (avatarUrl) userData.avatar = avatarUrl;
+          if (avatarUrl) {
+            const userData = { ...response.user, avatar: avatarUrl };
+            await login(userData, response.token);
+          }
 
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          await login(userData, response.token);
         }
       }
     } catch (error) {

@@ -163,12 +163,14 @@ if (__DEV__) {
   console.log('🧪 Mock Mode:', USE_MOCK_DATA ? 'ENABLED' : 'DISABLED');
 }
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token (only if not already set)
 realApiClient.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (!config.headers.Authorization) {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
