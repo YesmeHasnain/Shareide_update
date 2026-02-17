@@ -10,16 +10,16 @@
         <div class="border-b border-gray-200 dark:border-dark-100">
             <nav class="flex -mb-px space-x-8">
                 <button @click="activeTab = 'fares'" :class="{ 'border-yellow-500 text-yellow-600': activeTab === 'fares', 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300': activeTab !== 'fares' }" class="py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                    <i class="fas fa-calculator mr-2"></i>Fare Settings
+                    <i class="ti ti-calculator mr-2"></i>Fare Settings
                 </button>
                 <button @click="activeTab = 'surge'" :class="{ 'border-yellow-500 text-yellow-600': activeTab === 'surge', 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300': activeTab !== 'surge' }" class="py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                    <i class="fas fa-bolt mr-2"></i>Surge Pricing
+                    <i class="ti ti-bolt mr-2"></i>Surge Pricing
                 </button>
                 <button @click="activeTab = 'commission'" :class="{ 'border-yellow-500 text-yellow-600': activeTab === 'commission', 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300': activeTab !== 'commission' }" class="py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                    <i class="fas fa-percentage mr-2"></i>Commission
+                    <i class="ti ti-percentage mr-2"></i>Commission
                 </button>
                 <button @click="activeTab = 'zones'" :class="{ 'border-yellow-500 text-yellow-600': activeTab === 'zones', 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300': activeTab !== 'zones' }" class="py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                    <i class="fas fa-map-marked-alt mr-2"></i>Service Zones
+                    <i class="ti ti-map-pin mr-2"></i>Service Zones
                 </button>
             </nav>
         </div>
@@ -75,7 +75,7 @@
                     </div>
                     <div class="mt-4 flex justify-end">
                         <button type="submit" class="px-6 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all">
-                            <i class="fas fa-save mr-2"></i>Save Fare Settings
+                            <i class="ti ti-device-floppy mr-2"></i>Save Fare Settings
                         </button>
                     </div>
                 </form>
@@ -106,7 +106,7 @@
                                     <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">{{ $fare->city }}</td>
                                     <td class="px-6 py-4">
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $fare->vehicle_type === 'car' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' }}">
-                                            <i class="fas fa-{{ $fare->vehicle_type === 'car' ? 'car' : 'motorcycle' }} mr-1"></i>
+                                            <i class="ti ti-{{ $fare->vehicle_type === 'car' ? 'car' : 'motorbike' }} mr-1"></i>
                                             {{ ucfirst($fare->vehicle_type) }}
                                         </span>
                                     </td>
@@ -124,7 +124,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
-                                                <i class="fas fa-trash"></i>
+                                                <i class="ti ti-trash"></i>
                                             </button>
                                         </form>
                                     </td>
@@ -170,7 +170,7 @@
                     </div>
                     <div class="mt-4 flex justify-end">
                         <button type="submit" class="px-6 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all">
-                            <i class="fas fa-bolt mr-2"></i>Activate Surge
+                            <i class="ti ti-bolt mr-2"></i>Activate Surge
                         </button>
                     </div>
                 </form>
@@ -195,7 +195,7 @@
                             <form action="{{ route('admin.surge.deactivate', $surge->id) }}" method="POST">
                                 @csrf
                                 <button type="submit" class="px-4 py-2 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
-                                    <i class="fas fa-power-off mr-1"></i>Deactivate
+                                    <i class="ti ti-power mr-1"></i>Deactivate
                                 </button>
                             </form>
                         </div>
@@ -251,7 +251,7 @@
                     </div>
                     <div class="mt-4 flex justify-end">
                         <button type="submit" class="px-6 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all">
-                            <i class="fas fa-save mr-2"></i>Save Commission
+                            <i class="ti ti-device-floppy mr-2"></i>Save Commission
                         </button>
                     </div>
                 </form>
@@ -289,7 +289,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
-                                                <i class="fas fa-trash"></i>
+                                                <i class="ti ti-trash"></i>
                                             </button>
                                         </form>
                                     </td>
@@ -346,7 +346,7 @@
                     </div>
                     <div class="mt-4 flex justify-end">
                         <button type="submit" class="px-6 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all">
-                            <i class="fas fa-map-marker-alt mr-2"></i>Create Zone
+                            <i class="ti ti-map-pin mr-2"></i>Create Zone
                         </button>
                     </div>
                 </form>
@@ -382,7 +382,7 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
-                                        <i class="fas fa-trash"></i>
+                                        <i class="ti ti-trash"></i>
                                     </button>
                                 </form>
                             </div>

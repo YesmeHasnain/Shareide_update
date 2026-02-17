@@ -16,7 +16,7 @@
                             alt="Driver Photo" class="w-20 h-20 rounded-full object-cover border-4 border-primary">
                     @else
                         <div class="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
-                            <i class="fas fa-user text-gray-500 text-3xl"></i>
+                            <i class="ti ti-user text-gray-500 text-3xl"></i>
                         </div>
                     @endif
                     <div>
@@ -25,7 +25,7 @@
                         <p class="text-sm text-gray-400">{{ $driver->user->email ?? '-' }}</p>
                         @if($driver->cnic)
                             <p class="text-sm text-gray-500 mt-1">
-                                <i class="fas fa-id-card mr-1"></i>CNIC: {{ $driver->cnic }}
+                                <i class="ti ti-id mr-1"></i>CNIC: {{ $driver->cnic }}
                             </p>
                         @endif
                     </div>
@@ -33,22 +33,22 @@
                 <div class="text-right">
                     @if($driver->status == 'approved')
                         <span class="px-3 py-1 bg-green-100 text-green-600 rounded-full text-sm font-medium">
-                            <i class="fas fa-check-circle mr-1"></i>Approved
+                            <i class="ti ti-circle-check mr-1"></i>Approved
                         </span>
                         @if($driver->is_online)
                             <p class="mt-2"><span class="w-2 h-2 bg-green-500 rounded-full inline-block animate-pulse mr-1"></span>Online</p>
                         @endif
                     @elseif($driver->status == 'pending')
                         <span class="px-3 py-1 bg-yellow-100 text-yellow-600 rounded-full text-sm font-medium">
-                            <i class="fas fa-clock mr-1"></i>Pending
+                            <i class="ti ti-clock mr-1"></i>Pending
                         </span>
                     @elseif($driver->status == 'rejected')
                         <span class="px-3 py-1 bg-red-100 text-red-600 rounded-full text-sm font-medium">
-                            <i class="fas fa-times-circle mr-1"></i>Rejected
+                            <i class="ti ti-circle-x mr-1"></i>Rejected
                         </span>
                     @else
                         <span class="px-3 py-1 bg-gray-800 text-white rounded-full text-sm font-medium">
-                            <i class="fas fa-ban mr-1"></i>Blocked
+                            <i class="ti ti-ban mr-1"></i>Blocked
                         </span>
                     @endif
                 </div>
@@ -58,7 +58,7 @@
             @if($driver->status == 'blocked' && $driver->ban_reason)
                 <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
                     <p class="text-sm font-medium text-red-800 dark:text-red-400">
-                        <i class="fas fa-exclamation-triangle mr-2"></i>Blocked on {{ $driver->banned_at ? $driver->banned_at->format('M d, Y H:i') : 'N/A' }}
+                        <i class="ti ti-alert-triangle mr-2"></i>Blocked on {{ $driver->banned_at ? $driver->banned_at->format('M d, Y H:i') : 'N/A' }}
                     </p>
                     <p class="text-red-600 dark:text-red-400 mt-1">{{ $driver->ban_reason }}</p>
                 </div>
@@ -93,26 +93,26 @@
                     <form action="{{ route('admin.drivers.approve', $driver->id) }}" method="POST" class="inline" onsubmit="return confirm('Approve this driver?')">
                         @csrf
                         <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                            <i class="fas fa-check mr-2"></i>Approve Driver
+                            <i class="ti ti-check mr-2"></i>Approve Driver
                         </button>
                     </form>
                     <button onclick="openRejectModal()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                        <i class="fas fa-times mr-2"></i>Reject Driver
+                        <i class="ti ti-x mr-2"></i>Reject Driver
                     </button>
                 @elseif($driver->status == 'approved')
                     <button onclick="openBlockModal()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                        <i class="fas fa-ban mr-2"></i>Block Driver
+                        <i class="ti ti-ban mr-2"></i>Block Driver
                     </button>
                 @elseif($driver->status == 'blocked')
                     <form action="{{ route('admin.drivers.unblock', $driver->id) }}" method="POST" class="inline">
                         @csrf
                         <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                            <i class="fas fa-unlock mr-2"></i>Unblock Driver
+                            <i class="ti ti-lock-open mr-2"></i>Unblock Driver
                         </button>
                     </form>
                 @endif
                 <a href="{{ route('admin.drivers.documents', $driver->id) }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    <i class="fas fa-file-alt mr-2"></i>View All Documents
+                    <i class="ti ti-file-text mr-2"></i>View All Documents
                 </a>
             </div>
         </div>
@@ -121,7 +121,7 @@
         @if($driver->documents)
         <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm p-6">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                <i class="fas fa-id-card mr-2 text-blue-500"></i>Identity Documents (CNIC)
+                <i class="ti ti-id mr-2 text-blue-500"></i>Identity Documents (CNIC)
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 @foreach([
@@ -151,7 +151,7 @@
         <!-- License Documents -->
         <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm p-6">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                <i class="fas fa-id-badge mr-2 text-green-500"></i>License Documents
+                <i class="ti ti-id-badge mr-2 text-green-500"></i>License Documents
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @foreach([
@@ -180,7 +180,7 @@
         <!-- Vehicle Documents & Images -->
         <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm p-6">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                <i class="fas fa-car mr-2 text-purple-500"></i>Vehicle Documents & Images
+                <i class="ti ti-car mr-2 text-purple-500"></i>Vehicle Documents & Images
             </h3>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 @foreach([
@@ -214,7 +214,7 @@
         @if($driver->liveSelfieVerifications && $driver->liveSelfieVerifications->count() > 0)
         <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm p-6">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                <i class="fas fa-camera mr-2 text-orange-500"></i>Live Selfie Verifications
+                <i class="ti ti-camera mr-2 text-orange-500"></i>Live Selfie Verifications
             </h3>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 @foreach($driver->liveSelfieVerifications()->latest()->take(8)->get() as $verification)
@@ -285,7 +285,7 @@
                 <div class="flex items-center justify-between">
                     <span class="text-gray-500">Rating</span>
                     <span class="font-semibold text-yellow-600">
-                        <i class="fas fa-star"></i> {{ number_format($driver->rating_average, 1) }}
+                        <i class="ti ti-star"></i> {{ number_format($driver->rating_average, 1) }}
                     </span>
                 </div>
                 <div class="flex items-center justify-between">
@@ -389,7 +389,7 @@
     <div class="bg-white dark:bg-dark-200 rounded-xl shadow-xl w-full max-w-md mx-4">
         <div class="p-6">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                <i class="fas fa-ban text-red-500 mr-2"></i>Block Driver
+                <i class="ti ti-ban text-red-500 mr-2"></i>Block Driver
             </h3>
             <form action="{{ route('admin.drivers.block', $driver->id) }}" method="POST">
                 @csrf
@@ -414,7 +414,7 @@
                 @else
                 <div class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                     <p class="text-xs text-yellow-700 dark:text-yellow-400">
-                        <i class="fas fa-info-circle mr-1"></i>No CNIC on file - cannot permanently ban
+                        <i class="ti ti-info-circle mr-1"></i>No CNIC on file - cannot permanently ban
                     </p>
                 </div>
                 @endif
@@ -422,7 +422,7 @@
                 <div class="flex justify-end space-x-3">
                     <button type="button" onclick="closeBlockModal()" class="px-4 py-2 bg-gray-200 dark:bg-dark-100 text-gray-700 dark:text-gray-300 rounded-lg">Cancel</button>
                     <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                        <i class="fas fa-ban mr-1"></i>Block Driver
+                        <i class="ti ti-ban mr-1"></i>Block Driver
                     </button>
                 </div>
             </form>

@@ -193,6 +193,12 @@ class AuthController extends Controller
             ['balance' => 0, 'total_spent' => 0, 'total_topped_up' => 0]
         );
 
+        // Track IP and login time
+        $user->update([
+            'last_ip' => $request->ip(),
+            'last_login_at' => Carbon::now(),
+        ]);
+
         // Reload relationships for complete data
         $user->load(['riderProfile', 'riderWallet', 'driver']);
 
@@ -329,6 +335,12 @@ class AuthController extends Controller
 
         // Mark verification used
         $verification->update(['verified_at' => Carbon::now()]);
+
+        // Track IP and login time
+        $user->update([
+            'last_ip' => $request->ip(),
+            'last_login_at' => Carbon::now(),
+        ]);
 
         // Issue token
         $token = $user->createToken('auth_token')->plainTextToken;

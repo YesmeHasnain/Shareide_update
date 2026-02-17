@@ -7,7 +7,7 @@
 <div class="max-w-4xl mx-auto space-y-6">
     <!-- Back Button -->
     <a href="{{ route('admin.alerts.index') }}" class="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-        <i class="fas fa-arrow-left mr-2"></i>Back to Alerts
+        <i class="ti ti-arrow-left mr-2"></i>Back to Alerts
     </a>
 
     <!-- Alert Details Card -->
@@ -22,13 +22,13 @@
                             'info' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
                         ];
                         $severityIcons = [
-                            'critical' => 'exclamation-triangle',
-                            'warning' => 'exclamation-circle',
+                            'critical' => 'alert-triangle',
+                            'warning' => 'alert-circle',
                             'info' => 'info-circle',
                         ];
                     @endphp
                     <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium {{ $severityColors[$alert->severity] ?? 'bg-gray-100 text-gray-800' }}">
-                        <i class="fas fa-{{ $severityIcons[$alert->severity] ?? 'bell' }} mr-2"></i>
+                        <i class="ti ti-{{ $severityIcons[$alert->severity] ?? 'bell' }} mr-2"></i>
                         {{ ucfirst($alert->severity) }}
                     </span>
                     <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
@@ -36,7 +36,7 @@
                     </span>
                     @if($alert->is_resolved)
                         <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                            <i class="fas fa-check mr-2"></i>Resolved
+                            <i class="ti ti-check mr-2"></i>Resolved
                         </span>
                     @endif
                 </div>
@@ -64,7 +64,7 @@
                 <div class="space-y-4">
                     <div class="flex items-start gap-3">
                         <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                            <i class="fas fa-bell text-blue-600 text-sm"></i>
+                            <i class="ti ti-bell text-blue-600 text-sm"></i>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-900 dark:text-white">Alert Created</p>
@@ -75,7 +75,7 @@
                     @if($alert->is_read)
                         <div class="flex items-start gap-3">
                             <div class="p-2 bg-gray-100 dark:bg-gray-700 rounded-full">
-                                <i class="fas fa-eye text-gray-600 text-sm"></i>
+                                <i class="ti ti-eye text-gray-600 text-sm"></i>
                             </div>
                             <div>
                                 <p class="text-sm font-medium text-gray-900 dark:text-white">Read by {{ $alert->readByUser->name ?? 'Admin' }}</p>
@@ -87,7 +87,7 @@
                     @if($alert->is_resolved)
                         <div class="flex items-start gap-3">
                             <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
-                                <i class="fas fa-check text-green-600 text-sm"></i>
+                                <i class="ti ti-check text-green-600 text-sm"></i>
                             </div>
                             <div>
                                 <p class="text-sm font-medium text-gray-900 dark:text-white">Resolved by {{ $alert->resolvedByUser->name ?? 'Admin' }}</p>
@@ -111,7 +111,7 @@
                             <textarea name="resolution_note" rows="3" class="w-full rounded-lg border-gray-300 dark:border-dark-100 dark:bg-dark-300 dark:text-white focus:border-yellow-500 focus:ring-yellow-500" placeholder="Add a note about how this was resolved..."></textarea>
                         </div>
                         <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                            <i class="fas fa-check mr-2"></i>Mark as Resolved
+                            <i class="ti ti-check mr-2"></i>Mark as Resolved
                         </button>
                     </form>
                 </div>

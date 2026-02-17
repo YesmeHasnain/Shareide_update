@@ -27,7 +27,7 @@
 @if($stats['active'] > 0)
 <div class="mb-6 p-4 bg-red-100 border border-red-300 rounded-xl flex items-center justify-between">
     <div class="flex items-center">
-        <i class="fas fa-exclamation-triangle text-red-600 text-2xl mr-3 animate-pulse"></i>
+        <i class="ti ti-alert-triangle text-red-600 text-2xl mr-3 animate-pulse"></i>
         <div>
             <p class="font-semibold text-red-800">{{ $stats['active'] }} Active Emergency Alert(s)</p>
             <p class="text-sm text-red-600">Immediate attention required!</p>
@@ -57,8 +57,8 @@
             <label class="block text-sm text-gray-600 mb-1">To</label>
             <input type="date" name="date_to" value="{{ request('date_to') }}" class="w-full px-4 py-2 border rounded-lg">
         </div>
-        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="fas fa-search mr-2"></i>Filter</button>
-        <a href="{{ route('admin.sos.export', request()->query()) }}" class="px-4 py-2 bg-green-600 text-white rounded-lg"><i class="fas fa-download mr-2"></i>Export</a>
+        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="ti ti-search mr-2"></i>Filter</button>
+        <a href="{{ route('admin.sos.export', request()->query()) }}" class="px-4 py-2 bg-green-600 text-white rounded-lg"><i class="ti ti-download mr-2"></i>Export</a>
     </form>
 </div>
 
@@ -105,7 +105,7 @@
                         </td>
                         <td class="px-4 py-3 text-xs text-gray-500">{{ $alert->created_at->diffForHumans() }}</td>
                         <td class="px-4 py-3">
-                            <a href="{{ route('admin.sos.show', $alert->id) }}" class="p-2 text-blue-600 hover:bg-blue-50 rounded"><i class="fas fa-eye"></i></a>
+                            <a href="{{ route('admin.sos.show', $alert->id) }}" class="p-2 text-blue-600 hover:bg-blue-50 rounded"><i class="ti ti-eye"></i></a>
                         </td>
                     </tr>
                 @empty

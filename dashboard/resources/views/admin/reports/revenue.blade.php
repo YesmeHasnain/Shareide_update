@@ -43,8 +43,8 @@
                 @endfor
             </select>
         </div>
-        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="fas fa-filter mr-2"></i>Apply</button>
-        <a href="{{ route('admin.reports.export', ['type' => 'revenue', 'date_from' => $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-01', 'date_to' => $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-31']) }}" class="px-4 py-2 bg-green-600 text-white rounded-lg"><i class="fas fa-download mr-2"></i>Export</a>
+        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="ti ti-filter mr-2"></i>Apply</button>
+        <a href="{{ route('admin.reports.export', ['type' => 'revenue', 'date_from' => $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-01', 'date_to' => $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-31']) }}" class="px-4 py-2 bg-green-600 text-white rounded-lg"><i class="ti ti-download mr-2"></i>Export</a>
     </form>
 </div>
 

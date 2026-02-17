@@ -25,7 +25,7 @@
                 <div class="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer backdrop-blur-sm"
                     onclick="document.getElementById('avatarInput').click()">
                     <div class="text-center">
-                        <i class="fas fa-camera text-white text-2xl mb-1"></i>
+                        <i class="ti ti-camera text-white text-2xl mb-1"></i>
                         <p class="text-white text-xs font-medium">Change</p>
                     </div>
                 </div>
@@ -37,11 +37,11 @@
                 <p class="text-black/70">{{ $admin->email }}</p>
                 <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-3">
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-black/20">
-                        <i class="fas fa-shield-alt mr-2"></i>
+                        <i class="ti ti-shield mr-2"></i>
                         {{ $admin->adminRole->display_name ?? ucwords(str_replace('_', ' ', $admin->adminRole->name ?? 'Admin')) }}
                     </span>
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-black/20">
-                        <i class="fas fa-calendar mr-2"></i>
+                        <i class="ti ti-calendar mr-2"></i>
                         Member since {{ $admin->created_at?->format('M Y') ?? 'N/A' }}
                     </span>
                 </div>
@@ -65,7 +65,7 @@
     <div class="bg-white dark:bg-dark-200 rounded-2xl shadow-sm border border-gray-200 dark:border-dark-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-100 bg-gray-50 dark:bg-dark-300">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                <i class="fas fa-camera text-yellow-500"></i>
+                <i class="ti ti-camera text-yellow-500"></i>
                 Profile Photo
             </h3>
         </div>
@@ -99,14 +99,14 @@
                         <div class="border-2 border-dashed border-gray-300 dark:border-dark-100 rounded-xl p-6 text-center hover:border-yellow-500 transition-colors cursor-pointer"
                             onclick="document.getElementById('avatarInput').click()">
                             <input type="file" name="profile_photo" id="avatarInput" accept="image/*" class="hidden" onchange="previewImage(this)">
-                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                            <i class="ti ti-cloud-upload text-4xl text-gray-400 mb-3"></i>
                             <p class="text-gray-600 dark:text-gray-400 mb-1">Click to upload or drag and drop</p>
                             <p class="text-sm text-gray-500">PNG, JPG, GIF up to 2MB</p>
                         </div>
 
                         <div class="flex items-center gap-3 mt-4">
                             <button type="submit" id="uploadBtn" class="px-6 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all disabled:opacity-50" disabled>
-                                <i class="fas fa-upload mr-2"></i>
+                                <i class="ti ti-upload mr-2"></i>
                                 Upload Photo
                             </button>
                         </div>
@@ -117,7 +117,7 @@
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="px-6 py-2 bg-red-100 text-red-600 font-semibold rounded-xl hover:bg-red-200 transition-all">
-                            <i class="fas fa-trash mr-2"></i>
+                            <i class="ti ti-trash mr-2"></i>
                             Remove Photo
                         </button>
                     </form>
@@ -135,7 +135,7 @@
         <div class="bg-white dark:bg-dark-200 rounded-2xl shadow-sm border border-gray-200 dark:border-dark-100 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-100 bg-gray-50 dark:bg-dark-300">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-user text-yellow-500"></i>
+                    <i class="ti ti-user text-yellow-500"></i>
                     Profile Information
                 </h3>
             </div>
@@ -146,7 +146,7 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                <i class="fas fa-user"></i>
+                                <i class="ti ti-user"></i>
                             </span>
                             <input type="text" name="name" value="{{ old('name', $admin->name) }}" required
                                 class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-dark-100 rounded-xl bg-white dark:bg-dark-300 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
@@ -160,7 +160,7 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                <i class="fas fa-envelope"></i>
+                                <i class="ti ti-mail"></i>
                             </span>
                             <input type="email" name="email" value="{{ old('email', $admin->email) }}" required
                                 class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-dark-100 rounded-xl bg-white dark:bg-dark-300 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
@@ -174,7 +174,7 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone Number</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                <i class="fas fa-phone"></i>
+                                <i class="ti ti-phone"></i>
                             </span>
                             <input type="text" name="phone" value="{{ old('phone', $admin->phone) }}"
                                 class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-dark-100 rounded-xl bg-white dark:bg-dark-300 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
@@ -184,7 +184,7 @@
 
                 <div class="mt-6">
                     <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl">
-                        <i class="fas fa-save mr-2"></i>
+                        <i class="ti ti-device-floppy mr-2"></i>
                         Update Profile
                     </button>
                 </div>
@@ -195,7 +195,7 @@
         <div class="bg-white dark:bg-dark-200 rounded-2xl shadow-sm border border-gray-200 dark:border-dark-100 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-100 bg-gray-50 dark:bg-dark-300">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-key text-yellow-500"></i>
+                    <i class="ti ti-key text-yellow-500"></i>
                     Change Password
                 </h3>
             </div>
@@ -206,7 +206,7 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Password</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                <i class="fas fa-lock"></i>
+                                <i class="ti ti-lock"></i>
                             </span>
                             <input type="password" name="current_password" required
                                 class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-dark-100 rounded-xl bg-white dark:bg-dark-300 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
@@ -220,7 +220,7 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New Password</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                <i class="fas fa-key"></i>
+                                <i class="ti ti-key"></i>
                             </span>
                             <input type="password" name="password" required minlength="8"
                                 class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-dark-100 rounded-xl bg-white dark:bg-dark-300 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
@@ -235,7 +235,7 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm New Password</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                <i class="fas fa-check-double"></i>
+                                <i class="ti ti-checks"></i>
                             </span>
                             <input type="password" name="password_confirmation" required
                                 class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-dark-100 rounded-xl bg-white dark:bg-dark-300 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
@@ -245,7 +245,7 @@
 
                 <div class="mt-6">
                     <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl">
-                        <i class="fas fa-key mr-2"></i>
+                        <i class="ti ti-key mr-2"></i>
                         Change Password
                     </button>
                 </div>
@@ -257,7 +257,7 @@
     <div class="bg-white dark:bg-dark-200 rounded-2xl shadow-sm border border-gray-200 dark:border-dark-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-100 bg-gray-50 dark:bg-dark-300">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                <i class="fas fa-info-circle text-yellow-500"></i>
+                <i class="ti ti-info-circle text-yellow-500"></i>
                 Account Information
             </h3>
         </div>
@@ -283,7 +283,7 @@
                 <div class="flex flex-wrap gap-2">
                     @foreach($admin->adminRole->permissions as $permission)
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-                            <i class="fas fa-check-circle mr-2 text-green-500"></i>
+                            <i class="ti ti-circle-check mr-2 text-green-500"></i>
                             {{ ucfirst(str_replace('_', ' ', $permission)) }}
                         </span>
                     @endforeach

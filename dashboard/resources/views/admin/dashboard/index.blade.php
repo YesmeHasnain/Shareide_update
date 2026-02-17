@@ -5,300 +5,272 @@
 
 @section('content')
 <!-- Hero Stats Section -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <!-- Total Users -->
-    <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-        <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 rounded-full bg-white/10"></div>
-        <div class="absolute bottom-0 left-0 -mb-4 -ml-4 w-16 h-16 rounded-full bg-white/10"></div>
-        <div class="relative">
-            <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                    <i class="fas fa-users text-white text-xl"></i>
-                </div>
-                <span class="flex items-center text-xs text-white/80 bg-white/20 px-2 py-1 rounded-full">
-                    <i class="fas fa-arrow-up mr-1"></i>+{{ $newUsersToday }}
-                </span>
+    <div class="bg-white dark:bg-dark-200 rounded-xl p-5 border border-gray-100 dark:border-dark-100">
+        <div class="flex items-center justify-between mb-3">
+            <div class="w-9 h-9 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+                <i class="ti ti-users text-blue-600 dark:text-blue-400 text-[18px]"></i>
             </div>
-            <p class="text-white/80 text-sm font-medium">Total Users</p>
-            <p class="text-3xl font-bold text-white mt-1">{{ number_format($totalUsers) }}</p>
+            <span class="text-[11px] text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-md">+{{ $newUsersToday }} today</span>
         </div>
+        <p class="text-[12px] text-gray-500 dark:text-gray-400 font-medium">Total Users</p>
+        <p class="text-[20px] font-semibold text-gray-900 dark:text-white mt-0.5">{{ number_format($totalUsers) }}</p>
     </div>
 
     <!-- Total Drivers -->
-    <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-        <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 rounded-full bg-white/10"></div>
-        <div class="absolute bottom-0 left-0 -mb-4 -ml-4 w-16 h-16 rounded-full bg-white/10"></div>
-        <div class="relative">
-            <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                    <i class="fas fa-car text-white text-xl"></i>
-                </div>
-                <span class="flex items-center text-xs text-white bg-white/20 px-2 py-1 rounded-full">
-                    <span class="w-2 h-2 bg-green-300 rounded-full mr-1 animate-pulse"></span>
-                    {{ $onlineDrivers }} online
-                </span>
+    <div class="bg-white dark:bg-dark-200 rounded-xl p-5 border border-gray-100 dark:border-dark-100">
+        <div class="flex items-center justify-between mb-3">
+            <div class="w-9 h-9 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg flex items-center justify-center">
+                <i class="ti ti-car text-emerald-600 dark:text-emerald-400 text-[18px]"></i>
             </div>
-            <p class="text-white/80 text-sm font-medium">Total Drivers</p>
-            <p class="text-3xl font-bold text-white mt-1">{{ number_format($totalDrivers) }}</p>
+            <span class="flex items-center text-[11px] text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md">
+                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1 animate-pulse"></span>
+                {{ $onlineDrivers }} online
+            </span>
         </div>
+        <p class="text-[12px] text-gray-500 dark:text-gray-400 font-medium">Total Drivers</p>
+        <p class="text-[20px] font-semibold text-gray-900 dark:text-white mt-0.5">{{ number_format($totalDrivers) }}</p>
     </div>
 
     <!-- Total Rides -->
-    <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-        <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 rounded-full bg-white/10"></div>
-        <div class="absolute bottom-0 left-0 -mb-4 -ml-4 w-16 h-16 rounded-full bg-white/10"></div>
-        <div class="relative">
-            <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                    <i class="fas fa-route text-white text-xl"></i>
-                </div>
-                <span class="flex items-center text-xs text-white/80 bg-white/20 px-2 py-1 rounded-full">
-                    {{ $ridesToday }} today
-                </span>
+    <div class="bg-white dark:bg-dark-200 rounded-xl p-5 border border-gray-100 dark:border-dark-100">
+        <div class="flex items-center justify-between mb-3">
+            <div class="w-9 h-9 bg-violet-50 dark:bg-violet-900/20 rounded-lg flex items-center justify-center">
+                <i class="ti ti-route text-violet-600 dark:text-violet-400 text-[18px]"></i>
             </div>
-            <p class="text-white/80 text-sm font-medium">Total Rides</p>
-            <p class="text-3xl font-bold text-white mt-1">{{ number_format($totalRides) }}</p>
+            <span class="text-[11px] text-gray-500 dark:text-gray-400 font-medium bg-gray-50 dark:bg-dark-100 px-2 py-0.5 rounded-md">{{ $ridesToday }} today</span>
         </div>
+        <p class="text-[12px] text-gray-500 dark:text-gray-400 font-medium">Total Rides</p>
+        <p class="text-[20px] font-semibold text-gray-900 dark:text-white mt-0.5">{{ number_format($totalRides) }}</p>
     </div>
 
     <!-- Total Revenue -->
-    <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-        <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 rounded-full bg-white/10"></div>
-        <div class="absolute bottom-0 left-0 -mb-4 -ml-4 w-16 h-16 rounded-full bg-white/10"></div>
-        <div class="relative">
-            <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                    <i class="fas fa-coins text-white text-xl"></i>
-                </div>
-                <span class="flex items-center text-xs text-white/80 bg-white/20 px-2 py-1 rounded-full">
-                    <i class="fas fa-chart-line mr-1"></i>Today
-                </span>
+    <div class="bg-white dark:bg-dark-200 rounded-xl p-5 border border-gray-100 dark:border-dark-100">
+        <div class="flex items-center justify-between mb-3">
+            <div class="w-9 h-9 bg-amber-50 dark:bg-amber-900/20 rounded-lg flex items-center justify-center">
+                <i class="ti ti-coins text-amber-600 dark:text-amber-400 text-[18px]"></i>
             </div>
-            <p class="text-white/80 text-sm font-medium">Total Revenue</p>
-            <p class="text-3xl font-bold text-white mt-1">PKR {{ number_format($totalRevenue) }}</p>
-            <p class="text-xs text-white/70 mt-1">+PKR {{ number_format($revenueToday) }} today</p>
+            <span class="text-[11px] text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-md">+PKR {{ number_format($revenueToday) }} today</span>
         </div>
+        <p class="text-[12px] text-gray-500 dark:text-gray-400 font-medium">Total Revenue</p>
+        <p class="text-[20px] font-semibold text-gray-900 dark:text-white mt-0.5">PKR {{ number_format($totalRevenue) }}</p>
     </div>
 </div>
 
 <!-- Quick Stats Row -->
-<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
     <!-- Pending Drivers -->
-    <a href="{{ route('admin.drivers.pending') }}" class="group bg-white dark:bg-dark-200 rounded-2xl p-5 border border-gray-100 dark:border-dark-100 hover:border-yellow-300 dark:hover:border-yellow-600 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-        <div class="flex items-center justify-between mb-3">
-            <div class="w-11 h-11 {{ $pendingDrivers > 0 ? 'bg-gradient-to-br from-yellow-400 to-orange-500' : 'bg-gray-100 dark:bg-dark-100' }} rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                <i class="fas fa-user-clock {{ $pendingDrivers > 0 ? 'text-white' : 'text-gray-400' }}"></i>
+    <a href="{{ route('admin.drivers.pending') }}" class="bg-white dark:bg-dark-200 rounded-xl p-4 border border-gray-100 dark:border-dark-100 hover:border-gray-200 dark:hover:border-dark-100 transition-all">
+        <div class="flex items-center justify-between mb-2.5">
+            <div class="w-8 h-8 {{ $pendingDrivers > 0 ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-gray-50 dark:bg-dark-100' }} rounded-lg flex items-center justify-center">
+                <i class="ti ti-user-plus {{ $pendingDrivers > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400' }} text-[16px]"></i>
             </div>
             @if($pendingDrivers > 0)
-                <span class="relative flex h-3 w-3">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
-                </span>
+                <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
             @endif
         </div>
-        <p class="text-2xl font-bold {{ $pendingDrivers > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-800 dark:text-white' }}">{{ $pendingDrivers }}</p>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">Pending Drivers</p>
+        <p class="text-[17px] font-semibold {{ $pendingDrivers > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-800 dark:text-white' }}">{{ $pendingDrivers }}</p>
+        <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Pending Drivers</p>
     </a>
 
     <!-- Active Rides -->
-    <a href="{{ route('admin.rides.active') }}" class="group bg-white dark:bg-dark-200 rounded-2xl p-5 border border-gray-100 dark:border-dark-100 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-        <div class="flex items-center justify-between mb-3">
-            <div class="w-11 h-11 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                <i class="fas fa-car-side text-white"></i>
+    <a href="{{ route('admin.rides.active') }}" class="bg-white dark:bg-dark-200 rounded-xl p-4 border border-gray-100 dark:border-dark-100 hover:border-gray-200 dark:hover:border-dark-100 transition-all">
+        <div class="flex items-center justify-between mb-2.5">
+            <div class="w-8 h-8 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+                <i class="ti ti-car text-blue-600 dark:text-blue-400 text-[16px]"></i>
             </div>
             @if($activeRides > 0)
                 <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
             @endif
         </div>
-        <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ $activeRides }}</p>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">Active Rides</p>
+        <p class="text-[17px] font-semibold text-blue-600 dark:text-blue-400">{{ $activeRides }}</p>
+        <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Active Rides</p>
     </a>
 
     <!-- SOS Alerts -->
-    <a href="{{ route('admin.sos.active') }}" class="group bg-white dark:bg-dark-200 rounded-2xl p-5 border {{ $activeSOSAlerts > 0 ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20' : 'border-gray-100 dark:border-dark-100' }} hover:border-red-300 dark:hover:border-red-600 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-        <div class="flex items-center justify-between mb-3">
-            <div class="w-11 h-11 {{ $activeSOSAlerts > 0 ? 'bg-gradient-to-br from-red-400 to-red-600 animate-pulse' : 'bg-gray-100 dark:bg-dark-100' }} rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                <i class="fas fa-exclamation-triangle {{ $activeSOSAlerts > 0 ? 'text-white' : 'text-gray-400' }}"></i>
+    <a href="{{ route('admin.sos.active') }}" class="bg-white dark:bg-dark-200 rounded-xl p-4 border {{ $activeSOSAlerts > 0 ? 'border-red-200 dark:border-red-800' : 'border-gray-100 dark:border-dark-100' }} hover:border-gray-200 transition-all">
+        <div class="flex items-center justify-between mb-2.5">
+            <div class="w-8 h-8 {{ $activeSOSAlerts > 0 ? 'bg-red-50 dark:bg-red-900/20' : 'bg-gray-50 dark:bg-dark-100' }} rounded-lg flex items-center justify-center">
+                <i class="ti ti-alert-triangle {{ $activeSOSAlerts > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-400' }} text-[16px]"></i>
             </div>
             @if($activeSOSAlerts > 0)
-                <span class="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">!</span>
+                <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
             @endif
         </div>
-        <p class="text-2xl font-bold {{ $activeSOSAlerts > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-white' }}">{{ $activeSOSAlerts }}</p>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">SOS Alerts</p>
+        <p class="text-[17px] font-semibold {{ $activeSOSAlerts > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-white' }}">{{ $activeSOSAlerts }}</p>
+        <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">SOS Alerts</p>
     </a>
 
     <!-- Pending Withdrawals -->
-    <a href="{{ route('admin.payments.withdrawals') }}" class="group bg-white dark:bg-dark-200 rounded-2xl p-5 border border-gray-100 dark:border-dark-100 hover:border-orange-300 dark:hover:border-orange-600 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-        <div class="flex items-center justify-between mb-3">
-            <div class="w-11 h-11 {{ $pendingWithdrawals > 0 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : 'bg-gray-100 dark:bg-dark-100' }} rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                <i class="fas fa-wallet {{ $pendingWithdrawals > 0 ? 'text-white' : 'text-gray-400' }}"></i>
+    <a href="{{ route('admin.payments.withdrawals') }}" class="bg-white dark:bg-dark-200 rounded-xl p-4 border border-gray-100 dark:border-dark-100 hover:border-gray-200 transition-all">
+        <div class="flex items-center justify-between mb-2.5">
+            <div class="w-8 h-8 {{ $pendingWithdrawals > 0 ? 'bg-orange-50 dark:bg-orange-900/20' : 'bg-gray-50 dark:bg-dark-100' }} rounded-lg flex items-center justify-center">
+                <i class="ti ti-wallet {{ $pendingWithdrawals > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-400' }} text-[16px]"></i>
             </div>
         </div>
-        <p class="text-2xl font-bold {{ $pendingWithdrawals > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-800 dark:text-white' }}">{{ $pendingWithdrawals }}</p>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">Withdrawals</p>
+        <p class="text-[17px] font-semibold {{ $pendingWithdrawals > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-800 dark:text-white' }}">{{ $pendingWithdrawals }}</p>
+        <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Withdrawals</p>
     </a>
 
     <!-- Commission -->
-    <div class="group bg-white dark:bg-dark-200 rounded-2xl p-5 border border-gray-100 dark:border-dark-100 hover:shadow-lg transition-all duration-300">
-        <div class="flex items-center justify-between mb-3">
-            <div class="w-11 h-11 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                <i class="fas fa-percentage text-white"></i>
+    <div class="bg-white dark:bg-dark-200 rounded-xl p-4 border border-gray-100 dark:border-dark-100">
+        <div class="flex items-center justify-between mb-2.5">
+            <div class="w-8 h-8 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg flex items-center justify-center">
+                <i class="ti ti-percentage text-emerald-600 dark:text-emerald-400 text-[16px]"></i>
             </div>
         </div>
-        <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ number_format($totalCommission) }}</p>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">Commission (PKR)</p>
+        <p class="text-[17px] font-semibold text-emerald-600 dark:text-emerald-400">{{ number_format($totalCommission) }}</p>
+        <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Commission (PKR)</p>
     </div>
 </div>
 
 <!-- Charts Section -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
     <!-- Rides Chart -->
-    <div class="bg-white dark:bg-dark-200 rounded-2xl border border-gray-100 dark:border-dark-100 overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-100 dark:border-dark-100 bg-gradient-to-r from-gray-50 to-white dark:from-dark-300 dark:to-dark-200">
+    <div class="bg-white dark:bg-dark-200 rounded-xl border border-gray-100 dark:border-dark-100 overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100 dark:border-dark-100">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Rides Overview</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Last 7 days performance</p>
+                    <h3 class="text-[13px] font-semibold text-gray-900 dark:text-white">Rides Overview</h3>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Last 7 days</p>
                 </div>
-                <div class="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 px-3 py-1.5 rounded-full">
-                    <span class="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500"></span>
-                    <span class="text-sm font-medium text-yellow-700 dark:text-yellow-400">Rides</span>
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-900/20">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span class="text-[11px] font-medium text-amber-700 dark:text-amber-400">Rides</span>
                 </div>
             </div>
         </div>
-        <div class="p-6">
+        <div class="p-5">
             <canvas id="ridesChart" height="220"></canvas>
         </div>
     </div>
 
     <!-- Revenue Chart -->
-    <div class="bg-white dark:bg-dark-200 rounded-2xl border border-gray-100 dark:border-dark-100 overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-100 dark:border-dark-100 bg-gradient-to-r from-gray-50 to-white dark:from-dark-300 dark:to-dark-200">
+    <div class="bg-white dark:bg-dark-200 rounded-xl border border-gray-100 dark:border-dark-100 overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100 dark:border-dark-100">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Revenue Overview</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Last 7 days earnings</p>
+                    <h3 class="text-[13px] font-semibold text-gray-900 dark:text-white">Revenue Overview</h3>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Last 7 days</p>
                 </div>
-                <div class="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full">
-                    <span class="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-green-400 to-emerald-500"></span>
-                    <span class="text-sm font-medium text-green-700 dark:text-green-400">Revenue</span>
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-900/20">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span class="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">Revenue</span>
                 </div>
             </div>
         </div>
-        <div class="p-6">
+        <div class="p-5">
             <canvas id="revenueChart" height="220"></canvas>
         </div>
     </div>
 </div>
 
 <!-- Tables Section -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
     <!-- Pending Drivers -->
-    <div class="bg-white dark:bg-dark-200 rounded-2xl border border-gray-100 dark:border-dark-100 overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-100 dark:border-dark-100 bg-gradient-to-r from-yellow-50 to-white dark:from-dark-300 dark:to-dark-200">
+    <div class="bg-white dark:bg-dark-200 rounded-xl border border-gray-100 dark:border-dark-100 overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100 dark:border-dark-100">
             <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-md">
-                        <i class="fas fa-user-clock text-white"></i>
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 bg-amber-50 dark:bg-amber-900/20 rounded-lg flex items-center justify-center">
+                        <i class="ti ti-user-plus text-amber-600 dark:text-amber-400 text-[16px]"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-gray-900 dark:text-white">Pending Approvals</h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Drivers awaiting review</p>
+                        <h3 class="text-[13px] font-semibold text-gray-900 dark:text-white">Pending Approvals</h3>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400">Drivers awaiting review</p>
                     </div>
                 </div>
-                <a href="{{ route('admin.drivers.pending') }}" class="text-sm text-yellow-600 dark:text-yellow-400 hover:text-yellow-700 font-semibold flex items-center gap-1 hover:gap-2 transition-all">
-                    View All <i class="fas fa-arrow-right text-xs"></i>
+                <a href="{{ route('admin.drivers.pending') }}" class="text-[12px] text-amber-600 dark:text-amber-400 hover:text-amber-700 font-medium flex items-center gap-1">
+                    View All <i class="ti ti-arrow-right text-[12px]"></i>
                 </a>
             </div>
         </div>
-        <div class="p-5">
+        <div class="p-4">
             @forelse($pendingDriversList as $driver)
-                <div class="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-dark-100 rounded-xl transition-colors mb-2 last:mb-0 border border-transparent hover:border-gray-100 dark:hover:border-dark-100">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center text-white font-bold shadow-md">
+                <div class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-dark-100 rounded-lg transition-colors mb-1.5 last:mb-0">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center text-amber-700 dark:text-amber-400 font-semibold text-[12px]">
                             {{ strtoupper(substr($driver->user->name ?? 'D', 0, 1)) }}
                         </div>
                         <div>
-                            <p class="font-semibold text-gray-900 dark:text-white">{{ $driver->user->name ?? 'N/A' }}</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-300">
-                                    {{ $driver->vehicle_type }}
-                                </span>
+                            <p class="text-[13px] font-medium text-gray-900 dark:text-white">{{ $driver->user->name ?? 'N/A' }}</p>
+                            <p class="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-300">{{ $driver->vehicle_type }}</span>
                                 <span>{{ $driver->city }}</span>
                             </p>
                         </div>
                     </div>
-                    <a href="{{ route('admin.drivers.show', $driver->id) }}" class="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-semibold rounded-xl text-sm transition-all shadow-sm hover:shadow-md">
+                    <a href="{{ route('admin.drivers.show', $driver->id) }}" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-black font-medium rounded-lg text-[12px] transition-colors">
                         Review
                     </a>
                 </div>
             @empty
-                <div class="text-center py-10">
-                    <div class="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
-                        <i class="fas fa-check text-green-500 text-2xl"></i>
+                <div class="text-center py-8">
+                    <div class="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg flex items-center justify-center mx-auto mb-2.5">
+                        <i class="ti ti-check text-emerald-500 text-[18px]"></i>
                     </div>
-                    <p class="text-gray-600 dark:text-gray-300 font-medium">All caught up!</p>
-                    <p class="text-sm text-gray-400 dark:text-gray-500">No pending drivers</p>
+                    <p class="text-[13px] text-gray-600 dark:text-gray-300 font-medium">All caught up!</p>
+                    <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">No pending drivers</p>
                 </div>
             @endforelse
         </div>
     </div>
 
     <!-- Recent Rides -->
-    <div class="bg-white dark:bg-dark-200 rounded-2xl border border-gray-100 dark:border-dark-100 overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-100 dark:border-dark-100 bg-gradient-to-r from-purple-50 to-white dark:from-dark-300 dark:to-dark-200">
+    <div class="bg-white dark:bg-dark-200 rounded-xl border border-gray-100 dark:border-dark-100 overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100 dark:border-dark-100">
             <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 bg-gradient-to-br from-purple-400 to-violet-600 rounded-xl flex items-center justify-center shadow-md">
-                        <i class="fas fa-history text-white"></i>
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 bg-violet-50 dark:bg-violet-900/20 rounded-lg flex items-center justify-center">
+                        <i class="ti ti-history text-violet-600 dark:text-violet-400 text-[16px]"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-gray-900 dark:text-white">Recent Rides</h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Latest activity</p>
+                        <h3 class="text-[13px] font-semibold text-gray-900 dark:text-white">Recent Rides</h3>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400">Latest activity</p>
                     </div>
                 </div>
-                <a href="{{ route('admin.rides.index') }}" class="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 font-semibold flex items-center gap-1 hover:gap-2 transition-all">
-                    View All <i class="fas fa-arrow-right text-xs"></i>
+                <a href="{{ route('admin.rides.index') }}" class="text-[12px] text-violet-600 dark:text-violet-400 hover:text-violet-700 font-medium flex items-center gap-1">
+                    View All <i class="ti ti-arrow-right text-[12px]"></i>
                 </a>
             </div>
         </div>
-        <div class="p-5">
+        <div class="p-4">
             @forelse($recentRides as $ride)
-                <div class="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-dark-100 rounded-xl transition-colors mb-2 last:mb-0 border border-transparent hover:border-gray-100 dark:hover:border-dark-100">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm
-                            @if($ride->status == 'completed') bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30
-                            @elseif($ride->status == 'in_progress') bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30
-                            @else bg-gray-100 dark:bg-dark-100 @endif">
-                            <i class="fas fa-car
-                                @if($ride->status == 'completed') text-green-500
+                <div class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-dark-100 rounded-lg transition-colors mb-1.5 last:mb-0">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-lg flex items-center justify-center
+                            @if($ride->status == 'completed') bg-emerald-50 dark:bg-emerald-900/20
+                            @elseif($ride->status == 'in_progress') bg-blue-50 dark:bg-blue-900/20
+                            @else bg-gray-50 dark:bg-dark-100 @endif">
+                            <i class="ti ti-car text-[15px]
+                                @if($ride->status == 'completed') text-emerald-500
                                 @elseif($ride->status == 'in_progress') text-blue-500
-                                @else text-gray-400 @endif text-lg"></i>
+                                @else text-gray-400 @endif"></i>
                         </div>
                         <div>
-                            <p class="font-semibold text-gray-900 dark:text-white">{{ $ride->rider->name ?? 'N/A' }}</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ Str::limit($ride->pickup_address, 28) }}</p>
+                            <p class="text-[13px] font-medium text-gray-900 dark:text-white">{{ $ride->rider->name ?? 'N/A' }}</p>
+                            <p class="text-[11px] text-gray-500 dark:text-gray-400">{{ Str::limit($ride->pickup_address, 28) }}</p>
                         </div>
                     </div>
                     <div class="text-right">
-                        <span class="inline-flex items-center px-2.5 py-1 text-xs rounded-lg font-semibold
-                            @if($ride->status == 'completed') bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400
-                            @elseif($ride->status == 'in_progress') bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400
-                            @elseif(str_contains($ride->status, 'cancelled')) bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400
-                            @else bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 @endif">
+                        <span class="inline-flex items-center px-2 py-0.5 text-[10px] rounded-md font-medium
+                            @if($ride->status == 'completed') bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400
+                            @elseif($ride->status == 'in_progress') bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400
+                            @elseif(str_contains($ride->status, 'cancelled')) bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400
+                            @else bg-gray-50 dark:bg-dark-100 text-gray-600 dark:text-gray-400 @endif">
                             {{ ucfirst(str_replace('_', ' ', $ride->status)) }}
                         </span>
-                        <p class="text-sm font-bold text-gray-900 dark:text-white mt-1">PKR {{ number_format($ride->estimated_price ?? 0) }}</p>
+                        <p class="text-[12px] font-semibold text-gray-900 dark:text-white mt-1">PKR {{ number_format($ride->estimated_price ?? 0) }}</p>
                     </div>
                 </div>
             @empty
-                <div class="text-center py-10">
-                    <div class="w-16 h-16 bg-gray-100 dark:bg-dark-100 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
-                        <i class="fas fa-car text-gray-400 text-2xl"></i>
+                <div class="text-center py-8">
+                    <div class="w-10 h-10 bg-gray-50 dark:bg-dark-100 rounded-lg flex items-center justify-center mx-auto mb-2.5">
+                        <i class="ti ti-car text-gray-400 text-[18px]"></i>
                     </div>
-                    <p class="text-gray-600 dark:text-gray-300 font-medium">No recent rides</p>
-                    <p class="text-sm text-gray-400 dark:text-gray-500">Rides will appear here</p>
+                    <p class="text-[13px] text-gray-600 dark:text-gray-300 font-medium">No recent rides</p>
+                    <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">Rides will appear here</p>
                 </div>
             @endforelse
         </div>
@@ -307,38 +279,38 @@
 
 <!-- SOS Alerts Section -->
 @if($activeSOSAlerts > 0)
-<div class="mt-8 bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-2 border-red-200 dark:border-red-800 rounded-2xl p-6 shadow-lg">
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div class="flex items-center gap-4">
-            <div class="w-14 h-14 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl flex items-center justify-center shadow-lg animate-pulse">
-                <i class="fas fa-exclamation-triangle text-white text-2xl"></i>
+<div class="mt-6 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl p-5">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-4">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                <i class="ti ti-alert-triangle text-red-600 dark:text-red-400 text-[18px]"></i>
             </div>
             <div>
-                <h3 class="text-xl font-bold text-red-800 dark:text-red-300">Emergency Alerts</h3>
-                <p class="text-sm text-red-600 dark:text-red-400">{{ $activeSOSAlerts }} alert(s) require immediate attention</p>
+                <h3 class="text-[14px] font-semibold text-red-800 dark:text-red-300">Emergency Alerts</h3>
+                <p class="text-[12px] text-red-600 dark:text-red-400">{{ $activeSOSAlerts }} alert(s) require immediate attention</p>
             </div>
         </div>
-        <a href="{{ route('admin.sos.active') }}" class="px-5 py-2.5 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl hover:from-red-600 hover:to-rose-700 transition-all font-semibold shadow-md hover:shadow-lg flex items-center gap-2">
-            <i class="fas fa-eye"></i> View All Alerts
+        <a href="{{ route('admin.sos.active') }}" class="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[12px] font-medium transition-colors flex items-center gap-1.5">
+            <i class="ti ti-eye text-[14px]"></i> View All Alerts
         </a>
     </div>
-    <div class="grid gap-4">
+    <div class="grid gap-3">
         @foreach($recentSOSAlerts as $alert)
-            <div class="bg-white dark:bg-dark-200 rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-red-100 dark:border-red-800/50 shadow-sm hover:shadow-md transition-shadow">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-red-100 to-rose-100 dark:from-red-900/30 dark:to-rose-900/30 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-user text-red-500 text-lg"></i>
+            <div class="bg-white dark:bg-dark-200 rounded-lg p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 border border-red-100 dark:border-red-800/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
+                        <i class="ti ti-user text-red-500 text-[15px]"></i>
                     </div>
                     <div>
-                        <p class="font-bold text-gray-900 dark:text-white">{{ $alert->user->name ?? 'Unknown User' }}</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ $alert->location_address ?? 'Location not available' }}</p>
-                        <p class="text-xs text-red-500 dark:text-red-400 mt-1 flex items-center gap-1">
-                            <i class="fas fa-clock"></i>{{ $alert->created_at->diffForHumans() }}
+                        <p class="text-[13px] font-medium text-gray-900 dark:text-white">{{ $alert->user->name ?? 'Unknown User' }}</p>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400">{{ $alert->location_address ?? 'Location not available' }}</p>
+                        <p class="text-[11px] text-red-500 dark:text-red-400 mt-0.5 flex items-center gap-1">
+                            <i class="ti ti-clock text-[12px]"></i>{{ $alert->created_at->diffForHumans() }}
                         </p>
                     </div>
                 </div>
-                <a href="{{ route('admin.sos.show', $alert->id) }}" class="px-6 py-3 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl hover:from-red-600 hover:to-rose-700 transition-all font-semibold shadow-md hover:shadow-lg flex items-center gap-2">
-                    <i class="fas fa-phone-alt"></i> Respond Now
+                <a href="{{ route('admin.sos.show', $alert->id) }}" class="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[12px] font-medium transition-colors flex items-center gap-1.5">
+                    <i class="ti ti-phone text-[14px]"></i> Respond
                 </a>
             </div>
         @endforeach
@@ -350,7 +322,7 @@
 @push('scripts')
 <script>
     // Chart.js Configuration
-    Chart.defaults.font.family = 'Sora, sans-serif';
+    Chart.defaults.font.family = 'Inter, sans-serif';
     Chart.defaults.color = document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280';
 
     // Rides Chart

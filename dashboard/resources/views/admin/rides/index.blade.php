@@ -56,8 +56,8 @@
             <label class="block text-sm text-gray-600 mb-1">To</label>
             <input type="date" name="date_to" value="{{ request('date_to') }}" class="w-full px-4 py-2 border rounded-lg">
         </div>
-        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="fas fa-search mr-2"></i>Filter</button>
-        <a href="{{ route('admin.rides.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg"><i class="fas fa-times"></i></a>
+        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="ti ti-search mr-2"></i>Filter</button>
+        <a href="{{ route('admin.rides.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg"><i class="ti ti-x"></i></a>
     </form>
 </div>
 
@@ -66,8 +66,8 @@
     <div class="p-4 border-b flex justify-between">
         <h3 class="font-semibold text-gray-800">All Rides</h3>
         <div class="flex gap-2">
-            <a href="{{ route('admin.rides.active') }}" class="px-4 py-2 bg-blue-100 text-blue-600 rounded-lg text-sm"><i class="fas fa-car-side mr-2"></i>Active Rides</a>
-            <a href="{{ route('admin.rides.export', request()->query()) }}" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm"><i class="fas fa-download mr-2"></i>Export</a>
+            <a href="{{ route('admin.rides.active') }}" class="px-4 py-2 bg-blue-100 text-blue-600 rounded-lg text-sm"><i class="ti ti-car mr-2"></i>Active Rides</a>
+            <a href="{{ route('admin.rides.export', request()->query()) }}" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm"><i class="ti ti-download mr-2"></i>Export</a>
         </div>
     </div>
 
@@ -115,7 +115,7 @@
                         </td>
                         <td class="px-4 py-3 text-xs text-gray-500">{{ $ride->created_at->format('M d, Y H:i') }}</td>
                         <td class="px-4 py-3">
-                            <a href="{{ route('admin.rides.show', $ride->id) }}" class="p-2 text-blue-600 hover:bg-blue-50 rounded"><i class="fas fa-eye"></i></a>
+                            <a href="{{ route('admin.rides.show', $ride->id) }}" class="p-2 text-blue-600 hover:bg-blue-50 rounded"><i class="ti ti-eye"></i></a>
                         </td>
                     </tr>
                 @empty

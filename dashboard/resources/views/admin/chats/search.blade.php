@@ -11,7 +11,7 @@
                 class="w-full px-4 py-2 border rounded-lg" required minlength="2">
         </div>
         <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg">
-            <i class="fas fa-search mr-2"></i>Search
+            <i class="ti ti-search mr-2"></i>Search
         </button>
     </form>
 </div>

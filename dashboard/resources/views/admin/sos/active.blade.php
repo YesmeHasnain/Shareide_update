@@ -7,7 +7,7 @@
 <div class="mb-4 flex justify-between items-center">
     <p class="text-gray-600"><span class="font-semibold text-red-600">{{ $alerts->count() }}</span> active emergency alerts</p>
     <button onclick="location.reload()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">
-        <i class="fas fa-sync-alt mr-2"></i>Refresh
+        <i class="ti ti-refresh mr-2"></i>Refresh
     </button>
 </div>
 
@@ -19,7 +19,7 @@
                 <!-- User Info -->
                 <div class="flex items-start space-x-4">
                     <div class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center animate-pulse">
-                        <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
+                        <i class="ti ti-alert-triangle text-red-500 text-2xl"></i>
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold text-gray-800">{{ $alert->user->name ?? 'Unknown User' }}</h3>
@@ -35,7 +35,7 @@
                         <p class="text-gray-800">{{ $alert->location_address ?? 'Location not available' }}</p>
                         @if($alert->latitude && $alert->longitude)
                             <a href="https://www.google.com/maps?q={{ $alert->latitude }},{{ $alert->longitude }}" target="_blank" class="text-blue-600 text-sm hover:underline">
-                                <i class="fas fa-map-marker-alt mr-1"></i>View on Map
+                                <i class="ti ti-map-pin mr-1"></i>View on Map
                             </a>
                         @endif
                     </div>
@@ -54,17 +54,17 @@
                     <form action="{{ route('admin.sos.notify-contacts', $alert->id) }}" method="POST" class="inline">
                         @csrf
                         <button class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm {{ $alert->contacts_notified ? 'opacity-50' : '' }}">
-                            <i class="fas fa-phone mr-1"></i>{{ $alert->contacts_notified ? 'Notified' : 'Notify Contacts' }}
+                            <i class="ti ti-phone mr-1"></i>{{ $alert->contacts_notified ? 'Notified' : 'Notify Contacts' }}
                         </button>
                     </form>
                     <form action="{{ route('admin.sos.notify-police', $alert->id) }}" method="POST" class="inline">
                         @csrf
                         <button class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm {{ $alert->police_notified ? 'opacity-50' : '' }}">
-                            <i class="fas fa-shield-alt mr-1"></i>{{ $alert->police_notified ? 'Police Notified' : 'Notify Police' }}
+                            <i class="ti ti-shield mr-1"></i>{{ $alert->police_notified ? 'Police Notified' : 'Notify Police' }}
                         </button>
                     </form>
                     <a href="{{ route('admin.sos.show', $alert->id) }}" class="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm">
-                        <i class="fas fa-eye mr-1"></i>Details
+                        <i class="ti ti-eye mr-1"></i>Details
                     </a>
                 </div>
             </div>
@@ -80,7 +80,7 @@
 @else
 <div class="bg-white rounded-xl shadow-sm p-8 text-center">
     <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <i class="fas fa-check-circle text-green-500 text-3xl"></i>
+        <i class="ti ti-circle-check text-green-500 text-3xl"></i>
     </div>
     <h3 class="text-lg font-semibold text-gray-800">All Clear</h3>
     <p class="text-gray-500 mt-2">No active emergency alerts at the moment.</p>

@@ -35,7 +35,7 @@
                 @if($alert->latitude && $alert->longitude)
                     <p class="text-sm text-gray-500">Coordinates: {{ $alert->latitude }}, {{ $alert->longitude }}</p>
                     <a href="https://www.google.com/maps?q={{ $alert->latitude }},{{ $alert->longitude }}" target="_blank" class="inline-block mt-2 px-4 py-2 bg-blue-100 text-blue-600 rounded-lg text-sm">
-                        <i class="fas fa-map-marker-alt mr-2"></i>Open in Google Maps
+                        <i class="ti ti-map-pin mr-2"></i>Open in Google Maps
                     </a>
                 @endif
             </div>
@@ -62,13 +62,13 @@
                     <form action="{{ route('admin.sos.notify-contacts', $alert->id) }}" method="POST">
                         @csrf
                         <button class="px-4 py-2 {{ $alert->contacts_notified ? 'bg-gray-200 text-gray-600' : 'bg-blue-600 text-white' }} rounded-lg text-sm">
-                            <i class="fas fa-phone mr-2"></i>{{ $alert->contacts_notified ? 'Contacts Notified' : 'Notify Emergency Contacts' }}
+                            <i class="ti ti-phone mr-2"></i>{{ $alert->contacts_notified ? 'Contacts Notified' : 'Notify Emergency Contacts' }}
                         </button>
                     </form>
                     <form action="{{ route('admin.sos.notify-police', $alert->id) }}" method="POST">
                         @csrf
                         <button class="px-4 py-2 {{ $alert->police_notified ? 'bg-gray-200 text-gray-600' : 'bg-red-600 text-white' }} rounded-lg text-sm">
-                            <i class="fas fa-shield-alt mr-2"></i>{{ $alert->police_notified ? 'Police Notified' : 'Notify Police' }}
+                            <i class="ti ti-shield mr-2"></i>{{ $alert->police_notified ? 'Police Notified' : 'Notify Police' }}
                         </button>
                     </form>
                 </div>
@@ -81,12 +81,12 @@
                     </div>
                     <div class="flex gap-3">
                         <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg">
-                            <i class="fas fa-check mr-2"></i>Mark as Resolved
+                            <i class="ti ti-check mr-2"></i>Mark as Resolved
                         </button>
                         <form action="{{ route('admin.sos.false-alarm', $alert->id) }}" method="POST" class="inline">
                             @csrf
                             <button type="submit" class="px-4 py-2 bg-gray-600 text-white rounded-lg">
-                                <i class="fas fa-times mr-2"></i>False Alarm
+                                <i class="ti ti-x mr-2"></i>False Alarm
                             </button>
                         </form>
                     </div>
@@ -102,7 +102,7 @@
             <h3 class="font-semibold text-gray-800 mb-4">User</h3>
             <div class="flex items-center space-x-3 mb-4">
                 <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-user text-blue-500"></i>
+                    <i class="ti ti-user text-blue-500"></i>
                 </div>
                 <div>
                     <p class="font-medium text-gray-800">{{ $alert->user->name ?? 'N/A' }}</p>

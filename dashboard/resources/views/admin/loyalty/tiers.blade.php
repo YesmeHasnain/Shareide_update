@@ -8,10 +8,10 @@
     <!-- Add Tier Button -->
     <div class="flex justify-between items-center">
         <a href="{{ route('admin.loyalty.index') }}" class="flex items-center gap-2 text-sm" :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-800'">
-            <i class="fas fa-arrow-left"></i> Back to Loyalty
+            <i class="ti ti-arrow-left"></i> Back to Loyalty
         </a>
         <button onclick="document.getElementById('addTierModal').classList.remove('hidden')" class="btn-primary px-4 py-2 rounded-xl">
-            <i class="fas fa-plus mr-2"></i>Add Tier
+            <i class="ti ti-plus mr-2"></i>Add Tier
         </button>
     </div>
 
@@ -21,7 +21,7 @@
         <div class="rounded-2xl p-6 border-t-4" :class="darkMode ? 'bg-dark-200' : 'bg-white shadow-lg'" style="border-top-color: {{ $tier->badge_color }}">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background-color: {{ $tier->badge_color }}">
-                    <i class="fas fa-crown text-white text-2xl"></i>
+                    <i class="ti ti-crown text-white text-2xl"></i>
                 </div>
                 <span class="px-3 py-1 rounded-full text-xs font-medium {{ $tier->is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-700' }}">
                     {{ $tier->is_active ? 'Active' : 'Inactive' }}
@@ -56,7 +56,7 @@
                 <ul class="space-y-1">
                     @foreach($tier->benefits as $benefit)
                     <li class="text-xs flex items-center gap-2" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
-                        <i class="fas fa-check text-green-500"></i>{{ $benefit }}
+                        <i class="ti ti-check text-green-500"></i>{{ $benefit }}
                     </li>
                     @endforeach
                 </ul>
@@ -73,7 +73,7 @@
         <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-bold" :class="darkMode ? 'text-white' : 'text-gray-800'">Add New Tier</h3>
             <button onclick="document.getElementById('addTierModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times"></i>
+                <i class="ti ti-x"></i>
             </button>
         </div>
         <form action="{{ route('admin.loyalty.tiers.store') }}" method="POST" class="space-y-4">

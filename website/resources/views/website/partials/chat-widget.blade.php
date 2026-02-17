@@ -40,7 +40,19 @@
 
         <div class="chat-popup__quick" id="quickButtons" style="display:none;"></div>
 
+        <div class="chat-popup__file-preview" id="chatFilePreview" style="display:none;">
+            <div class="chat-file-preview">
+                <div class="chat-file-preview__thumb" id="chatFileThumb"><i class="fas fa-file"></i></div>
+                <div class="chat-file-preview__info">
+                    <span class="chat-file-preview__name" id="chatFileName"></span>
+                    <span class="chat-file-preview__size" id="chatFileSize"></span>
+                </div>
+                <button class="chat-file-preview__remove" id="chatFileRemove"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
         <form class="chat-popup__form" id="chatForm" style="display:none;">
+            <input type="file" id="chatFileInput" style="display:none;" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip">
+            <button type="button" class="chat-attach-btn" id="chatAttachBtn" title="Attach file"><i class="fas fa-paperclip"></i></button>
             <input type="text" placeholder="Type your question..." id="chatInput">
             <button type="submit"><i class="fas fa-paper-plane"></i></button>
         </form>

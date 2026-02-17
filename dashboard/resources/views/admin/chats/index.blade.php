@@ -44,8 +44,8 @@
                 <option value="locked" {{ request('status') == 'locked' ? 'selected' : '' }}>Locked</option>
             </select>
         </div>
-        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="fas fa-search mr-2"></i>Filter</button>
-        <a href="{{ route('admin.chats.search') }}" class="px-4 py-2 bg-purple-600 text-white rounded-lg"><i class="fas fa-comment-dots mr-2"></i>Search Messages</a>
+        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="ti ti-search mr-2"></i>Filter</button>
+        <a href="{{ route('admin.chats.search') }}" class="px-4 py-2 bg-purple-600 text-white rounded-lg"><i class="ti ti-message-dots mr-2"></i>Search Messages</a>
     </form>
 </div>
 
@@ -88,14 +88,14 @@
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex space-x-2">
-                                <a href="{{ route('admin.chats.show', $chat->id) }}" class="p-2 text-blue-600 hover:bg-blue-50 rounded"><i class="fas fa-eye"></i></a>
+                                <a href="{{ route('admin.chats.show', $chat->id) }}" class="p-2 text-blue-600 hover:bg-blue-50 rounded"><i class="ti ti-eye"></i></a>
                                 <form action="{{ route('admin.chats.toggle-lock', $chat->id) }}" method="POST">
                                     @csrf
                                     <button class="p-2 {{ $chat->status == 'active' ? 'text-red-600 hover:bg-red-50' : 'text-green-600 hover:bg-green-50' }} rounded">
                                         <i class="fas {{ $chat->status == 'active' ? 'fa-lock' : 'fa-unlock' }}"></i>
                                     </button>
                                 </form>
-                                <a href="{{ route('admin.chats.export', $chat->id) }}" class="p-2 text-gray-600 hover:bg-gray-50 rounded"><i class="fas fa-download"></i></a>
+                                <a href="{{ route('admin.chats.export', $chat->id) }}" class="p-2 text-gray-600 hover:bg-gray-50 rounded"><i class="ti ti-download"></i></a>
                             </div>
                         </td>
                     </tr>

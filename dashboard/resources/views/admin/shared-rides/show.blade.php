@@ -7,13 +7,13 @@
     <h1>Shared Ride #{{ $ride->id }}</h1>
     <div class="page-actions">
         <a href="{{ route('admin.shared-rides.index') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Rides
+            <i class="ti ti-arrow-left"></i> Back to Rides
         </a>
         @if(!in_array($ride->status, ['completed', 'cancelled']))
         <form action="{{ route('admin.shared-rides.cancel', $ride->id) }}" method="POST" style="display: inline;">
             @csrf
             <button type="submit" class="btn btn-danger" onclick="return confirm('Cancel this ride and all bookings?')">
-                <i class="fas fa-times"></i> Cancel Ride
+                <i class="ti ti-x"></i> Cancel Ride
             </button>
         </form>
         @endif
@@ -24,7 +24,7 @@
     <!-- Ride Info Card -->
     <div class="card">
         <div class="card-header">
-            <h3><i class="fas fa-car"></i> Ride Information</h3>
+            <h3><i class="ti ti-car"></i> Ride Information</h3>
             @php
                 $statusColors = [
                     'open' => 'success',
@@ -71,7 +71,7 @@
     <!-- Driver Info Card -->
     <div class="card">
         <div class="card-header">
-            <h3><i class="fas fa-user"></i> Driver Information</h3>
+            <h3><i class="ti ti-user"></i> Driver Information</h3>
         </div>
         <div class="card-body">
             <div class="driver-profile">
@@ -80,11 +80,11 @@
                 </div>
                 <div class="driver-info">
                     <h4>{{ $ride->driver->name ?? 'N/A' }}</h4>
-                    <p><i class="fas fa-phone"></i> {{ $ride->driver->phone ?? 'N/A' }}</p>
-                    <p><i class="fas fa-envelope"></i> {{ $ride->driver->email ?? 'N/A' }}</p>
+                    <p><i class="ti ti-phone"></i> {{ $ride->driver->phone ?? 'N/A' }}</p>
+                    <p><i class="ti ti-mail"></i> {{ $ride->driver->email ?? 'N/A' }}</p>
                     @if($ride->driver->driver)
-                    <p><i class="fas fa-car"></i> {{ $ride->driver->driver->vehicle_model ?? '' }} - {{ $ride->driver->driver->vehicle_color ?? '' }}</p>
-                    <p><i class="fas fa-id-badge"></i> {{ $ride->driver->driver->vehicle_number ?? '' }}</p>
+                    <p><i class="ti ti-car"></i> {{ $ride->driver->driver->vehicle_model ?? '' }} - {{ $ride->driver->driver->vehicle_color ?? '' }}</p>
+                    <p><i class="ti ti-id-badge"></i> {{ $ride->driver->driver->vehicle_number ?? '' }}</p>
                     @endif
                 </div>
             </div>
@@ -95,13 +95,13 @@
 <!-- Route Card -->
 <div class="card">
     <div class="card-header">
-        <h3><i class="fas fa-route"></i> Route Details</h3>
+        <h3><i class="ti ti-route"></i> Route Details</h3>
     </div>
     <div class="card-body">
         <div class="route-display">
             <div class="route-point">
                 <div class="route-marker pickup">
-                    <i class="fas fa-circle"></i>
+                    <i class="ti ti-circle"></i>
                 </div>
                 <div class="route-content">
                     <label>Pickup Location</label>
@@ -112,7 +112,7 @@
             <div class="route-line"></div>
             <div class="route-point">
                 <div class="route-marker dropoff">
-                    <i class="fas fa-circle"></i>
+                    <i class="ti ti-circle"></i>
                 </div>
                 <div class="route-content">
                     <label>Dropoff Location</label>
@@ -133,7 +133,7 @@
 <!-- Bookings Card -->
 <div class="card">
     <div class="card-header">
-        <h3><i class="fas fa-ticket-alt"></i> Bookings ({{ $ride->bookings->count() }})</h3>
+        <h3><i class="ti ti-ticket"></i> Bookings ({{ $ride->bookings->count() }})</h3>
     </div>
     <div class="card-body">
         @if($ride->bookings->count() > 0)
@@ -193,7 +193,7 @@
                         <form action="{{ route('admin.shared-rides.cancel-booking', $booking->id) }}" method="POST" style="display: inline;">
                             @csrf
                             <button type="submit" class="btn btn-sm btn-danger" title="Cancel" onclick="return confirm('Cancel this booking?')">
-                                <i class="fas fa-times"></i>
+                                <i class="ti ti-x"></i>
                             </button>
                         </form>
                         @endif
@@ -204,7 +204,7 @@
         </table>
         @else
         <div class="empty-state">
-            <i class="fas fa-ticket-alt"></i>
+            <i class="ti ti-ticket"></i>
             <p>No bookings yet</p>
         </div>
         @endif
@@ -214,7 +214,7 @@
 <!-- Earnings Summary -->
 <div class="card">
     <div class="card-header">
-        <h3><i class="fas fa-coins"></i> Earnings Summary</h3>
+        <h3><i class="ti ti-coins"></i> Earnings Summary</h3>
     </div>
     <div class="card-body">
         @php
@@ -225,7 +225,7 @@
         <div class="earnings-grid">
             <div class="earning-item">
                 <div class="earning-icon" style="background: linear-gradient(135deg, #10B981, #059669);">
-                    <i class="fas fa-check-circle"></i>
+                    <i class="ti ti-circle-check"></i>
                 </div>
                 <div>
                     <div class="earning-value">Rs. {{ number_format($totalEarnings) }}</div>
@@ -234,7 +234,7 @@
             </div>
             <div class="earning-item">
                 <div class="earning-icon" style="background: linear-gradient(135deg, #F59E0B, #D97706);">
-                    <i class="fas fa-clock"></i>
+                    <i class="ti ti-clock"></i>
                 </div>
                 <div>
                     <div class="earning-value">Rs. {{ number_format($pendingEarnings) }}</div>
@@ -243,7 +243,7 @@
             </div>
             <div class="earning-item">
                 <div class="earning-icon" style="background: linear-gradient(135deg, #6366F1, #8B5CF6);">
-                    <i class="fas fa-users"></i>
+                    <i class="ti ti-users"></i>
                 </div>
                 <div>
                     <div class="earning-value">{{ $confirmedBookings }}</div>

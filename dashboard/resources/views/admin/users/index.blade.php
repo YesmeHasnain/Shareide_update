@@ -37,10 +37,10 @@
             </select>
         </div>
         <button type="submit" class="px-6 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all">
-            <i class="fas fa-search mr-2"></i>Filter
+            <i class="ti ti-search mr-2"></i>Filter
         </button>
         <a href="{{ route('admin.users.index') }}" class="px-4 py-2 bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-dark-100 transition-colors">
-            <i class="fas fa-times"></i>
+            <i class="ti ti-x"></i>
         </a>
     </form>
 </div>
@@ -50,7 +50,7 @@
     <div class="p-4 border-b border-gray-100 dark:border-dark-100 flex justify-between items-center">
         <h3 class="font-semibold text-gray-800 dark:text-white">All Users</h3>
         <a href="{{ route('admin.users.export', request()->query()) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm transition-colors">
-            <i class="fas fa-download mr-2"></i>Export
+            <i class="ti ti-download mr-2"></i>Export
         </a>
     </div>
 
@@ -62,6 +62,7 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Contact</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Wallet</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Rides</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Last IP</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Joined</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
@@ -95,6 +96,13 @@
                             <p class="text-sm font-medium text-green-600">PKR {{ number_format($user->riderWallet->balance ?? 0) }}</p>
                         </td>
                         <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{{ $user->ridesAsRider()->count() }}</td>
+                        <td class="px-4 py-3">
+                            @if($user->last_ip)
+                                <code class="text-[11px] bg-gray-100 dark:bg-dark-100 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-400">{{ $user->last_ip }}</code>
+                            @else
+                                <span class="text-xs text-gray-400">-</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{{ $user->created_at->format('M d, Y') }}</td>
                         <td class="px-4 py-3">
                             @if($user->status == 'active')
@@ -106,20 +114,20 @@
                         <td class="px-4 py-3">
                             <div class="flex space-x-2">
                                 <a href="{{ route('admin.users.show', $user->id) }}" class="p-2 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded transition-colors">
-                                    <i class="fas fa-eye"></i>
+                                    <i class="ti ti-eye"></i>
                                 </a>
                                 @if($user->status == 'active')
                                     <form action="{{ route('admin.users.block', $user->id) }}" method="POST" onsubmit="return confirm('Block this user?')">
                                         @csrf
                                         <button class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors">
-                                            <i class="fas fa-ban"></i>
+                                            <i class="ti ti-ban"></i>
                                         </button>
                                     </form>
                                 @else
                                     <form action="{{ route('admin.users.unblock', $user->id) }}" method="POST">
                                         @csrf
                                         <button class="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors">
-                                            <i class="fas fa-unlock"></i>
+                                            <i class="ti ti-lock-open"></i>
                                         </button>
                                     </form>
                                 @endif
@@ -129,7 +137,7 @@
                 @empty
                     <tr>
                         <td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                            <i class="fas fa-users text-4xl mb-2 opacity-50"></i>
+                            <i class="ti ti-users text-4xl mb-2 opacity-50"></i>
                             <p>No users found</p>
                         </td>
                     </tr>

@@ -6,7 +6,7 @@
 @section('content')
 <div class="space-y-6">
     <a href="{{ route('admin.loyalty.index') }}" class="flex items-center gap-2 text-sm" :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-800'">
-        <i class="fas fa-arrow-left"></i> Back to Loyalty
+        <i class="ti ti-arrow-left"></i> Back to Loyalty
     </a>
 
     <!-- Redemptions Table -->
@@ -59,7 +59,7 @@
                 @empty
                 <tr>
                     <td colspan="7" class="px-6 py-12 text-center" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
-                        <i class="fas fa-inbox text-5xl mb-3 opacity-30"></i>
+                        <i class="ti ti-inbox text-5xl mb-3 opacity-30"></i>
                         <p>No redemptions yet</p>
                     </td>
                 </tr>

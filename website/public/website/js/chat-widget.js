@@ -1,5 +1,5 @@
-// SHAREIDE - Smart AI Chat Widget
-// Rule-based chatbot with live chat escalation
+// SHAREIDE - AI Chat Widget (Powered by Gemini)
+// Intelligent chatbot with live chat escalation
 
 (function() {
 
@@ -7,165 +7,17 @@
   var STORAGE_KEY = 'shareide_support';
 
   // ============================================
-  // BOT KNOWLEDGE BASE
-  // ============================================
-  var BOT_KNOWLEDGE = {
-    categories: {
-      booking: {
-        keywords: ['booking', 'book', 'ride', 'trip', 'schedule', 'reserve', 'pickup', 'drop', 'destination', 'cancel ride', 'cancel booking'],
-        subCategories: {
-          cancel_ride: { keywords: ['cancel', 'cancellation', 'cancel ride', 'cancel booking', 'cancel my ride', 'cancel trip'] },
-          no_driver: { keywords: ['no driver', 'driver not found', 'no one accepted', 'waiting for driver', 'can\'t find driver', 'no drivers available'] },
-          wrong_location: { keywords: ['wrong location', 'wrong pickup', 'wrong address', 'wrong drop', 'wrong destination', 'location wrong'] },
-          schedule_ride: { keywords: ['schedule', 'advance booking', 'book later', 'pre-book', 'book for tomorrow', 'future ride'] },
-          ride_status: { keywords: ['ride status', 'where is my ride', 'track', 'eta', 'arrival time', 'how long'] }
-        }
-      },
-      payment: {
-        keywords: ['payment', 'pay', 'money', 'charge', 'charged', 'bill', 'receipt', 'wallet', 'refund', 'price', 'fare', 'cost', 'expensive', 'overcharge'],
-        subCategories: {
-          overcharge: { keywords: ['overcharge', 'overcharged', 'too much', 'extra charge', 'wrong amount', 'charged more', 'expensive'] },
-          refund: { keywords: ['refund', 'money back', 'return money', 'get refund', 'want refund', 'refund please'] },
-          wallet: { keywords: ['wallet', 'balance', 'top up', 'topup', 'add money', 'wallet balance', 'deposit'] },
-          payment_failed: { keywords: ['payment failed', 'payment error', 'can\'t pay', 'payment issue', 'transaction failed', 'declined'] },
-          receipt: { keywords: ['receipt', 'invoice', 'bill', 'fare breakdown', 'trip cost'] }
-        }
-      },
-      driver: {
-        keywords: ['driver', 'captain', 'rude', 'behavior', 'behaviour', 'complaint', 'unprofessional', 'rating', 'rate'],
-        subCategories: {
-          behavior: { keywords: ['rude', 'behavior', 'behaviour', 'unprofessional', 'abusive', 'bad driver', 'complaint about driver', 'misbehave'] },
-          rating: { keywords: ['rating', 'rate', 'review', 'stars', 'give rating', 'rate driver'] },
-          wrong_route: { keywords: ['wrong route', 'long route', 'longer route', 'detour', 'not following map'] },
-          vehicle_issue: { keywords: ['vehicle', 'car condition', 'dirty car', 'ac not working', 'different car', 'wrong vehicle'] }
-        }
-      },
-      app_bug: {
-        keywords: ['app', 'bug', 'crash', 'error', 'not working', 'broken', 'glitch', 'freeze', 'stuck', 'loading', 'update'],
-        subCategories: {
-          crash: { keywords: ['crash', 'crashes', 'crashing', 'force close', 'app closes', 'keeps closing'] },
-          login: { keywords: ['login', 'log in', 'can\'t login', 'otp', 'verification', 'code not received', 'sms not coming'] },
-          gps: { keywords: ['gps', 'location', 'map', 'not showing location', 'location wrong', 'gps not working'] },
-          loading: { keywords: ['loading', 'stuck', 'freeze', 'not loading', 'slow', 'taking too long', 'spinning'] },
-          update: { keywords: ['update', 'latest version', 'new version', 'update app', 'outdated'] }
-        }
-      },
-      safety: {
-        keywords: ['safety', 'safe', 'emergency', 'sos', 'accident', 'unsafe', 'danger', 'harass', 'threat'],
-        subCategories: {
-          emergency: { keywords: ['emergency', 'sos', 'accident', 'danger', 'help me', 'immediate', 'urgent help'] },
-          harassment: { keywords: ['harass', 'harassment', 'threat', 'threaten', 'uncomfortable', 'inappropriate', 'unsafe'] },
-          lost_item: { keywords: ['lost', 'left', 'forgot', 'forgotten', 'lost item', 'left phone', 'left bag', 'belongings'] }
-        }
-      },
-      account: {
-        keywords: ['account', 'profile', 'password', 'email', 'phone number', 'delete account', 'deactivate', 'settings'],
-        subCategories: {
-          update_info: { keywords: ['change phone', 'change email', 'update profile', 'change name', 'edit profile'] },
-          delete_account: { keywords: ['delete account', 'deactivate', 'remove account', 'close account'] },
-          verification: { keywords: ['verify', 'verification', 'cnic', 'identity', 'documents', 'kyc'] }
-        }
-      }
-    },
-
-    responses: {
-      'booking.cancel_ride': 'To cancel a ride:\n\n1. Open the SHAREIDE app\n2. Go to your active ride\n3. Tap "Cancel Ride"\n4. Select a reason\n\nNote: Cancellation after driver acceptance may incur a small fee. Free cancellation is available within 2 minutes of booking.',
-
-      'booking.no_driver': 'If no driver is accepting your ride:\n\n1. Check if your pickup location is accessible\n2. Try adjusting the pickup point slightly\n3. Wait a few more minutes - drivers are being notified\n4. Try booking again during peak hours more drivers are available\n\nIf the problem persists, try using the ride bidding feature for faster matching.',
-
-      'booking.wrong_location': 'For wrong pickup/drop location:\n\n1. You can change the destination during the ride from the app\n2. If the ride hasn\'t started, cancel and rebook with the correct location\n3. Contact the driver directly through the in-app chat to coordinate\n\nFor location accuracy, make sure GPS is enabled and you\'re in an open area.',
-
-      'booking.schedule_ride': 'To schedule a ride in advance:\n\n1. Open SHAREIDE app\n2. Set your pickup and drop location\n3. Tap "Schedule for Later"\n4. Select date and time\n5. Confirm your booking\n\nYou can schedule rides up to 7 days in advance. You\'ll receive a reminder 30 minutes before your ride.',
-
-      'booking.ride_status': 'To check your ride status:\n\n1. Open the SHAREIDE app\n2. Your active ride appears on the home screen\n3. You can see the driver\'s live location and ETA\n\nYou\'ll also receive push notifications for ride updates.',
-
-      'payment.overcharge': 'If you believe you were overcharged:\n\n1. Check your ride receipt in the app (Ride History > Trip Details)\n2. Verify the fare breakdown including distance, time, and surge pricing\n3. If the charge is incorrect, you can dispute it through the app\n\nWe take overcharging seriously. Let me create a support ticket for our team to review your case.',
-
-      'payment.refund': 'For refund requests:\n\n1. Go to Ride History in the app\n2. Select the trip\n3. Tap "Report an Issue"\n4. Choose "Request Refund"\n\nRefunds are typically processed within 3-5 business days. The amount will be credited to your original payment method or SHAREIDE Wallet.',
-
-      'payment.wallet': 'SHAREIDE Wallet information:\n\n1. To add money: Go to Wallet > Top Up > Select amount\n2. Payment methods: Bank transfer, credit/debit card, or mobile wallet\n3. Wallet balance can be used for all rides\n4. Promotional credits are automatically applied\n\nFor wallet issues, make sure your payment method is up to date.',
-
-      'payment.payment_failed': 'If your payment failed:\n\n1. Check your internet connection\n2. Verify your card/account has sufficient balance\n3. Try a different payment method\n4. Clear app cache and try again\n\nIf the amount was deducted but the ride shows unpaid, it will be automatically reversed within 24-48 hours.',
-
-      'payment.receipt': 'To get your ride receipt:\n\n1. Go to Ride History in the app\n2. Select the completed trip\n3. Tap "View Receipt"\n4. You can download or email the receipt\n\nReceipts are also sent to your registered email after each ride.',
-
-      'driver.behavior': 'We\'re sorry about your experience. Driver behavior complaints are taken very seriously.\n\nI\'ll need to create a support ticket so our safety team can investigate and take appropriate action against the driver. This may include warnings, suspension, or permanent removal from the platform.',
-
-      'driver.rating': 'To rate your driver:\n\n1. After the ride ends, a rating screen appears automatically\n2. Select stars (1-5) and add comments\n3. You can also rate later from Ride History\n\nYour feedback helps maintain service quality and is anonymous to drivers.',
-
-      'driver.wrong_route': 'If your driver took a wrong/longer route:\n\n1. The fare is calculated based on estimated distance, not actual route taken\n2. If the fare seems too high, check the trip details in Ride History\n3. You can report the issue and request a fare adjustment\n\nWant me to create a support ticket for a fare review?',
-
-      'driver.vehicle_issue': 'For vehicle condition complaints:\n\n1. Rate the ride and mention vehicle issues in your feedback\n2. For safety concerns (no seatbelts, broken lights), report immediately\n3. If the vehicle doesn\'t match the app info, you can cancel without a fee\n\nWould you like to report this for our quality team to investigate?',
-
-      'app_bug.crash': 'If the app is crashing:\n\n1. Make sure you have the latest version installed\n2. Clear app cache: Settings > Apps > SHAREIDE > Clear Cache\n3. Restart your phone\n4. Uninstall and reinstall the app\n\nIf the issue persists, please note your phone model and Android/iOS version so we can investigate.',
-
-      'app_bug.login': 'For login issues:\n\n1. Check that you\'re using the correct phone number\n2. Make sure you have network connectivity\n3. Wait 60 seconds before requesting a new OTP\n4. Check SMS filters/blocked messages\n5. Try the WhatsApp OTP option if available\n\nIf OTP is still not arriving, it may be a carrier issue. Try on WiFi calling.',
-
-      'app_bug.gps': 'For GPS/location issues:\n\n1. Enable GPS/Location Services on your phone\n2. Set location permission to "Always" or "While Using"\n3. Go to an open area for better GPS signal\n4. Turn on WiFi for improved location accuracy\n5. Restart the app',
-
-      'app_bug.loading': 'If the app is loading slowly:\n\n1. Check your internet connection (WiFi or mobile data)\n2. Close other apps running in the background\n3. Clear app cache\n4. Update to the latest version\n\nIf speeds are slow during peak hours, please try again in a few minutes.',
-
-      'app_bug.update': 'To update the SHAREIDE app:\n\n1. Go to Google Play Store (Android) or App Store (iOS)\n2. Search for "SHAREIDE"\n3. Tap "Update" if available\n\nWe recommend enabling auto-updates for the best experience.',
-
-      'safety.emergency': 'For emergencies:\n\n1. Use the SOS button in the app immediately\n2. Call local emergency services (1122 / 15)\n3. Share your live location with trusted contacts\n\nYour safety is our top priority. I\'m creating an urgent support ticket right now.',
-
-      'safety.harassment': 'We take harassment complaints very seriously.\n\nPlease let me create a support ticket immediately. Our safety team will:\n1. Investigate the incident\n2. Take action against the reported person\n3. Follow up with you within 24 hours\n\nIf you feel unsafe right now, please call emergency services.',
-
-      'safety.lost_item': 'For lost items:\n\n1. Go to Ride History > Select the trip\n2. Tap "I lost an item"\n3. We\'ll contact the driver on your behalf\n4. You can also call the driver directly (available for 24 hours after the ride)\n\nMost items are recovered within 24 hours. A small delivery fee may apply.',
-
-      'account.update_info': 'To update your account info:\n\n1. Open the app > Profile\n2. Tap "Edit Profile"\n3. Update your name, email, or photo\n\nTo change your phone number, go to Settings > Change Phone Number. You\'ll need to verify the new number with an OTP.',
-
-      'account.delete_account': 'To delete your account:\n\n1. Go to Settings > Account > Delete Account\n2. You\'ll need to confirm your identity\n3. All ride history and data will be permanently removed\n4. Wallet balance should be withdrawn first\n\nAccount deletion is permanent and cannot be reversed.',
-
-      'account.verification': 'For account verification:\n\n1. Go to Profile > Verification\n2. Upload required documents (CNIC front/back)\n3. Take a selfie for identity verification\n4. Wait for review (usually 24-48 hours)\n\nVerified accounts get priority matching and higher trust scores.'
-    },
-
-    // Phrases that trigger immediate escalation
-    escalationTriggers: [
-      'talk to human', 'real person', 'talk to agent', 'live chat',
-      'talk to someone', 'human please', 'agent please', 'real agent',
-      'speak to someone', 'representative', 'customer service', 'support agent',
-      'connect me', 'transfer me', 'escalate', 'not helpful', 'useless bot'
-    ],
-
-    // Categories that auto-escalate to ticket (always create ticket)
-    autoEscalateCategories: [
-      'payment.overcharge', 'driver.behavior', 'safety.emergency', 'safety.harassment'
-    ],
-
-    // Category mapping to DB values
-    categoryToDb: {
-      booking: 'ride_issue',
-      payment: 'payment',
-      driver: 'driver_behavior',
-      app_bug: 'app_bug',
-      safety: 'other',
-      account: 'account',
-      general: 'other'
-    },
-
-    // Priority mapping
-    categoryPriority: {
-      'safety.emergency': 'urgent',
-      'safety.harassment': 'urgent',
-      'payment.overcharge': 'high',
-      'driver.behavior': 'high'
-    }
-  };
-
-  // ============================================
   // CHAT STATE
   // ============================================
   var CHAT_STATE = {
     phase: 'bot', // bot | collecting_info | live_chat
-    conversationHistory: [],
-    detectedCategory: null,
-    detectedSubCategory: null,
+    conversationHistory: [], // {role: 'user'|'bot', text: '...'}
     awaitingInput: null, // null | collect_name | collect_email | collect_phone
     userInfo: { name: '', email: '', phone: '' },
-    faqShown: false,
-    ticketData: null, // stored ticket after creation
-    lastMessageId: 0 // track last message ID for incremental polling
+    ticketData: null,
+    lastMessageId: 0,
+    detectedCategory: 'other',
+    isBotThinking: false
   };
 
   // ============================================
@@ -175,9 +27,7 @@
     try {
       var data = localStorage.getItem(STORAGE_KEY);
       return data ? JSON.parse(data) : null;
-    } catch (e) {
-      return null;
-    }
+    } catch (e) { return null; }
   }
 
   function saveTicketData(data) {
@@ -195,69 +45,6 @@
   }
 
   // ============================================
-  // CLASSIFIER
-  // ============================================
-  function classifyMessage(text) {
-    var lower = text.toLowerCase().trim();
-    var bestCategory = null;
-    var bestSubCategory = null;
-    var bestScore = 0;
-
-    // Check escalation triggers first
-    for (var i = 0; i < BOT_KNOWLEDGE.escalationTriggers.length; i++) {
-      if (lower.indexOf(BOT_KNOWLEDGE.escalationTriggers[i]) !== -1) {
-        return { category: 'escalate', subCategory: null, score: 100 };
-      }
-    }
-
-    var categories = BOT_KNOWLEDGE.categories;
-    for (var catKey in categories) {
-      var cat = categories[catKey];
-      var catScore = 0;
-
-      // Score main category keywords
-      for (var k = 0; k < cat.keywords.length; k++) {
-        if (lower.indexOf(cat.keywords[k]) !== -1) {
-          catScore += cat.keywords[k].split(' ').length * 2;
-        }
-      }
-
-      if (catScore > 0) {
-        // Score sub-categories
-        var bestSub = null;
-        var bestSubScore = 0;
-
-        for (var subKey in cat.subCategories) {
-          var sub = cat.subCategories[subKey];
-          var subScore = 0;
-          for (var s = 0; s < sub.keywords.length; s++) {
-            if (lower.indexOf(sub.keywords[s]) !== -1) {
-              subScore += sub.keywords[s].split(' ').length * 3;
-            }
-          }
-          if (subScore > bestSubScore) {
-            bestSubScore = subScore;
-            bestSub = subKey;
-          }
-        }
-
-        var totalScore = catScore + bestSubScore;
-        if (totalScore > bestScore) {
-          bestScore = totalScore;
-          bestCategory = catKey;
-          bestSubCategory = bestSub;
-        }
-      }
-    }
-
-    return {
-      category: bestCategory,
-      subCategory: bestSubCategory,
-      score: bestScore
-    };
-  }
-
-  // ============================================
   // MAIN SETUP
   // ============================================
   function setupChat() {
@@ -268,7 +55,6 @@
     var chatInput = document.getElementById('chatInput');
     var chatMessages = document.getElementById('chatMessages');
     var chatBadge = document.querySelector('.chat-badge');
-    var contactInfoForm = document.getElementById('contactInfoForm');
     var quickButtons = document.getElementById('quickButtons');
     var newTicketBtn = document.getElementById('newTicketBtn');
 
@@ -282,16 +68,24 @@
     var chatHeaderStatus = document.getElementById('chatHeaderStatus');
     var currentAgent = null;
 
+    // File attachment elements
+    var chatFileInput = document.getElementById('chatFileInput');
+    var chatAttachBtn = document.getElementById('chatAttachBtn');
+    var chatFilePreview = document.getElementById('chatFilePreview');
+    var chatFileThumb = document.getElementById('chatFileThumb');
+    var chatFileName = document.getElementById('chatFileName');
+    var chatFileSize = document.getElementById('chatFileSize');
+    var chatFileRemove = document.getElementById('chatFileRemove');
+    var chatPendingFile = null;
+
     // ============================================
     // UI HELPERS
     // ============================================
     function scrollToBottom() {
-      if (chatMessages) {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-      }
+      if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    function addMessage(text, type, time, senderName) {
+    function addMessage(text, type, time, senderName, attachUrl, attachName) {
       if (!chatMessages) return;
       var div = document.createElement('div');
       div.className = 'chat-message chat-message--' + type;
@@ -299,21 +93,20 @@
       if (senderName && type === 'bot') {
         html += '<span class="chat-sender">' + escapeHtml(senderName) + '</span>';
       }
-      html += '<p>' + escapeHtml(text) + '</p>';
+      if (attachUrl) {
+        var ext = (attachName || attachUrl).split('.').pop().toLowerCase().split('?')[0];
+        var isImage = ['jpg','jpeg','png','gif','webp'].indexOf(ext) !== -1;
+        if (isImage) {
+          html += '<a href="' + escapeHtml(attachUrl) + '" target="_blank" class="chat-attachment-img"><img src="' + escapeHtml(attachUrl) + '" alt="Image"></a>';
+        } else {
+          html += '<a href="' + escapeHtml(attachUrl) + '" target="_blank" class="chat-attachment-file"><i class="fas fa-file"></i> <span>' + escapeHtml(attachName || 'File') + '</span> <i class="fas fa-download"></i></a>';
+        }
+      }
+      if (text) {
+        html += '<p>' + escapeHtml(text) + '</p>';
+      }
       if (time) html += '<span class="chat-time">' + escapeHtml(time) + '</span>';
       div.innerHTML = html;
-      chatMessages.appendChild(div);
-      scrollToBottom();
-
-      // Track conversation
-      CHAT_STATE.conversationHistory.push({ role: type === 'user' ? 'user' : 'bot', text: text });
-    }
-
-    function addBotHtml(html) {
-      if (!chatMessages) return;
-      var div = document.createElement('div');
-      div.className = 'chat-message chat-message--bot';
-      div.innerHTML = '<p>' + html + '</p>';
       chatMessages.appendChild(div);
       scrollToBottom();
     }
@@ -339,7 +132,6 @@
     function showTypingIndicator() {
       var existing = document.getElementById('typingIndicator');
       if (existing) existing.remove();
-
       var div = document.createElement('div');
       div.className = 'chat-message chat-message--bot';
       div.id = 'typingIndicator';
@@ -351,25 +143,6 @@
     function hideTypingIndicator() {
       var el = document.getElementById('typingIndicator');
       if (el) el.remove();
-    }
-
-    function addBotMessageWithDelay(text, callback) {
-      showTypingIndicator();
-      setTimeout(function() {
-        hideTypingIndicator();
-        addMessage(text, 'bot');
-        if (callback) callback();
-      }, 800 + Math.random() * 600);
-    }
-
-    function addBotHtmlWithDelay(html, callback) {
-      showTypingIndicator();
-      setTimeout(function() {
-        hideTypingIndicator();
-        addBotHtml(html);
-        CHAT_STATE.conversationHistory.push({ role: 'bot', text: '(quick options shown)' });
-        if (callback) callback();
-      }, 800 + Math.random() * 600);
     }
 
     function showQuickReplies(options) {
@@ -398,28 +171,20 @@
       if (!agent || !agent.name) return;
       if (currentAgent && currentAgent.name === agent.name) return;
       currentAgent = agent;
-
-      // Show agent bar
       if (agentBar) {
         agentBar.style.display = 'flex';
         if (agentAvatar) agentAvatar.textContent = agent.initial || agent.name.charAt(0).toUpperCase();
         if (agentNameEl) agentNameEl.textContent = agent.name;
       }
-
-      // Update header
       if (chatHeaderName) chatHeaderName.textContent = agent.name;
-      if (chatHeaderStatus) {
-        chatHeaderStatus.innerHTML = '<span class="online-dot"></span> Support Agent';
-      }
+      if (chatHeaderStatus) chatHeaderStatus.innerHTML = '<span class="online-dot"></span> Support Agent';
     }
 
     function hideAgentProfile() {
       currentAgent = null;
       if (agentBar) agentBar.style.display = 'none';
       if (chatHeaderName) chatHeaderName.textContent = 'SHAREIDE Support';
-      if (chatHeaderStatus) {
-        chatHeaderStatus.innerHTML = '<span class="online-dot"></span> Online';
-      }
+      if (chatHeaderStatus) chatHeaderStatus.innerHTML = '<span class="online-dot"></span> Online';
     }
 
     function setInputPlaceholder(text) {
@@ -436,18 +201,145 @@
     }
 
     // ============================================
-    // BOT PHASE LOGIC
+    // FILE ATTACHMENT HANDLING
+    // ============================================
+    if (chatAttachBtn) {
+      chatAttachBtn.addEventListener('click', function() {
+        if (CHAT_STATE.phase !== 'live_chat') return;
+        if (chatFileInput) chatFileInput.click();
+      });
+    }
+
+    if (chatFileInput) {
+      chatFileInput.addEventListener('change', function() {
+        var file = this.files[0];
+        if (!file) return;
+        if (file.size > 10 * 1024 * 1024) {
+          addMessage('File too large. Max 10MB.', 'bot');
+          this.value = '';
+          return;
+        }
+        chatPendingFile = file;
+        showChatFilePreview(file);
+      });
+    }
+
+    if (chatFileRemove) {
+      chatFileRemove.addEventListener('click', function() {
+        clearChatFilePreview();
+      });
+    }
+
+    function showChatFilePreview(file) {
+      if (!chatFilePreview) return;
+      chatFilePreview.style.display = 'block';
+      if (chatFileName) chatFileName.textContent = file.name;
+      if (chatFileSize) chatFileSize.textContent = formatFileSize(file.size);
+      if (file.type.startsWith('image/') && chatFileThumb) {
+        var reader = new FileReader();
+        reader.onload = function(e) { chatFileThumb.innerHTML = '<img src="' + e.target.result + '" alt="Preview">'; };
+        reader.readAsDataURL(file);
+      } else if (chatFileThumb) {
+        chatFileThumb.innerHTML = '<i class="fas fa-file"></i>';
+      }
+    }
+
+    function clearChatFilePreview() {
+      chatPendingFile = null;
+      if (chatFileInput) chatFileInput.value = '';
+      if (chatFilePreview) chatFilePreview.style.display = 'none';
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    async function sendFileMessage(file, caption) {
+      if (!currentTicket || !currentTicket.token) return;
+      var formData = new FormData();
+      formData.append('file', file);
+      if (caption) formData.append('message', caption);
+      var tempUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
+      addMessage(caption || '', 'user', null, null, tempUrl, file.name);
+      clearChatFilePreview();
+      try {
+        var response = await fetch(API_BASE_URL + '/support/ticket/' + currentTicket.token + '/upload', { method: 'POST', body: formData });
+        var data = await response.json();
+        if (data.success && data.message_id) CHAT_STATE.lastMessageId = data.message_id;
+      } catch (error) {
+        addMessage('Connection error. Please try again.', 'bot');
+      }
+    }
+
+    // ============================================
+    // AI CHATBOT (Gemini-powered)
+    // ============================================
+    async function sendToAI(userText) {
+      if (CHAT_STATE.isBotThinking) return;
+      CHAT_STATE.isBotThinking = true;
+
+      showTypingIndicator();
+      disableInput();
+
+      try {
+        var response = await fetch(API_BASE_URL + '/chatbot/message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            message: userText,
+            history: CHAT_STATE.conversationHistory.slice(-16) // last 16 messages for context
+          })
+        });
+
+        var data = await response.json();
+
+        hideTypingIndicator();
+        enableInput();
+        CHAT_STATE.isBotThinking = false;
+
+        if (data.success) {
+          addMessage(data.reply, 'bot');
+          CHAT_STATE.conversationHistory.push({ role: 'bot', text: data.reply });
+
+          if (data.category && data.category !== 'other') {
+            CHAT_STATE.detectedCategory = data.category;
+          }
+
+          // If AI says escalate, offer to connect with support
+          if (data.escalate) {
+            setTimeout(function() {
+              showQuickReplies([
+                { label: 'Connect me to support', value: '_connect_support', variant: 'escalate' },
+                { label: 'No thanks, this helped', value: '_ai_resolved', variant: 'confirm' }
+              ]);
+            }, 500);
+          }
+        } else {
+          addMessage('Sorry, I had trouble processing that. Please try again.', 'bot');
+        }
+
+      } catch (error) {
+        hideTypingIndicator();
+        enableInput();
+        CHAT_STATE.isBotThinking = false;
+        addMessage('Connection error. Please check your internet and try again.', 'bot');
+      }
+    }
+
+    // ============================================
+    // BOT GREETING
     // ============================================
     function showBotGreeting() {
-      chatMessages.innerHTML = '';
+      if (chatMessages) chatMessages.innerHTML = '';
       CHAT_STATE.conversationHistory = [];
       CHAT_STATE.phase = 'bot';
-      CHAT_STATE.detectedCategory = null;
-      CHAT_STATE.detectedSubCategory = null;
-      CHAT_STATE.faqShown = false;
       CHAT_STATE.awaitingInput = null;
+      CHAT_STATE.detectedCategory = 'other';
+      CHAT_STATE.isBotThinking = false;
 
-      if (contactInfoForm) contactInfoForm.style.display = 'none';
+      if (chatFilePreview) chatFilePreview.style.display = 'none';
       if (chatMessages) chatMessages.style.display = 'block';
       if (chatForm) chatForm.style.display = 'flex';
       if (newTicketBtn) newTicketBtn.style.display = 'none';
@@ -455,235 +347,64 @@
       enableInput();
       setInputPlaceholder('Type your question...');
 
-      addBotMessageWithDelay('Hi there! I\'m SHAREIDE\'s virtual assistant. How can I help you today?', function() {
-        showQuickReplies([
-          { label: 'Booking Issue', value: 'I have a booking issue' },
-          { label: 'Payment Help', value: 'I need help with payment' },
-          { label: 'Driver Complaint', value: 'I have a driver complaint' },
-          { label: 'App Problem', value: 'The app is not working' }
-        ]);
-      });
-    }
-
-    function handleBotPhase(text) {
-      var result = classifyMessage(text);
-
-      // Escalation requested
-      if (result.category === 'escalate') {
-        addBotMessageWithDelay('Of course! Let me connect you with our support team. I\'ll need a few details first.', function() {
-          startInfoCollection();
-        });
-        return;
-      }
-
-      // No match found
-      if (!result.category || result.score < 2) {
-        hideQuickReplies();
-        addBotMessageWithDelay('I\'m not sure I understood that. Could you tell me more about your issue? You can also choose from these topics:', function() {
-          showQuickReplies([
-            { label: 'Booking', value: 'I have a booking issue' },
-            { label: 'Payment', value: 'I need help with payment' },
-            { label: 'Driver', value: 'I have a driver complaint' },
-            { label: 'App Bug', value: 'The app is not working' }
-          ]);
-        });
-        return;
-      }
-
-      CHAT_STATE.detectedCategory = result.category;
-      CHAT_STATE.detectedSubCategory = result.subCategory;
-
-      var responseKey = result.category + '.' + result.subCategory;
-
-      // Check if this is an auto-escalate category
-      if (BOT_KNOWLEDGE.autoEscalateCategories.indexOf(responseKey) !== -1) {
-        hideQuickReplies();
-        var response = BOT_KNOWLEDGE.responses[responseKey];
-        if (response) {
-          addBotMessageWithDelay(response, function() {
-            addBotMessageWithDelay('I\'m creating a support ticket for this right away. I\'ll need a few details.', function() {
-              startInfoCollection();
-            });
-          });
-        } else {
-          addBotMessageWithDelay('This needs immediate attention from our team. Let me connect you with support.', function() {
-            startInfoCollection();
-          });
-        }
-        return;
-      }
-
-      // Have a sub-category match with FAQ
-      if (result.subCategory && BOT_KNOWLEDGE.responses[responseKey]) {
-        hideQuickReplies();
-        CHAT_STATE.faqShown = true;
-        addBotMessageWithDelay(BOT_KNOWLEDGE.responses[responseKey], function() {
-          showQuickReplies([
-            { label: 'Yes, this helped!', value: '_faq_resolved', variant: 'confirm' },
-            { label: 'No, I need more help', value: '_faq_not_resolved', variant: 'danger' },
-            { label: 'Talk to support', value: '_escalate', variant: 'escalate' }
-          ]);
-        });
-        return;
-      }
-
-      // Category matched but no specific sub-category — show sub-options
-      hideQuickReplies();
-      var subOptions = getSubCategoryOptions(result.category);
-      if (subOptions.length > 0) {
-        addBotMessageWithDelay('I see you need help with ' + formatCategoryName(result.category) + '. Can you be more specific?', function() {
-          showQuickReplies(subOptions);
-        });
-      } else {
-        addBotMessageWithDelay('I understand you need help with ' + formatCategoryName(result.category) + '. Let me connect you with our team for detailed assistance.', function() {
-          startInfoCollection();
-        });
-      }
-    }
-
-    function getSubCategoryOptions(category) {
-      var cat = BOT_KNOWLEDGE.categories[category];
-      if (!cat || !cat.subCategories) return [];
-
-      var labels = {
-        cancel_ride: 'Cancel a Ride',
-        no_driver: 'No Driver Found',
-        wrong_location: 'Wrong Location',
-        schedule_ride: 'Schedule Ride',
-        ride_status: 'Ride Status',
-        overcharge: 'Overcharged',
-        refund: 'Need Refund',
-        wallet: 'Wallet Issue',
-        payment_failed: 'Payment Failed',
-        receipt: 'Get Receipt',
-        behavior: 'Driver Behavior',
-        rating: 'Rate Driver',
-        wrong_route: 'Wrong Route',
-        vehicle_issue: 'Vehicle Problem',
-        crash: 'App Crashing',
-        login: 'Can\'t Login',
-        gps: 'GPS Issues',
-        loading: 'App Slow/Stuck',
-        update: 'App Update',
-        emergency: 'Emergency',
-        harassment: 'Harassment',
-        lost_item: 'Lost Item',
-        update_info: 'Update Info',
-        delete_account: 'Delete Account',
-        verification: 'Verification'
-      };
-
-      var options = [];
-      for (var subKey in cat.subCategories) {
-        options.push({
-          label: labels[subKey] || subKey.replace(/_/g, ' '),
-          value: 'I need help with ' + (labels[subKey] || subKey.replace(/_/g, ' ')).toLowerCase()
-        });
-      }
-
-      // Max 4 quick buttons
-      if (options.length > 4) {
-        options = options.slice(0, 3);
-        options.push({ label: 'Something else', value: '_escalate', variant: 'escalate' });
-      }
-
-      return options;
-    }
-
-    function formatCategoryName(cat) {
-      var names = {
-        booking: 'ride booking',
-        payment: 'payments',
-        driver: 'a driver issue',
-        app_bug: 'app problems',
-        safety: 'safety',
-        account: 'your account'
-      };
-      return names[cat] || cat;
-    }
-
-    function handleFaqResponse(text) {
-      if (text === '_faq_resolved') {
-        hideQuickReplies();
-        addBotMessageWithDelay('Great! Glad I could help. Is there anything else I can assist you with?', function() {
-          showQuickReplies([
-            { label: 'Yes, another question', value: '_new_question' },
-            { label: 'No, I\'m good', value: '_done', variant: 'confirm' }
-          ]);
-        });
-        return true;
-      }
-
-      if (text === '_faq_not_resolved' || text === '_escalate') {
-        hideQuickReplies();
-        addBotMessageWithDelay('No worries! Let me connect you with our support team for personalized help. I\'ll need a few details.', function() {
-          startInfoCollection();
-        });
-        return true;
-      }
-
-      if (text === '_new_question') {
-        hideQuickReplies();
-        CHAT_STATE.faqShown = false;
-        CHAT_STATE.detectedCategory = null;
-        CHAT_STATE.detectedSubCategory = null;
-        addBotMessageWithDelay('Sure! What else can I help you with?', function() {
-          showQuickReplies([
-            { label: 'Booking Issue', value: 'I have a booking issue' },
-            { label: 'Payment Help', value: 'I need help with payment' },
-            { label: 'Driver Complaint', value: 'I have a driver complaint' },
-            { label: 'App Problem', value: 'The app is not working' }
-          ]);
-        });
-        return true;
-      }
-
-      if (text === '_done') {
-        hideQuickReplies();
-        addBotMessageWithDelay('Thank you for using SHAREIDE! Have a great day. You can reopen this chat anytime.');
-        disableInput();
-        setInputPlaceholder('Chat ended. Click "New" to start over.');
-        if (newTicketBtn) newTicketBtn.style.display = 'block';
-        return true;
-      }
-
-      return false;
+      // Show greeting after small delay
+      showTypingIndicator();
+      setTimeout(function() {
+        hideTypingIndicator();
+        addMessage('Hi! I\'m SHAREIDE\'s AI assistant. How can I help you today? You can ask me anything about rides, payments, or your account - in any language! 🚗', 'bot');
+        CHAT_STATE.conversationHistory.push({ role: 'bot', text: 'Hi! I\'m SHAREIDE\'s AI assistant. How can I help you today?' });
+      }, 600);
     }
 
     // ============================================
-    // INFO COLLECTION PHASE
+    // INFO COLLECTION (for ticket creation)
     // ============================================
     function startInfoCollection() {
       CHAT_STATE.phase = 'collecting_info';
       CHAT_STATE.awaitingInput = 'collect_name';
       hideQuickReplies();
       setInputPlaceholder('Enter your full name...');
-      addBotMessageWithDelay('What\'s your name?');
+
+      showTypingIndicator();
+      setTimeout(function() {
+        hideTypingIndicator();
+        addMessage('I\'ll connect you with our support team. First, what\'s your name?', 'bot');
+      }, 400);
     }
 
     function handleInfoCollection(text) {
       if (CHAT_STATE.awaitingInput === 'collect_name') {
         if (text.trim().length < 2) {
-          addBotMessageWithDelay('Please enter a valid name (at least 2 characters).');
+          addMessage('Please enter a valid name (at least 2 characters).', 'bot');
           return;
         }
         CHAT_STATE.userInfo.name = text.trim();
         CHAT_STATE.awaitingInput = 'collect_email';
         setInputPlaceholder('Enter your email address...');
-        addBotMessageWithDelay('Thanks, ' + escapeHtml(CHAT_STATE.userInfo.name) + '! What\'s your email address?');
+
+        showTypingIndicator();
+        setTimeout(function() {
+          hideTypingIndicator();
+          addMessage('Thanks, ' + escapeHtml(CHAT_STATE.userInfo.name) + '! What\'s your email address?', 'bot');
+        }, 300);
         return;
       }
 
       if (CHAT_STATE.awaitingInput === 'collect_email') {
         var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(text.trim())) {
-          addBotMessageWithDelay('That doesn\'t look like a valid email. Please try again.');
+          addMessage('That doesn\'t look like a valid email. Please try again.', 'bot');
           return;
         }
         CHAT_STATE.userInfo.email = text.trim();
         CHAT_STATE.awaitingInput = 'collect_phone';
         setInputPlaceholder('Enter phone (or type "skip")...');
-        addBotMessageWithDelay('And your phone number? (You can type "skip" if you prefer not to share)');
+
+        showTypingIndicator();
+        setTimeout(function() {
+          hideTypingIndicator();
+          addMessage('And your phone number? (Type "skip" if you prefer not to share)', 'bot');
+        }, 300);
         return;
       }
 
@@ -694,12 +415,14 @@
           CHAT_STATE.userInfo.phone = text.trim();
         }
         CHAT_STATE.awaitingInput = null;
-
-        // Create the ticket
         hideQuickReplies();
-        addBotMessageWithDelay('Perfect! Creating your support ticket now...', function() {
+
+        showTypingIndicator();
+        setTimeout(function() {
+          hideTypingIndicator();
+          addMessage('Creating your support ticket now...', 'bot');
           createTicket();
-        });
+        }, 400);
         return;
       }
     }
@@ -718,44 +441,28 @@
     }
 
     function getTicketSubject() {
-      if (CHAT_STATE.detectedCategory && CHAT_STATE.detectedSubCategory) {
-        var labels = {
-          'booking.cancel_ride': 'Ride Cancellation Issue',
-          'booking.no_driver': 'No Driver Available',
-          'booking.wrong_location': 'Wrong Location Issue',
-          'booking.schedule_ride': 'Scheduled Ride Issue',
-          'booking.ride_status': 'Ride Status Inquiry',
-          'payment.overcharge': 'Overcharge Complaint',
-          'payment.refund': 'Refund Request',
-          'payment.wallet': 'Wallet Issue',
-          'payment.payment_failed': 'Payment Failed',
-          'payment.receipt': 'Receipt Request',
-          'driver.behavior': 'Driver Behavior Complaint',
-          'driver.rating': 'Driver Rating Issue',
-          'driver.wrong_route': 'Wrong Route Complaint',
-          'driver.vehicle_issue': 'Vehicle Condition Issue',
-          'app_bug.crash': 'App Crashing',
-          'app_bug.login': 'Login Issue',
-          'app_bug.gps': 'GPS Issue',
-          'app_bug.loading': 'App Performance Issue',
-          'app_bug.update': 'App Update Issue',
-          'safety.emergency': 'Safety Emergency',
-          'safety.harassment': 'Harassment Report',
-          'safety.lost_item': 'Lost Item Report',
-          'account.update_info': 'Account Update Request',
-          'account.delete_account': 'Account Deletion Request',
-          'account.verification': 'Verification Issue'
-        };
-        return labels[CHAT_STATE.detectedCategory + '.' + CHAT_STATE.detectedSubCategory] || 'Support Request (via Chatbot)';
+      // Try to use first user message as subject
+      for (var i = 0; i < CHAT_STATE.conversationHistory.length; i++) {
+        if (CHAT_STATE.conversationHistory[i].role === 'user') {
+          var msg = CHAT_STATE.conversationHistory[i].text;
+          if (msg.length > 5 && msg.length <= 100) return msg;
+          if (msg.length > 100) return msg.substring(0, 97) + '...';
+        }
       }
-      return 'Support Request (via Chatbot)';
+      return 'Support Request (via AI Chatbot)';
     }
 
     async function createTicket() {
       var transcript = buildConversationTranscript();
-      var dbCategory = BOT_KNOWLEDGE.categoryToDb[CHAT_STATE.detectedCategory] || 'other';
-      var priorityKey = CHAT_STATE.detectedCategory + '.' + CHAT_STATE.detectedSubCategory;
-      var priority = BOT_KNOWLEDGE.categoryPriority[priorityKey] || 'medium';
+      var categoryMap = {
+        payment: 'payment',
+        ride_issue: 'ride_issue',
+        driver_behavior: 'driver_behavior',
+        app_bug: 'app_bug',
+        account: 'account',
+        other: 'other'
+      };
+      var dbCategory = categoryMap[CHAT_STATE.detectedCategory] || 'other';
 
       try {
         var response = await fetch(API_BASE_URL + '/contact', {
@@ -768,7 +475,7 @@
             subject: getTicketSubject(),
             message: transcript,
             category: dbCategory,
-            priority: priority,
+            priority: 'medium',
             source: 'chatbot'
           })
         });
@@ -788,14 +495,12 @@
           };
           saveTicketData(currentTicket);
           CHAT_STATE.ticketData = currentTicket;
-
           switchToLiveChat(data.ticket_number);
         } else {
           addMessage('Sorry, there was an error creating your ticket. Please try again.', 'bot');
           enableInput();
         }
       } catch (error) {
-        console.error('Ticket creation error:', error);
         addMessage('Connection error. Please check your internet and try again.', 'bot');
         enableInput();
       }
@@ -810,12 +515,13 @@
 
       addTransition('Connected to Support');
 
-      addBotHtml(
-        '<strong>Ticket #' + escapeHtml(String(ticketNumber)) + ' created!</strong>\n' +
-        'Your conversation has been sent to our support team. ' +
-        'An agent will respond here shortly.\n\n' +
-        '<span class="live-badge"><span class="pulse-dot"></span> Live Chat Active</span>'
-      );
+      var div = document.createElement('div');
+      div.className = 'chat-message chat-message--bot';
+      div.innerHTML = '<p><strong>Ticket #' + escapeHtml(String(ticketNumber)) + ' created!</strong>\n' +
+        'Your conversation has been sent to our support team. An agent will respond here shortly.\n\n' +
+        '<span class="live-badge"><span class="pulse-dot"></span> Live Chat Active</span></p>';
+      chatMessages.appendChild(div);
+      scrollToBottom();
 
       setInputPlaceholder('Type a message to support...');
       enableInput();
@@ -827,15 +533,13 @@
 
     function resumeLiveChat() {
       if (!currentTicket || !currentTicket.token) return;
-
       CHAT_STATE.phase = 'live_chat';
-      if (contactInfoForm) contactInfoForm.style.display = 'none';
+      if (chatFilePreview) chatFilePreview.style.display = 'none';
       if (chatMessages) chatMessages.style.display = 'block';
       if (chatForm) chatForm.style.display = 'flex';
       if (newTicketBtn) newTicketBtn.style.display = 'block';
       enableInput();
       setInputPlaceholder('Type a message to support...');
-
       loadTicketMessages();
       startAutoRefresh();
       startActivityPing();
@@ -843,35 +547,23 @@
 
     async function loadTicketMessages() {
       if (!currentTicket || !currentTicket.token) return;
-
       try {
         var response = await fetch(API_BASE_URL + '/support/ticket/' + currentTicket.token);
         var data = await response.json();
-
         if (data.success) {
           chatMessages.innerHTML = '';
           currentTicket.status = data.ticket.status;
           saveTicketData(currentTicket);
-
           addSystemMessage('Ticket #' + data.ticket.ticket_number);
-
-          // Show agent profile if assigned
-          if (data.ticket.agent) {
-            showAgentProfile(data.ticket.agent);
-          }
-
+          if (data.ticket.agent) showAgentProfile(data.ticket.agent);
           data.ticket.messages.forEach(function(msg) {
             if (msg.is_admin) {
-              addMessage(msg.message, 'bot', msg.created_at, msg.sender);
+              addMessage(msg.message, 'bot', msg.created_at, msg.sender, msg.attachment, msg.attachment_name);
             } else {
-              addMessage(msg.message, 'user', msg.created_at);
+              addMessage(msg.message, 'user', msg.created_at, null, msg.attachment, msg.attachment_name);
             }
-            // Track last message ID for incremental polling
-            if (msg.id) {
-              CHAT_STATE.lastMessageId = msg.id;
-            }
+            if (msg.id) CHAT_STATE.lastMessageId = msg.id;
           });
-
           if (currentTicket.status === 'closed' || currentTicket.status === 'resolved') {
             disableInput();
             setInputPlaceholder('Ticket closed. Click "New Conversation" to start over.');
@@ -884,25 +576,19 @@
           currentTicket = null;
           showBotGreeting();
         }
-      } catch (error) {
-        console.error('Error loading messages:', error);
-      }
+      } catch (error) { /* silently ignore */ }
     }
 
     async function pollForNewMessages() {
       if (!currentTicket || !currentTicket.token) return;
-
       try {
         var url = API_BASE_URL + '/support/ticket/' + currentTicket.token + '/messages?after=' + CHAT_STATE.lastMessageId;
         var response = await fetch(url);
         var data = await response.json();
-
         if (!data.success) return;
 
-        // Show/hide admin typing indicator
         showAdminTypingIndicator(data.admin_typing);
 
-        // Check for ticket status changes
         if (data.ticket_status && data.ticket_status !== currentTicket.status) {
           currentTicket.status = data.ticket_status;
           saveTicketData(currentTicket);
@@ -916,23 +602,18 @@
           }
         }
 
-        // Append new messages
         if (data.messages && data.messages.length > 0) {
           hideAdminTypingIndicator();
           data.messages.forEach(function(msg) {
             if (msg.is_admin) {
-              addMessage(msg.message, 'bot', msg.created_at, msg.sender);
+              addMessage(msg.message, 'bot', msg.created_at, msg.sender, msg.attachment, msg.attachment_name);
             } else {
-              addMessage(msg.message, 'user', msg.created_at);
+              addMessage(msg.message, 'user', msg.created_at, null, msg.attachment, msg.attachment_name);
             }
-            if (msg.id) {
-              CHAT_STATE.lastMessageId = msg.id;
-            }
+            if (msg.id) CHAT_STATE.lastMessageId = msg.id;
           });
         }
-      } catch (error) {
-        // Silently ignore poll errors
-      }
+      } catch (error) { /* silently ignore */ }
     }
 
     function showAdminTypingIndicator(show) {
@@ -966,7 +647,6 @@
 
     async function sendLiveChatMessage(message) {
       if (!currentTicket || !currentTicket.token) return;
-
       try {
         var response = await fetch(API_BASE_URL + '/support/ticket/' + currentTicket.token + '/reply', {
           method: 'POST',
@@ -974,14 +654,12 @@
           body: JSON.stringify({ message: message })
         });
         var data = await response.json();
-
         if (data.success && data.message_id) {
           CHAT_STATE.lastMessageId = data.message_id;
         } else if (!data.success) {
           addMessage('Error: ' + (data.message || 'Could not send message.'), 'bot');
         }
       } catch (error) {
-        console.error('Send error:', error);
         addMessage('Connection error. Please try again.', 'bot');
       }
     }
@@ -996,25 +674,17 @@
     }
 
     function stopAutoRefresh() {
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-        refreshInterval = null;
-      }
+      if (refreshInterval) { clearInterval(refreshInterval); refreshInterval = null; }
     }
 
     function startActivityPing() {
       if (activityInterval) clearInterval(activityInterval);
       pingActivity();
-      activityInterval = setInterval(function() {
-        pingActivity();
-      }, 30000);
+      activityInterval = setInterval(pingActivity, 30000);
     }
 
     function stopActivityPing() {
-      if (activityInterval) {
-        clearInterval(activityInterval);
-        activityInterval = null;
-      }
+      if (activityInterval) { clearInterval(activityInterval); activityInterval = null; }
     }
 
     function pingActivity() {
@@ -1031,19 +701,35 @@
     function processUserMessage(text) {
       if (!text || !text.trim()) return;
 
-      addMessage(text, 'user');
       hideQuickReplies();
 
-      // Handle special internal commands
-      if (text.charAt(0) === '_') {
-        if (handleFaqResponse(text)) return;
+      // Handle special commands
+      if (text === '_connect_support') {
+        addMessage('Connect me to support', 'user');
+        CHAT_STATE.conversationHistory.push({ role: 'user', text: 'Connect me to support' });
+        startInfoCollection();
+        return;
       }
+
+      if (text === '_ai_resolved') {
+        addMessage('No thanks, this helped', 'user');
+        CHAT_STATE.conversationHistory.push({ role: 'user', text: 'No thanks, this helped' });
+
+        showTypingIndicator();
+        setTimeout(function() {
+          hideTypingIndicator();
+          addMessage('Glad I could help! Is there anything else I can assist you with?', 'bot');
+          CHAT_STATE.conversationHistory.push({ role: 'bot', text: 'Glad I could help! Is there anything else?' });
+        }, 400);
+        return;
+      }
+
+      addMessage(text, 'user');
+      CHAT_STATE.conversationHistory.push({ role: 'user', text: text });
 
       switch (CHAT_STATE.phase) {
         case 'bot':
-          // Check FAQ response buttons first
-          if (CHAT_STATE.faqShown && handleFaqResponse(text)) return;
-          handleBotPhase(text);
+          sendToAI(text);
           break;
 
         case 'collecting_info':
@@ -1108,6 +794,11 @@
       chatForm.addEventListener('submit', function(e) {
         e.preventDefault();
         var msg = chatInput.value.trim();
+        if (chatPendingFile && CHAT_STATE.phase === 'live_chat') {
+          sendFileMessage(chatPendingFile, msg);
+          chatInput.value = '';
+          return;
+        }
         if (msg) {
           processUserMessage(msg);
           chatInput.value = '';
@@ -1121,27 +812,70 @@
         if (CHAT_STATE.phase === 'live_chat' && currentTicket && currentTicket.token) {
           clearTimeout(guestTypingTimeout);
           sendGuestTypingSignal();
-          guestTypingTimeout = setTimeout(function() {
-            // Typing signal expires via cache TTL, no explicit stop needed
-          }, 2000);
+          guestTypingTimeout = setTimeout(function() {}, 2000);
         }
       });
     }
+
+    // ============================================
+    // TAB CLOSE: go offline + clear all chat data
+    // ============================================
+    function sendOfflineAndClear() {
+      // Send offline signal via sendBeacon (works even when tab is closing)
+      if (currentTicket && currentTicket.token) {
+        var url = API_BASE_URL + '/support/ticket/' + currentTicket.token + '/offline';
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon(url, '');
+        } else {
+          // Fallback: sync XHR (last resort for old browsers)
+          try {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', url, false); // synchronous
+            xhr.send();
+          } catch (e) {}
+        }
+      }
+
+      // Clear all stored chat data
+      clearTicketData();
+      currentTicket = null;
+      CHAT_STATE.phase = 'bot';
+      CHAT_STATE.conversationHistory = [];
+      CHAT_STATE.ticketData = null;
+      CHAT_STATE.lastMessageId = 0;
+      stopAutoRefresh();
+      stopActivityPing();
+    }
+
+    // When user closes or navigates away from the tab
+    window.addEventListener('beforeunload', sendOfflineAndClear);
+
+    // Also handle page hide (mobile browsers, tab switching in some cases)
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'hidden') {
+        // Send offline signal when tab becomes hidden
+        if (currentTicket && currentTicket.token) {
+          var url = API_BASE_URL + '/support/ticket/' + currentTicket.token + '/offline';
+          if (navigator.sendBeacon) {
+            navigator.sendBeacon(url, '');
+          }
+        }
+      } else if (document.visibilityState === 'visible') {
+        // Re-ping activity when coming back to tab (if still in live chat)
+        if (currentTicket && currentTicket.token && CHAT_STATE.phase === 'live_chat' && chatPopup && chatPopup.classList.contains('show')) {
+          pingActivity();
+        }
+      }
+    });
   }
 
   // ============================================
   // BOOT
   // ============================================
-  function initWhenReady() {
-    setupChat();
-  }
-
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(initWhenReady, 100);
-    });
+    document.addEventListener('DOMContentLoaded', function() { setTimeout(setupChat, 100); });
   } else {
-    setTimeout(initWhenReady, 100);
+    setTimeout(setupChat, 100);
   }
 
 })();

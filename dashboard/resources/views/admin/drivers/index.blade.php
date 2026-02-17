@@ -60,10 +60,10 @@
         </div>
         <div class="flex gap-2">
             <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                <i class="fas fa-search mr-2"></i>Filter
+                <i class="ti ti-search mr-2"></i>Filter
             </button>
             <a href="{{ route('admin.drivers.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-                <i class="fas fa-times"></i>
+                <i class="ti ti-x"></i>
             </a>
         </div>
     </form>
@@ -74,7 +74,7 @@
     <div class="p-4 border-b flex items-center justify-between">
         <h3 class="font-semibold text-gray-800">All Drivers</h3>
         <a href="{{ route('admin.drivers.export', request()->query()) }}" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
-            <i class="fas fa-download mr-2"></i>Export CSV
+            <i class="ti ti-download mr-2"></i>Export CSV
         </a>
     </div>
     <div class="overflow-x-auto">
@@ -97,7 +97,7 @@
                         <td class="px-4 py-3">
                             <div class="flex items-center">
                                 <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-user text-gray-500"></i>
+                                    <i class="ti ti-user text-gray-500"></i>
                                 </div>
                                 <div class="ml-3">
                                     <p class="font-medium text-gray-800">{{ $driver->user->name ?? 'N/A' }}</p>
@@ -118,7 +118,7 @@
                         <td class="px-4 py-3 text-sm text-gray-600">{{ $driver->city }}</td>
                         <td class="px-4 py-3">
                             <div class="flex items-center">
-                                <i class="fas fa-star text-yellow-400 mr-1"></i>
+                                <i class="ti ti-star text-yellow-400 mr-1"></i>
                                 <span class="text-sm text-gray-800">{{ number_format($driver->rating_average, 1) }}</span>
                             </div>
                         </td>
@@ -126,35 +126,35 @@
                         <td class="px-4 py-3">
                             @if($driver->status == 'approved')
                                 <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-600">
-                                    <i class="fas fa-check-circle mr-1"></i>Approved
+                                    <i class="ti ti-circle-check mr-1"></i>Approved
                                 </span>
                                 @if($driver->is_online)
                                     <span class="ml-1 px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-600">Online</span>
                                 @endif
                             @elseif($driver->status == 'pending')
                                 <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-600">
-                                    <i class="fas fa-clock mr-1"></i>Pending
+                                    <i class="ti ti-clock mr-1"></i>Pending
                                 </span>
                             @elseif($driver->status == 'rejected')
                                 <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-600">
-                                    <i class="fas fa-times-circle mr-1"></i>Rejected
+                                    <i class="ti ti-circle-x mr-1"></i>Rejected
                                 </span>
                             @else
                                 <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
-                                    <i class="fas fa-ban mr-1"></i>Blocked
+                                    <i class="ti ti-ban mr-1"></i>Blocked
                                 </span>
                             @endif
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex items-center space-x-2">
                                 <a href="{{ route('admin.drivers.show', $driver->id) }}" class="p-2 text-blue-600 hover:bg-blue-50 rounded" title="View">
-                                    <i class="fas fa-eye"></i>
+                                    <i class="ti ti-eye"></i>
                                 </a>
                                 @if($driver->status == 'pending')
                                     <form action="{{ route('admin.drivers.approve', $driver->id) }}" method="POST" class="inline">
                                         @csrf
                                         <button type="submit" class="p-2 text-green-600 hover:bg-green-50 rounded" title="Approve">
-                                            <i class="fas fa-check"></i>
+                                            <i class="ti ti-check"></i>
                                         </button>
                                     </form>
                                 @endif
@@ -162,7 +162,7 @@
                                     <form action="{{ route('admin.drivers.block', $driver->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to block this driver?')">
                                         @csrf
                                         <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded" title="Block">
-                                            <i class="fas fa-ban"></i>
+                                            <i class="ti ti-ban"></i>
                                         </button>
                                     </form>
                                 @endif
@@ -170,7 +170,7 @@
                                     <form action="{{ route('admin.drivers.unblock', $driver->id) }}" method="POST" class="inline">
                                         @csrf
                                         <button type="submit" class="p-2 text-green-600 hover:bg-green-50 rounded" title="Unblock">
-                                            <i class="fas fa-unlock"></i>
+                                            <i class="ti ti-lock-open"></i>
                                         </button>
                                     </form>
                                 @endif

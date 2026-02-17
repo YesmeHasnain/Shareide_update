@@ -7,7 +7,7 @@
     <h1>Shared Ride Bookings</h1>
     <div class="page-actions">
         <a href="{{ route('admin.shared-rides.index') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Rides
+            <i class="ti ti-arrow-left"></i> Back to Rides
         </a>
     </div>
 </div>
@@ -16,7 +16,7 @@
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-icon" style="background: linear-gradient(135deg, #6366F1, #8B5CF6);">
-            <i class="fas fa-ticket-alt"></i>
+            <i class="ti ti-ticket"></i>
         </div>
         <div class="stat-content">
             <div class="stat-value">{{ $stats['total'] }}</div>
@@ -25,7 +25,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-icon" style="background: linear-gradient(135deg, #F59E0B, #D97706);">
-            <i class="fas fa-clock"></i>
+            <i class="ti ti-clock"></i>
         </div>
         <div class="stat-content">
             <div class="stat-value">{{ $stats['pending'] }}</div>
@@ -34,7 +34,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-icon" style="background: linear-gradient(135deg, #10B981, #059669);">
-            <i class="fas fa-check"></i>
+            <i class="ti ti-check"></i>
         </div>
         <div class="stat-content">
             <div class="stat-value">{{ $stats['confirmed'] }}</div>
@@ -43,7 +43,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-icon" style="background: linear-gradient(135deg, #3B82F6, #2563EB);">
-            <i class="fas fa-flag-checkered"></i>
+            <i class="ti ti-flag"></i>
         </div>
         <div class="stat-content">
             <div class="stat-value">{{ $stats['completed'] }}</div>
@@ -52,7 +52,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-icon" style="background: linear-gradient(135deg, #EF4444, #DC2626);">
-            <i class="fas fa-times-circle"></i>
+            <i class="ti ti-circle-x"></i>
         </div>
         <div class="stat-content">
             <div class="stat-value">{{ $stats['cancelled'] }}</div>
@@ -110,8 +110,8 @@
                     </td>
                     <td>
                         <div class="route-info">
-                            <div class="route-from"><i class="fas fa-circle text-primary" style="font-size: 8px;"></i> {{ Str::limit($booking->sharedRide->from_address ?? '', 25) }}</div>
-                            <div class="route-to"><i class="fas fa-circle text-success" style="font-size: 8px;"></i> {{ Str::limit($booking->sharedRide->to_address ?? '', 25) }}</div>
+                            <div class="route-from"><i class="ti ti-circle text-primary" style="font-size: 8px;"></i> {{ Str::limit($booking->sharedRide->from_address ?? '', 25) }}</div>
+                            <div class="route-to"><i class="ti ti-circle text-success" style="font-size: 8px;"></i> {{ Str::limit($booking->sharedRide->to_address ?? '', 25) }}</div>
                         </div>
                     </td>
                     <td>{{ $booking->seats_booked }}</td>
@@ -142,13 +142,13 @@
                     <td>
                         <div class="action-buttons">
                             <a href="{{ route('admin.shared-rides.show', $booking->shared_ride_id) }}" class="btn btn-sm btn-info" title="View Ride">
-                                <i class="fas fa-eye"></i>
+                                <i class="ti ti-eye"></i>
                             </a>
                             @if(!in_array($booking->status, ['dropped_off', 'cancelled', 'rejected']))
                             <form action="{{ route('admin.shared-rides.cancel-booking', $booking->id) }}" method="POST" style="display: inline;">
                                 @csrf
                                 <button type="submit" class="btn btn-sm btn-danger" title="Cancel" onclick="return confirm('Cancel this booking?')">
-                                    <i class="fas fa-times"></i>
+                                    <i class="ti ti-x"></i>
                                 </button>
                             </form>
                             @endif

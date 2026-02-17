@@ -9,7 +9,7 @@
     <div class="bg-white dark:bg-dark-200 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-100 bg-gray-50 dark:bg-dark-300">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                <i class="fas fa-cog text-yellow-500"></i>
+                <i class="ti ti-settings text-yellow-500"></i>
                 General Settings
             </h3>
         </div>
@@ -46,7 +46,7 @@
                 </div>
             </div>
             <button type="submit" class="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl">
-                <i class="fas fa-save mr-2"></i>Save Changes
+                <i class="ti ti-device-floppy mr-2"></i>Save Changes
             </button>
         </form>
     </div>
@@ -55,7 +55,7 @@
     <div class="bg-white dark:bg-dark-200 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-100 bg-gray-50 dark:bg-dark-300">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                <i class="fas fa-percentage text-green-500"></i>
+                <i class="ti ti-percentage text-green-500"></i>
                 Commission Settings
             </h3>
         </div>
@@ -79,7 +79,7 @@
                 </div>
             </div>
             <button type="submit" class="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl">
-                <i class="fas fa-save mr-2"></i>Save Changes
+                <i class="ti ti-device-floppy mr-2"></i>Save Changes
             </button>
         </form>
     </div>
@@ -88,7 +88,7 @@
     <div class="bg-white dark:bg-dark-200 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-100 bg-gray-50 dark:bg-dark-300">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                <i class="fas fa-tag text-purple-500"></i>
+                <i class="ti ti-tag text-purple-500"></i>
                 Pricing Settings
             </h3>
         </div>
@@ -127,7 +127,7 @@
                 </div>
             </div>
             <button type="submit" class="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl">
-                <i class="fas fa-save mr-2"></i>Save Changes
+                <i class="ti ti-device-floppy mr-2"></i>Save Changes
             </button>
         </form>
     </div>
@@ -136,7 +136,7 @@
     <div class="bg-white dark:bg-dark-200 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-100 bg-gray-50 dark:bg-dark-300">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                <i class="fas fa-bell text-blue-500"></i>
+                <i class="ti ti-bell text-blue-500"></i>
                 Notification Settings
             </h3>
         </div>
@@ -177,7 +177,7 @@
                 </label>
             </div>
             <button type="submit" class="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl">
-                <i class="fas fa-save mr-2"></i>Save Changes
+                <i class="ti ti-device-floppy mr-2"></i>Save Changes
             </button>
         </form>
     </div>
@@ -186,7 +186,7 @@
     <div class="bg-white dark:bg-dark-200 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-100 bg-gray-50 dark:bg-dark-300">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                <i class="fas fa-bolt text-yellow-500"></i>
+                <i class="ti ti-bolt text-yellow-500"></i>
                 Quick Actions
             </h3>
         </div>
@@ -195,7 +195,7 @@
                 <a href="{{ route('admin.settings.profile') }}"
                     class="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
                     <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-user"></i>
+                        <i class="ti ti-user"></i>
                     </div>
                     <div>
                         <span class="font-semibold">My Profile</span>
@@ -205,7 +205,7 @@
                 <a href="{{ route('admin.settings.admin-users') }}"
                     class="flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
                     <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-users"></i>
+                        <i class="ti ti-users"></i>
                     </div>
                     <div>
                         <span class="font-semibold">Admin Users</span>
@@ -217,7 +217,7 @@
                     <button type="submit"
                         class="w-full flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
                         <div class="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-trash"></i>
+                            <i class="ti ti-trash"></i>
                         </div>
                         <div class="text-left">
                             <span class="font-semibold">Clear Cache</span>

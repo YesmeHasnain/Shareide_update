@@ -14,7 +14,7 @@
                     <p class="text-3xl font-bold mt-2" :class="darkMode ? 'text-white' : 'text-gray-800'">{{ number_format($stats['total_points_earned']) }}</p>
                 </div>
                 <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
-                    <i class="fas fa-coins text-white text-xl"></i>
+                    <i class="ti ti-coins text-white text-xl"></i>
                 </div>
             </div>
         </div>
@@ -26,7 +26,7 @@
                     <p class="text-3xl font-bold mt-2" :class="darkMode ? 'text-white' : 'text-gray-800'">{{ number_format($stats['total_points_redeemed']) }}</p>
                 </div>
                 <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
-                    <i class="fas fa-gift text-white text-xl"></i>
+                    <i class="ti ti-gift text-white text-xl"></i>
                 </div>
             </div>
         </div>
@@ -38,7 +38,7 @@
                     <p class="text-3xl font-bold mt-2" :class="darkMode ? 'text-white' : 'text-gray-800'">{{ number_format($stats['total_redemptions']) }}</p>
                 </div>
                 <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center">
-                    <i class="fas fa-ticket-alt text-white text-xl"></i>
+                    <i class="ti ti-ticket text-white text-xl"></i>
                 </div>
             </div>
         </div>
@@ -50,7 +50,7 @@
                     <p class="text-3xl font-bold mt-2" :class="darkMode ? 'text-white' : 'text-gray-800'">{{ $stats['active_rewards'] }}</p>
                 </div>
                 <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
-                    <i class="fas fa-star text-white text-xl"></i>
+                    <i class="ti ti-star text-white text-xl"></i>
                 </div>
             </div>
         </div>
@@ -60,7 +60,7 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <a href="{{ route('admin.loyalty.tiers') }}" class="rounded-xl p-4 flex items-center gap-4 transition-all hover:scale-105" :class="darkMode ? 'bg-dark-200 hover:bg-dark-100' : 'bg-white shadow hover:shadow-lg'">
             <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-                <i class="fas fa-crown text-white"></i>
+                <i class="ti ti-crown text-white"></i>
             </div>
             <div>
                 <p class="font-semibold" :class="darkMode ? 'text-white' : 'text-gray-800'">Manage Tiers</p>
@@ -70,7 +70,7 @@
 
         <a href="{{ route('admin.loyalty.rewards') }}" class="rounded-xl p-4 flex items-center gap-4 transition-all hover:scale-105" :class="darkMode ? 'bg-dark-200 hover:bg-dark-100' : 'bg-white shadow hover:shadow-lg'">
             <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
-                <i class="fas fa-gift text-white"></i>
+                <i class="ti ti-gift text-white"></i>
             </div>
             <div>
                 <p class="font-semibold" :class="darkMode ? 'text-white' : 'text-gray-800'">Manage Rewards</p>
@@ -80,7 +80,7 @@
 
         <a href="{{ route('admin.loyalty.achievements') }}" class="rounded-xl p-4 flex items-center gap-4 transition-all hover:scale-105" :class="darkMode ? 'bg-dark-200 hover:bg-dark-100' : 'bg-white shadow hover:shadow-lg'">
             <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center">
-                <i class="fas fa-trophy text-white"></i>
+                <i class="ti ti-trophy text-white"></i>
             </div>
             <div>
                 <p class="font-semibold" :class="darkMode ? 'text-white' : 'text-gray-800'">Achievements</p>
@@ -90,7 +90,7 @@
 
         <a href="{{ route('admin.loyalty.redemptions') }}" class="rounded-xl p-4 flex items-center gap-4 transition-all hover:scale-105" :class="darkMode ? 'bg-dark-200 hover:bg-dark-100' : 'bg-white shadow hover:shadow-lg'">
             <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
-                <i class="fas fa-history text-white"></i>
+                <i class="ti ti-history text-white"></i>
             </div>
             <div>
                 <p class="font-semibold" :class="darkMode ? 'text-white' : 'text-gray-800'">Redemption History</p>
@@ -102,14 +102,14 @@
     <!-- Tiers Overview -->
     <div class="rounded-2xl p-6" :class="darkMode ? 'bg-dark-200' : 'bg-white shadow-lg'">
         <h3 class="text-lg font-bold mb-4" :class="darkMode ? 'text-white' : 'text-gray-800'">
-            <i class="fas fa-crown text-yellow-500 mr-2"></i>Loyalty Tiers
+            <i class="ti ti-crown text-yellow-500 mr-2"></i>Loyalty Tiers
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             @foreach($tiers as $tier)
             <div class="rounded-xl p-4 border-2" style="border-color: {{ $tier->badge_color }}">
                 <div class="flex items-center gap-3 mb-3">
                     <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background-color: {{ $tier->badge_color }}">
-                        <i class="fas fa-crown text-white"></i>
+                        <i class="ti ti-crown text-white"></i>
                     </div>
                     <div>
                         <p class="font-bold" :class="darkMode ? 'text-white' : 'text-gray-800'">{{ $tier->name }}</p>
@@ -117,9 +117,9 @@
                     </div>
                 </div>
                 <div class="space-y-1 text-sm" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
-                    <p><i class="fas fa-coins text-yellow-500 w-5"></i> {{ number_format($tier->min_points) }}+ points</p>
-                    <p><i class="fas fa-percent text-green-500 w-5"></i> {{ $tier->discount_percentage }}% discount</p>
-                    <p><i class="fas fa-times text-blue-500 w-5"></i> {{ $tier->points_multiplier }}x multiplier</p>
+                    <p><i class="ti ti-coins text-yellow-500 w-5"></i> {{ number_format($tier->min_points) }}+ points</p>
+                    <p><i class="ti ti-percentage text-green-500 w-5"></i> {{ $tier->discount_percentage }}% discount</p>
+                    <p><i class="ti ti-x text-blue-500 w-5"></i> {{ $tier->points_multiplier }}x multiplier</p>
                 </div>
             </div>
             @endforeach
@@ -130,7 +130,7 @@
     <div class="rounded-2xl p-6" :class="darkMode ? 'bg-dark-200' : 'bg-white shadow-lg'">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-bold" :class="darkMode ? 'text-white' : 'text-gray-800'">
-                <i class="fas fa-history text-blue-500 mr-2"></i>Recent Redemptions
+                <i class="ti ti-history text-blue-500 mr-2"></i>Recent Redemptions
             </h3>
             <a href="{{ route('admin.loyalty.redemptions') }}" class="text-primary hover:underline text-sm">View All</a>
         </div>
@@ -167,7 +167,7 @@
                     @empty
                     <tr>
                         <td colspan="6" class="py-8 text-center" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
-                            <i class="fas fa-inbox text-4xl mb-2 opacity-50"></i>
+                            <i class="ti ti-inbox text-4xl mb-2 opacity-50"></i>
                             <p>No redemptions yet</p>
                         </td>
                     </tr>

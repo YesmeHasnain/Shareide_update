@@ -6,7 +6,7 @@
     <title>Login - SHAREIDE Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
@@ -19,14 +19,14 @@
                         darker: '#0F0F1A',
                     },
                     fontFamily: {
-                        sora: ['Sora', 'sans-serif'],
+                        inter: ['Inter', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
     <style>
-        body { font-family: 'Sora', sans-serif; }
+        body { font-family: 'Inter', sans-serif; }
 
         .gradient-gold {
             background: linear-gradient(135deg, #FCC014 0%, #F5A623 100%);
@@ -149,7 +149,7 @@
                 @if(session('error'))
                     <div class="mb-5 p-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-[13px] flex items-center gap-3">
                         <div class="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-exclamation-circle text-red-500 text-sm"></i>
+                            <i class="ti ti-alert-circle text-red-500 text-sm"></i>
                         </div>
                         <span>{{ session('error') }}</span>
                     </div>
@@ -162,14 +162,14 @@
                         <label class="block text-[13px] font-semibold text-[#1A1A2E] mb-2">Email Address</label>
                         <div class="relative">
                             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                                <i class="fas fa-envelope text-sm"></i>
+                                <i class="ti ti-mail text-sm"></i>
                             </span>
                             <input type="email" name="email" value="{{ old('email') }}" required
                                 class="input-focus w-full pl-11 pr-4 py-3.5 border border-[#E5E7EB] rounded-xl text-[13px] focus:outline-none transition-all bg-[#F8F9FC] hover:border-[#FCC014]/30 @error('email') border-red-400 @enderror"
                                 placeholder="admin@shareide.com">
                         </div>
                         @error('email')
-                            <p class="mt-2 text-[11px] text-red-500 flex items-center gap-1"><i class="fas fa-exclamation-circle"></i>{{ $message }}</p>
+                            <p class="mt-2 text-[11px] text-red-500 flex items-center gap-1"><i class="ti ti-alert-circle"></i>{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -177,7 +177,7 @@
                         <label class="block text-[13px] font-semibold text-[#1A1A2E] mb-2">Password</label>
                         <div class="relative">
                             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                                <i class="fas fa-lock text-sm"></i>
+                                <i class="ti ti-lock text-sm"></i>
                             </span>
                             <input type="password" name="password" required
                                 class="input-focus w-full pl-11 pr-4 py-3.5 border border-[#E5E7EB] rounded-xl text-[13px] focus:outline-none transition-all bg-[#F8F9FC] hover:border-[#FCC014]/30"
@@ -193,7 +193,7 @@
                     </div>
 
                     <button type="submit" class="btn-gradient w-full text-black font-semibold py-3.5 text-[14px] flex items-center justify-center gap-2">
-                        <i class="fas fa-sign-in-alt"></i>
+                        <i class="ti ti-login"></i>
                         <span>Log In</span>
                     </button>
                 </form>

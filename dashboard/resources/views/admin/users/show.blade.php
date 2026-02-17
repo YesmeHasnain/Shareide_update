@@ -23,15 +23,18 @@
                         <h2 class="text-xl font-bold text-gray-800 dark:text-white">{{ $user->name ?? 'N/A' }}</h2>
                         <p class="text-gray-500 dark:text-gray-400">{{ $user->phone }}</p>
                         <p class="text-sm text-gray-400 dark:text-gray-500">{{ $user->email ?? '-' }}</p>
+                        @if($user->last_ip)
+                            <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1"><i class="ti ti-world mr-1"></i>IP: <code class="bg-gray-100 dark:bg-dark-100 px-1.5 py-0.5 rounded">{{ $user->last_ip }}</code></p>
+                        @endif
                     </div>
                 </div>
                 @if($user->status == 'active')
                     <span class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-sm font-medium">
-                        <i class="fas fa-check-circle mr-1"></i>Active
+                        <i class="ti ti-circle-check mr-1"></i>Active
                     </span>
                 @else
                     <span class="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full text-sm font-medium">
-                        <i class="fas fa-ban mr-1"></i>Blocked
+                        <i class="ti ti-ban mr-1"></i>Blocked
                     </span>
                 @endif
             </div>
@@ -41,14 +44,14 @@
                     <form action="{{ route('admin.users.block', $user->id) }}" method="POST" onsubmit="return confirm('Block this user?')">
                         @csrf
                         <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
-                            <i class="fas fa-ban mr-2"></i>Block User
+                            <i class="ti ti-ban mr-2"></i>Block User
                         </button>
                     </form>
                 @else
                     <form action="{{ route('admin.users.unblock', $user->id) }}" method="POST">
                         @csrf
                         <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
-                            <i class="fas fa-unlock mr-2"></i>Unblock
+                            <i class="ti ti-lock-open mr-2"></i>Unblock
                         </button>
                     </form>
                 @endif
@@ -58,7 +61,7 @@
         <!-- Recent Rides -->
         <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm border border-gray-100 dark:border-dark-100 p-6">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                <i class="fas fa-car mr-2 text-yellow-500"></i>Recent Rides
+                <i class="ti ti-car mr-2 text-yellow-500"></i>Recent Rides
             </h3>
             <div class="space-y-3">
                 @forelse($recentRides as $ride)
@@ -68,14 +71,14 @@
                                 {{ $ride->driver->user->name ?? 'Driver Not Assigned' }}
                             </p>
                             <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                <i class="fas fa-map-marker-alt text-green-500"></i>
+                                <i class="ti ti-map-pin text-green-500"></i>
                                 <span>{{ Str::limit($ride->pickup_address, 25) }}</span>
-                                <i class="fas fa-arrow-right text-xs"></i>
-                                <i class="fas fa-map-marker-alt text-red-500"></i>
+                                <i class="ti ti-arrow-right text-xs"></i>
+                                <i class="ti ti-map-pin text-red-500"></i>
                                 <span>{{ Str::limit($ride->drop_address, 25) }}</span>
                             </div>
                             <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                <i class="fas fa-clock mr-1"></i>{{ $ride->created_at->format('M d, Y H:i') }}
+                                <i class="ti ti-clock mr-1"></i>{{ $ride->created_at->format('M d, Y H:i') }}
                             </p>
                         </div>
                         <div class="text-right">
@@ -95,7 +98,7 @@
                     </div>
                 @empty
                     <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                        <i class="fas fa-car text-4xl mb-2 opacity-50"></i>
+                        <i class="ti ti-car text-4xl mb-2 opacity-50"></i>
                         <p>No rides yet</p>
                     </div>
                 @endforelse
@@ -107,7 +110,7 @@
         <!-- Stats -->
         <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm border border-gray-100 dark:border-dark-100 p-6">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                <i class="fas fa-chart-bar mr-2 text-yellow-500"></i>Statistics
+                <i class="ti ti-chart-bar mr-2 text-yellow-500"></i>Statistics
             </h3>
             <div class="space-y-4">
                 <div class="flex justify-between items-center">
@@ -133,7 +136,7 @@
         <!-- Wallet -->
         <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm border border-gray-100 dark:border-dark-100 p-6">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                <i class="fas fa-wallet mr-2 text-yellow-500"></i>Wallet
+                <i class="ti ti-wallet mr-2 text-yellow-500"></i>Wallet
             </h3>
             <div class="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl mb-4">
                 <p class="text-sm text-gray-500 dark:text-gray-400">Balance</p>
@@ -154,7 +157,7 @@
         <!-- Emergency Contacts -->
         <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm border border-gray-100 dark:border-dark-100 p-6">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                <i class="fas fa-phone-alt mr-2 text-red-500"></i>Emergency Contacts
+                <i class="ti ti-phone mr-2 text-red-500"></i>Emergency Contacts
             </h3>
             @forelse($user->emergencyContacts as $contact)
                 <div class="p-3 bg-gray-50 dark:bg-dark-300 rounded-lg mb-2">
@@ -164,7 +167,7 @@
                 </div>
             @empty
                 <div class="text-center py-4 text-gray-500 dark:text-gray-400">
-                    <i class="fas fa-user-friends text-2xl mb-2 opacity-50"></i>
+                    <i class="ti ti-users-group text-2xl mb-2 opacity-50"></i>
                     <p class="text-sm">No emergency contacts</p>
                 </div>
             @endforelse

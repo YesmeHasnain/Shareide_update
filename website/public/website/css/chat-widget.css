@@ -216,7 +216,7 @@
   border: 1px solid var(--border-light);
   border-radius: var(--radius);
   font-size: 14px;
-  font-family: 'Sora', sans-serif;
+  font-family: 'Inter', sans-serif;
   outline: none;
   color: var(--text);
   margin-bottom: 10px;
@@ -248,7 +248,7 @@
   border: 1px solid var(--border-light);
   border-radius: 50px;
   font-size: 14px;
-  font-family: 'Sora', sans-serif;
+  font-family: 'Inter', sans-serif;
   outline: none;
   color: var(--text);
   transition: border-color 0.3s ease;
@@ -522,6 +522,146 @@
   color: var(--primary-dark);
   margin-bottom: 2px;
   padding: 0 4px;
+}
+
+/* Attach button in form */
+.chat-attach-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--gray-400);
+  border-radius: 50%;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.chat-attach-btn:hover {
+  color: var(--primary-dark);
+  background: rgba(252,192,20,0.1);
+}
+
+/* File preview bar */
+.chat-popup__file-preview {
+  padding: 8px 15px;
+  background: var(--white);
+  border-top: 1px solid var(--border-light);
+}
+
+.chat-file-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+}
+
+.chat-file-preview__thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  color: var(--gray-400);
+  font-size: 14px;
+}
+
+.chat-file-preview__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chat-file-preview__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-file-preview__name {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-file-preview__size {
+  display: block;
+  font-size: 10px;
+  color: var(--gray-400);
+}
+
+.chat-file-preview__remove {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--gray-400);
+  font-size: 10px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.chat-file-preview__remove:hover {
+  background: rgba(239,68,68,0.1);
+  color: var(--red);
+}
+
+/* Attachment display in messages */
+.chat-attachment-img {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.chat-attachment-img img {
+  max-width: 180px;
+  max-height: 180px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.chat-attachment-file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: inherit;
+  margin-bottom: 4px;
+  transition: background 0.2s ease;
+  text-decoration: none;
+}
+
+.chat-attachment-file:hover {
+  background: rgba(0,0,0,0.1);
+}
+
+.chat-attachment-file span {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-attachment-file .fa-download {
+  font-size: 10px;
+  opacity: 0.5;
 }
 
 @media (max-width: 480px) {

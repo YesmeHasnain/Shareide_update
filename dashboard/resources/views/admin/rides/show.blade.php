@@ -23,7 +23,7 @@
             <div class="space-y-4 mb-6">
                 <div class="flex items-start space-x-3">
                     <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-circle text-green-500 text-xs"></i>
+                        <i class="ti ti-circle text-green-500 text-xs"></i>
                     </div>
                     <div>
                         <p class="text-xs text-gray-500 uppercase">Pickup</p>
@@ -33,7 +33,7 @@
                 <div class="ml-4 border-l-2 border-dashed border-gray-300 h-8"></div>
                 <div class="flex items-start space-x-3">
                     <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-map-marker-alt text-red-500"></i>
+                        <i class="ti ti-map-pin text-red-500"></i>
                     </div>
                     <div>
                         <p class="text-xs text-gray-500 uppercase">Dropoff</p>
@@ -95,7 +95,7 @@
                     <p class="text-sm text-gray-500 mb-2">Driver Rating (by Rider)</p>
                     <div class="flex items-center">
                         @for($i = 1; $i <= 5; $i++)
-                            <i class="fas fa-star {{ $i <= $ride->rating->driver_rating ? 'text-yellow-400' : 'text-gray-300' }}"></i>
+                            <i class="ti ti-star {{ $i <= $ride->rating->driver_rating ? 'text-yellow-400' : 'text-gray-300' }}"></i>
                         @endfor
                         <span class="ml-2 font-semibold">{{ $ride->rating->driver_rating }}/5</span>
                     </div>
@@ -109,7 +109,7 @@
                     <p class="text-sm text-gray-500 mb-2">Rider Rating (by Driver)</p>
                     <div class="flex items-center">
                         @for($i = 1; $i <= 5; $i++)
-                            <i class="fas fa-star {{ $i <= $ride->rating->rider_rating ? 'text-yellow-400' : 'text-gray-300' }}"></i>
+                            <i class="ti ti-star {{ $i <= $ride->rating->rider_rating ? 'text-yellow-400' : 'text-gray-300' }}"></i>
                         @endfor
                         <span class="ml-2 font-semibold">{{ $ride->rating->rider_rating }}/5</span>
                     </div>
@@ -126,7 +126,7 @@
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Rider</h3>
             <div class="flex items-center space-x-3">
                 <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-user text-blue-500"></i>
+                    <i class="ti ti-user text-blue-500"></i>
                 </div>
                 <div>
                     <p class="font-medium text-gray-800">{{ $ride->rider->name ?? 'N/A' }}</p>
@@ -142,7 +142,7 @@
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Driver</h3>
             <div class="flex items-center space-x-3">
                 <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-car text-green-500"></i>
+                    <i class="ti ti-car text-green-500"></i>
                 </div>
                 <div>
                     <p class="font-medium text-gray-800">{{ $ride->driver->name ?? 'N/A' }}</p>

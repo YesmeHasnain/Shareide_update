@@ -28,7 +28,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
                 <input type="password" name="password_confirmation" required class="w-full md:w-1/3 px-4 py-2 border rounded-lg">
             </div>
-            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="fas fa-plus mr-2"></i>Add Admin</button>
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="ti ti-plus mr-2"></i>Add Admin</button>
         </form>
     </div>
 
@@ -55,7 +55,7 @@
                         @else
                             <form action="{{ route('admin.settings.admin-users.delete', $admin->id) }}" method="POST" onsubmit="return confirm('Delete this admin?')">
                                 @csrf @method('DELETE')
-                                <button class="p-2 text-red-600 hover:bg-red-50 rounded"><i class="fas fa-trash"></i></button>
+                                <button class="p-2 text-red-600 hover:bg-red-50 rounded"><i class="ti ti-trash"></i></button>
                             </form>
                         @endif
                     </div>

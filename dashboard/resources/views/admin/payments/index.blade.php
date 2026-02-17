@@ -27,16 +27,16 @@
 <!-- Quick Links -->
 <div class="flex flex-wrap gap-4 mb-6">
     <a href="{{ route('admin.payments.withdrawals') }}" class="px-4 py-2 bg-orange-100 text-orange-600 rounded-lg text-sm font-medium hover:bg-orange-200">
-        <i class="fas fa-hand-holding-usd mr-2"></i>Withdrawals
+        <i class="ti ti-cash mr-2"></i>Withdrawals
     </a>
     <a href="{{ route('admin.payments.driver-wallets') }}" class="px-4 py-2 bg-green-100 text-green-600 rounded-lg text-sm font-medium hover:bg-green-200">
-        <i class="fas fa-wallet mr-2"></i>Driver Wallets
+        <i class="ti ti-wallet mr-2"></i>Driver Wallets
     </a>
     <a href="{{ route('admin.payments.rider-wallets') }}" class="px-4 py-2 bg-blue-100 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-200">
-        <i class="fas fa-wallet mr-2"></i>Rider Wallets
+        <i class="ti ti-wallet mr-2"></i>Rider Wallets
     </a>
     <a href="{{ route('admin.payments.transactions') }}" class="px-4 py-2 bg-purple-100 text-purple-600 rounded-lg text-sm font-medium hover:bg-purple-200">
-        <i class="fas fa-exchange-alt mr-2"></i>Transactions
+        <i class="ti ti-arrows-exchange mr-2"></i>Transactions
     </a>
 </div>
 
@@ -72,7 +72,7 @@
             <label class="block text-sm text-gray-600 mb-1">To</label>
             <input type="date" name="date_to" value="{{ request('date_to') }}" class="w-full px-4 py-2 border rounded-lg">
         </div>
-        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="fas fa-search mr-2"></i>Filter</button>
+        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="ti ti-search mr-2"></i>Filter</button>
     </form>
 </div>
 

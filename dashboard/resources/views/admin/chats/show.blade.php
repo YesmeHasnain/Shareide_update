@@ -42,7 +42,7 @@
                             {{ $message->sender->name ?? 'Unknown' }} - {{ $message->created_at->format('M d, H:i') }}
                             <form action="{{ route('admin.chats.delete-message', [$chat->id, $message->id]) }}" method="POST" class="inline ml-2" onsubmit="return confirm('Delete this message?')">
                                 @csrf @method('DELETE')
-                                <button class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                                <button class="text-red-500 hover:text-red-700"><i class="ti ti-trash"></i></button>
                             </form>
                         </div>
                     </div>
@@ -53,7 +53,7 @@
 
             <div class="p-4 border-t">
                 <a href="{{ route('admin.chats.export', $chat->id) }}" class="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm">
-                    <i class="fas fa-download mr-2"></i>Export Chat
+                    <i class="ti ti-download mr-2"></i>Export Chat
                 </a>
             </div>
         </div>
@@ -66,7 +66,7 @@
             <h3 class="font-semibold text-gray-800 mb-4">Rider</h3>
             <div class="flex items-center space-x-3">
                 <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-user text-blue-500"></i>
+                    <i class="ti ti-user text-blue-500"></i>
                 </div>
                 <div>
                     <p class="font-medium text-gray-800">{{ $chat->rider->name ?? 'N/A' }}</p>
@@ -80,7 +80,7 @@
             <h3 class="font-semibold text-gray-800 mb-4">Driver</h3>
             <div class="flex items-center space-x-3">
                 <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-car text-green-500"></i>
+                    <i class="ti ti-car text-green-500"></i>
                 </div>
                 <div>
                     <p class="font-medium text-gray-800">{{ $chat->driver->user->name ?? 'N/A' }}</p>

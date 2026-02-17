@@ -12,10 +12,10 @@
         </div>
         <div class="flex gap-3">
             <a href="{{ route('admin.shared-rides.active') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-semibold rounded-xl hover:shadow-lg transition-all">
-                <i class="fas fa-car"></i> Active Rides
+                <i class="ti ti-car"></i> Active Rides
             </a>
             <a href="{{ route('admin.shared-rides.bookings') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-dark-200 transition-all">
-                <i class="fas fa-ticket-alt"></i> View Bookings
+                <i class="ti ti-ticket"></i> View Bookings
             </a>
         </div>
     </div>
@@ -25,7 +25,7 @@
         <div class="bg-white dark:bg-dark-100 rounded-2xl p-4 border border-gray-100 dark:border-dark-200">
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                    <i class="fas fa-car text-white text-lg"></i>
+                    <i class="ti ti-car text-white text-lg"></i>
                 </div>
                 <div>
                     <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['total'] }}</p>
@@ -36,7 +36,7 @@
         <div class="bg-white dark:bg-dark-100 rounded-2xl p-4 border border-gray-100 dark:border-dark-200">
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                    <i class="fas fa-door-open text-white text-lg"></i>
+                    <i class="ti ti-door text-white text-lg"></i>
                 </div>
                 <div>
                     <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['open'] }}</p>
@@ -47,7 +47,7 @@
         <div class="bg-white dark:bg-dark-100 rounded-2xl p-4 border border-gray-100 dark:border-dark-200">
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                    <i class="fas fa-chair text-white text-lg"></i>
+                    <i class="ti ti-armchair text-white text-lg"></i>
                 </div>
                 <div>
                     <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['full'] }}</p>
@@ -58,7 +58,7 @@
         <div class="bg-white dark:bg-dark-100 rounded-2xl p-4 border border-gray-100 dark:border-dark-200">
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                    <i class="fas fa-road text-white text-lg"></i>
+                    <i class="ti ti-road text-white text-lg"></i>
                 </div>
                 <div>
                     <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['in_progress'] }}</p>
@@ -69,7 +69,7 @@
         <div class="bg-white dark:bg-dark-100 rounded-2xl p-4 border border-gray-100 dark:border-dark-200">
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center">
-                    <i class="fas fa-check-circle text-white text-lg"></i>
+                    <i class="ti ti-circle-check text-white text-lg"></i>
                 </div>
                 <div>
                     <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['completed'] }}</p>
@@ -80,7 +80,7 @@
         <div class="bg-white dark:bg-dark-100 rounded-2xl p-4 border border-gray-100 dark:border-dark-200">
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center">
-                    <i class="fas fa-times-circle text-white text-lg"></i>
+                    <i class="ti ti-circle-x text-white text-lg"></i>
                 </div>
                 <div>
                     <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['cancelled'] }}</p>
@@ -192,13 +192,13 @@
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2">
                                 <a href="{{ route('admin.shared-rides.show', $ride->id) }}" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="View">
-                                    <i class="fas fa-eye"></i>
+                                    <i class="ti ti-eye"></i>
                                 </a>
                                 @if(!in_array($ride->status, ['completed', 'cancelled']))
                                 <form action="{{ route('admin.shared-rides.cancel', $ride->id) }}" method="POST" class="inline">
                                     @csrf
                                     <button type="submit" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Cancel" onclick="return confirm('Cancel this ride?')">
-                                        <i class="fas fa-times"></i>
+                                        <i class="ti ti-x"></i>
                                     </button>
                                 </form>
                                 @endif
@@ -210,7 +210,7 @@
                         <td colspan="9" class="px-6 py-12 text-center">
                             <div class="flex flex-col items-center">
                                 <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-dark-200 flex items-center justify-center mb-4">
-                                    <i class="fas fa-car text-2xl text-gray-400"></i>
+                                    <i class="ti ti-car text-2xl text-gray-400"></i>
                                 </div>
                                 <p class="text-gray-500 dark:text-gray-400">No shared rides found</p>
                             </div>

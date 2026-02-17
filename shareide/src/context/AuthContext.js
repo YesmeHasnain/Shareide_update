@@ -17,6 +17,7 @@ const MOCK_USER = {
   avatar: null,
   wallet_balance: 5000,
   total_loyalty_points: 250,
+  
   available_loyalty_points: 200,
   loyalty_tier: { name: 'Silver', badge_color: '#C0C0C0' },
   created_at: '2024-01-01T00:00:00.000Z',

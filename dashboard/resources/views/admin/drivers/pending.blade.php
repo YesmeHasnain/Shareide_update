@@ -7,7 +7,7 @@
 <div class="mb-6">
     <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
         <div class="flex items-center">
-            <i class="fas fa-info-circle text-yellow-600 mr-3 text-xl"></i>
+            <i class="ti ti-info-circle text-yellow-600 mr-3 text-xl"></i>
             <div>
                 <p class="font-medium text-yellow-800">{{ $drivers->total() }} driver(s) waiting for approval</p>
                 <p class="text-sm text-yellow-600">Please review their documents carefully before approving.</p>
@@ -25,7 +25,7 @@
                         <!-- Driver Info -->
                         <div class="flex items-start space-x-4">
                             <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
-                                <i class="fas fa-user text-gray-500 text-2xl"></i>
+                                <i class="ti ti-user text-gray-500 text-2xl"></i>
                             </div>
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-800">{{ $driver->user->name ?? 'N/A' }}</h3>
@@ -98,16 +98,16 @@
                     <!-- Actions -->
                     <div class="mt-6 flex flex-wrap gap-3">
                         <a href="{{ route('admin.drivers.show', $driver->id) }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                            <i class="fas fa-eye mr-2"></i>View Details & Documents
+                            <i class="ti ti-eye mr-2"></i>View Details & Documents
                         </a>
                         <form action="{{ route('admin.drivers.approve', $driver->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to approve this driver?')">
                             @csrf
                             <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                                <i class="fas fa-check mr-2"></i>Approve
+                                <i class="ti ti-check mr-2"></i>Approve
                             </button>
                         </form>
                         <button onclick="openRejectModal({{ $driver->id }})" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                            <i class="fas fa-times mr-2"></i>Reject
+                            <i class="ti ti-x mr-2"></i>Reject
                         </button>
                     </div>
                 </div>
@@ -122,7 +122,7 @@
 @else
     <div class="bg-white rounded-xl shadow-sm p-8 text-center">
         <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-check-circle text-green-500 text-3xl"></i>
+            <i class="ti ti-circle-check text-green-500 text-3xl"></i>
         </div>
         <h3 class="text-lg font-semibold text-gray-800">All Caught Up!</h3>
         <p class="text-gray-500 mt-2">No pending driver approvals at the moment.</p>

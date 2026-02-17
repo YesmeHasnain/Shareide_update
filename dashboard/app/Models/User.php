@@ -26,6 +26,7 @@ class User extends Authenticatable
         'available_loyalty_points',
         'rating',
         'total_rides',
+        'last_ip',
     ];
 
     protected $hidden = [

@@ -46,7 +46,7 @@
                     <div class="text-right">
                         <p class="text-sm font-semibold text-green-600">{{ $driver->completed_rides_count }} rides</p>
                         <div class="flex items-center justify-end text-xs text-yellow-500">
-                            <i class="fas fa-star mr-1"></i>{{ number_format($driver->rating_average, 1) }}
+                            <i class="ti ti-star mr-1"></i>{{ number_format($driver->rating_average, 1) }}
                         </div>
                     </div>
                 </div>

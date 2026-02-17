@@ -27,7 +27,7 @@
 <!-- Actions -->
 <div class="mb-6">
     <a href="{{ route('admin.promo-codes.create') }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg">
-        <i class="fas fa-plus mr-2"></i>Create New Promo Code
+        <i class="ti ti-plus mr-2"></i>Create New Promo Code
     </a>
 </div>
 
@@ -78,8 +78,8 @@
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex space-x-2">
-                                <a href="{{ route('admin.promo-codes.edit', $code->id) }}" class="p-2 text-blue-600 hover:bg-blue-50 rounded"><i class="fas fa-edit"></i></a>
-                                <a href="{{ route('admin.promo-codes.usage', $code->id) }}" class="p-2 text-purple-600 hover:bg-purple-50 rounded"><i class="fas fa-chart-bar"></i></a>
+                                <a href="{{ route('admin.promo-codes.edit', $code->id) }}" class="p-2 text-blue-600 hover:bg-blue-50 rounded"><i class="ti ti-edit"></i></a>
+                                <a href="{{ route('admin.promo-codes.usage', $code->id) }}" class="p-2 text-purple-600 hover:bg-purple-50 rounded"><i class="ti ti-chart-bar"></i></a>
                                 <form action="{{ route('admin.promo-codes.toggle', $code->id) }}" method="POST" class="inline">
                                     @csrf
                                     <button class="p-2 {{ $code->is_active ? 'text-red-600 hover:bg-red-50' : 'text-green-600 hover:bg-green-50' }} rounded">

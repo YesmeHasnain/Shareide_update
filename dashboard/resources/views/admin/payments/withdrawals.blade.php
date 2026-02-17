@@ -73,9 +73,9 @@
                                 <div class="flex space-x-2">
                                     <form action="{{ route('admin.payments.approve-withdrawal', $withdrawal->id) }}" method="POST" onsubmit="return confirm('Approve this withdrawal?')">
                                         @csrf
-                                        <button class="px-3 py-1 bg-green-600 text-white rounded text-xs"><i class="fas fa-check mr-1"></i>Approve</button>
+                                        <button class="px-3 py-1 bg-green-600 text-white rounded text-xs"><i class="ti ti-check mr-1"></i>Approve</button>
                                     </form>
-                                    <button onclick="openRejectModal({{ $withdrawal->id }})" class="px-3 py-1 bg-red-600 text-white rounded text-xs"><i class="fas fa-times mr-1"></i>Reject</button>
+                                    <button onclick="openRejectModal({{ $withdrawal->id }})" class="px-3 py-1 bg-red-600 text-white rounded text-xs"><i class="ti ti-x mr-1"></i>Reject</button>
                                 </div>
                             @else
                                 <span class="text-xs text-gray-500">{{ $withdrawal->processed_at ? $withdrawal->processed_at->format('M d, H:i') : '-' }}</span>

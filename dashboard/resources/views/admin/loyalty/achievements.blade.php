@@ -7,10 +7,10 @@
 <div class="space-y-6">
     <div class="flex justify-between items-center">
         <a href="{{ route('admin.loyalty.index') }}" class="flex items-center gap-2 text-sm" :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-800'">
-            <i class="fas fa-arrow-left"></i> Back to Loyalty
+            <i class="ti ti-arrow-left"></i> Back to Loyalty
         </a>
         <button onclick="document.getElementById('addAchievementModal').classList.remove('hidden')" class="btn-primary px-4 py-2 rounded-xl">
-            <i class="fas fa-plus mr-2"></i>Add Achievement
+            <i class="ti ti-plus mr-2"></i>Add Achievement
         </button>
     </div>
 
@@ -20,7 +20,7 @@
         <div class="rounded-2xl p-6" :class="darkMode ? 'bg-dark-200' : 'bg-white shadow-lg'">
             <div class="flex items-start justify-between mb-4">
                 <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                    <i class="fas fa-{{ $achievement->icon ?? 'trophy' }} text-white text-2xl"></i>
+                    <i class="ti ti-{{ $achievement->icon ?? 'trophy' }} text-white text-2xl"></i>
                 </div>
                 <span class="px-3 py-1 rounded-full text-xs font-medium {{ $achievement->is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-500' }}">
                     {{ $achievement->is_active ? 'Active' : 'Inactive' }}
@@ -59,7 +59,7 @@
         <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-bold" :class="darkMode ? 'text-white' : 'text-gray-800'">Add Achievement</h3>
             <button onclick="document.getElementById('addAchievementModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times"></i>
+                <i class="ti ti-x"></i>
             </button>
         </div>
         <form action="{{ route('admin.loyalty.achievements.store') }}" method="POST" class="space-y-4">

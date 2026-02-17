@@ -95,7 +95,7 @@
 
             <div class="flex justify-end space-x-4">
                 <a href="{{ route('admin.promo-codes.index') }}" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg">Cancel</a>
-                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="fas fa-save mr-2"></i>Update</button>
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="ti ti-device-floppy mr-2"></i>Update</button>
             </div>
         </form>
     </div>

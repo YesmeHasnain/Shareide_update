@@ -6,7 +6,7 @@
 @section('content')
 <div class="mb-6">
     <a href="{{ route('admin.drivers.show', $driver->id) }}" class="text-blue-600 hover:underline">
-        <i class="fas fa-arrow-left mr-2"></i>Back to Driver Profile
+        <i class="ti ti-arrow-left mr-2"></i>Back to Driver Profile
     </a>
 </div>
 
@@ -52,15 +52,15 @@
                         </a>
                         <div class="mt-3 flex justify-between items-center">
                             <a href="{{ asset('storage/' . $driver->documents->{$doc['field']}) }}" target="_blank" class="text-blue-600 text-sm hover:underline">
-                                <i class="fas fa-external-link-alt mr-1"></i>Full Size
+                                <i class="ti ti-external-link mr-1"></i>Full Size
                             </a>
                             <a href="{{ asset('storage/' . $driver->documents->{$doc['field']}) }}" download class="text-gray-600 text-sm hover:underline">
-                                <i class="fas fa-download mr-1"></i>Download
+                                <i class="ti ti-download mr-1"></i>Download
                             </a>
                         </div>
                     @else
                         <div class="w-full h-48 bg-gray-100 rounded-lg flex flex-col items-center justify-center">
-                            <i class="fas fa-image text-gray-300 text-4xl mb-2"></i>
+                            <i class="ti ti-photo text-gray-300 text-4xl mb-2"></i>
                             <span class="text-gray-400 text-sm">Not uploaded</span>
                         </div>
                     @endif
@@ -79,7 +79,7 @@
     @if($driver->documents->verified_at)
         <div class="mt-6 p-4 bg-green-50 border border-green-200 rounded-xl">
             <p class="text-green-800">
-                <i class="fas fa-check-circle mr-2"></i>
+                <i class="ti ti-circle-check mr-2"></i>
                 Documents verified on {{ $driver->documents->verified_at->format('M d, Y H:i') }}
             </p>
         </div>
@@ -91,11 +91,11 @@
         <form action="{{ route('admin.drivers.approve', $driver->id) }}" method="POST" onsubmit="return confirm('Approve this driver?')">
             @csrf
             <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg">
-                <i class="fas fa-check mr-2"></i>Approve Driver
+                <i class="ti ti-check mr-2"></i>Approve Driver
             </button>
         </form>
         <button onclick="document.getElementById('rejectModal').classList.remove('hidden')" class="px-6 py-2 bg-red-600 text-white rounded-lg">
-            <i class="fas fa-times mr-2"></i>Reject Driver
+            <i class="ti ti-x mr-2"></i>Reject Driver
         </button>
     </div>
     @endif
@@ -103,7 +103,7 @@
 @else
 <div class="bg-white rounded-xl shadow-sm p-8 text-center">
     <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <i class="fas fa-file-alt text-gray-400 text-2xl"></i>
+        <i class="ti ti-file-text text-gray-400 text-2xl"></i>
     </div>
     <h3 class="text-lg font-semibold text-gray-800">No Documents</h3>
     <p class="text-gray-500 mt-2">This driver hasn't uploaded any documents yet.</p>

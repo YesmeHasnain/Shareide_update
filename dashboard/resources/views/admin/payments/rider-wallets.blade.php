@@ -25,7 +25,7 @@
     <form action="{{ route('admin.payments.rider-wallets') }}" method="GET" class="flex gap-4">
         <input type="text" name="search" value="{{ request('search') }}" placeholder="Search user name or phone..."
             class="flex-1 px-4 py-2 border rounded-lg">
-        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="fas fa-search mr-2"></i>Search</button>
+        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="ti ti-search mr-2"></i>Search</button>
     </form>
 </div>
 

@@ -7,7 +7,7 @@
     <h1>Active Shared Rides</h1>
     <div class="page-actions">
         <a href="{{ route('admin.shared-rides.index') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> All Rides
+            <i class="ti ti-arrow-left"></i> All Rides
         </a>
     </div>
 </div>
@@ -40,26 +40,26 @@
 
         <div class="route-section">
             <div class="route-item">
-                <i class="fas fa-circle text-primary" style="font-size: 8px;"></i>
+                <i class="ti ti-circle text-primary" style="font-size: 8px;"></i>
                 <span>{{ Str::limit($ride->from_address, 35) }}</span>
             </div>
             <div class="route-item">
-                <i class="fas fa-circle text-success" style="font-size: 8px;"></i>
+                <i class="ti ti-circle text-success" style="font-size: 8px;"></i>
                 <span>{{ Str::limit($ride->to_address, 35) }}</span>
             </div>
         </div>
 
         <div class="ride-info-row">
             <div class="info-box">
-                <i class="fas fa-clock"></i>
+                <i class="ti ti-clock"></i>
                 <span>{{ $ride->departure_time->format('h:i A') }}</span>
             </div>
             <div class="info-box">
-                <i class="fas fa-chair"></i>
+                <i class="ti ti-armchair"></i>
                 <span>{{ $ride->total_seats - $ride->available_seats }}/{{ $ride->total_seats }}</span>
             </div>
             <div class="info-box">
-                <i class="fas fa-money-bill"></i>
+                <i class="ti ti-cash"></i>
                 <span>Rs. {{ number_format($ride->price_per_seat) }}</span>
             </div>
         </div>
@@ -82,13 +82,13 @@
 
         <div class="ride-actions">
             <a href="{{ route('admin.shared-rides.show', $ride->id) }}" class="btn btn-sm btn-info">
-                <i class="fas fa-eye"></i> View Details
+                <i class="ti ti-eye"></i> View Details
             </a>
             @if($ride->status !== 'in_progress')
             <form action="{{ route('admin.shared-rides.cancel', $ride->id) }}" method="POST" style="display: inline;">
                 @csrf
                 <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Cancel this ride?')">
-                    <i class="fas fa-times"></i> Cancel
+                    <i class="ti ti-x"></i> Cancel
                 </button>
             </form>
             @endif
@@ -96,7 +96,7 @@
     </div>
     @empty
     <div class="empty-state-full">
-        <i class="fas fa-car"></i>
+        <i class="ti ti-car"></i>
         <h3>No Active Rides</h3>
         <p>There are no active shared rides at the moment</p>
     </div>

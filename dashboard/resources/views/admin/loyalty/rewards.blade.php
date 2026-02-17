@@ -7,10 +7,10 @@
 <div class="space-y-6">
     <div class="flex justify-between items-center">
         <a href="{{ route('admin.loyalty.index') }}" class="flex items-center gap-2 text-sm" :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-800'">
-            <i class="fas fa-arrow-left"></i> Back to Loyalty
+            <i class="ti ti-arrow-left"></i> Back to Loyalty
         </a>
         <button onclick="document.getElementById('addRewardModal').classList.remove('hidden')" class="btn-primary px-4 py-2 rounded-xl">
-            <i class="fas fa-plus mr-2"></i>Add Reward
+            <i class="ti ti-plus mr-2"></i>Add Reward
         </button>
     </div>
 
@@ -34,7 +34,7 @@
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
-                                <i class="fas fa-gift text-white"></i>
+                                <i class="ti ti-gift text-white"></i>
                             </div>
                             <div>
                                 <p class="font-medium" :class="darkMode ? 'text-white' : 'text-gray-800'">{{ $reward->name }}</p>
@@ -71,7 +71,7 @@
                 @empty
                 <tr>
                     <td colspan="7" class="px-6 py-12 text-center" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
-                        <i class="fas fa-gift text-5xl mb-3 opacity-30"></i>
+                        <i class="ti ti-gift text-5xl mb-3 opacity-30"></i>
                         <p>No rewards created yet</p>
                     </td>
                 </tr>
@@ -89,7 +89,7 @@
         <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-bold" :class="darkMode ? 'text-white' : 'text-gray-800'">Add New Reward</h3>
             <button onclick="document.getElementById('addRewardModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times"></i>
+                <i class="ti ti-x"></i>
             </button>
         </div>
         <form action="{{ route('admin.loyalty.rewards.store') }}" method="POST" class="space-y-4">

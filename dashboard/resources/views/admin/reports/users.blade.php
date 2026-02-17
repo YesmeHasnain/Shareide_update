@@ -35,7 +35,7 @@
                 @endfor
             </select>
         </div>
-        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="fas fa-filter mr-2"></i>Apply</button>
+        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg"><i class="ti ti-filter mr-2"></i>Apply</button>
     </form>
 </div>
 

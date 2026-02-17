@@ -203,6 +203,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('/{id}/guest-activity', [SupportTicketController::class, 'guestActivity'])->name('guest-activity');
         Route::post('/{id}/typing', [SupportTicketController::class, 'typing'])->name('typing');
         Route::get('/{id}/messages', [SupportTicketController::class, 'getMessages'])->name('messages');
+        Route::get('/{id}/file/{messageId}', [SupportTicketController::class, 'getAttachment'])->name('file');
+        Route::post('/{id}/upload', [SupportTicketController::class, 'uploadAttachment'])->name('upload');
     });
 
     // Audit Logs

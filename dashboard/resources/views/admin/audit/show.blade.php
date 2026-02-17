@@ -7,7 +7,7 @@
 <div class="max-w-4xl mx-auto space-y-6">
     <!-- Back Button -->
     <a href="{{ route('admin.audit.index') }}" class="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-        <i class="fas fa-arrow-left mr-2"></i>Back to Audit Logs
+        <i class="ti ti-arrow-left mr-2"></i>Back to Audit Logs
     </a>
 
     <!-- Audit Log Details Card -->
@@ -16,7 +16,7 @@
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ ucfirst(str_replace('_', ' ', $log->action)) }}</h2>
                 <span class="text-sm text-gray-500 dark:text-gray-400">
-                    <i class="fas fa-clock mr-1"></i>{{ $log->created_at->format('M d, Y \a\t h:i A') }}
+                    <i class="ti ti-clock mr-1"></i>{{ $log->created_at->format('M d, Y \a\t h:i A') }}
                 </span>
             </div>
         </div>
@@ -66,7 +66,7 @@
                         @if($log->old_values)
                             <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
                                 <h4 class="text-sm font-medium text-red-800 dark:text-red-400 mb-2">
-                                    <i class="fas fa-minus-circle mr-1"></i>Old Values
+                                    <i class="ti ti-circle-minus mr-1"></i>Old Values
                                 </h4>
                                 <pre class="text-sm text-red-700 dark:text-red-300 overflow-x-auto">{{ json_encode($log->old_values, JSON_PRETTY_PRINT) }}</pre>
                             </div>
@@ -74,7 +74,7 @@
                         @if($log->new_values)
                             <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
                                 <h4 class="text-sm font-medium text-green-800 dark:text-green-400 mb-2">
-                                    <i class="fas fa-plus-circle mr-1"></i>New Values
+                                    <i class="ti ti-circle-plus mr-1"></i>New Values
                                 </h4>
                                 <pre class="text-sm text-green-700 dark:text-green-300 overflow-x-auto">{{ json_encode($log->new_values, JSON_PRETTY_PRINT) }}</pre>
                             </div>
