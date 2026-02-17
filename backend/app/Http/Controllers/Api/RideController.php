@@ -183,11 +183,6 @@ class RideController extends Controller
                 ->values()
                 ->take(10);
 
-            // DEV MODE: Return mock drivers if no real drivers found
-            if ($drivers->isEmpty() && config('app.debug')) {
-                $drivers = $this->getMockDrivers($distance, 0);
-            }
-
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -924,11 +919,6 @@ class RideController extends Controller
             $maxDrivers = $bidPercentage >= 30 ? 20 : ($bidPercentage >= 10 ? 15 : 10);
             $drivers = $drivers->take($maxDrivers);
 
-            // DEV MODE: Return mock drivers if no real drivers found and in debug mode
-            if ($drivers->isEmpty() && config('app.debug')) {
-                $drivers = $this->getMockDrivers($distance, $bidPercentage);
-            }
-
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -1226,115 +1216,4 @@ class RideController extends Controller
         }
     }
 
-    /**
-     * DEV MODE: Generate mock drivers for testing
-     * Only used when APP_DEBUG=true and no real drivers found
-     */
-    private function getMockDrivers($distance, $bidPercentage = 0)
-    {
-        $mockDrivers = [
-            [
-                'name' => 'Ahmed Khan',
-                'vehicle_type' => 'car',
-                'vehicle_make' => 'Toyota',
-                'vehicle_model' => 'Corolla 2020',
-                'vehicle_color' => 'White',
-                'plate_number' => 'LHR-1234',
-                'rating' => 4.8,
-                'total_rides' => 245,
-                'has_ac' => true,
-                'gender' => 'male',
-            ],
-            [
-                'name' => 'Usman Ali',
-                'vehicle_type' => 'car',
-                'vehicle_make' => 'Honda',
-                'vehicle_model' => 'City 2021',
-                'vehicle_color' => 'Black',
-                'plate_number' => 'ISB-5678',
-                'rating' => 4.9,
-                'total_rides' => 389,
-                'has_ac' => true,
-                'gender' => 'male',
-            ],
-            [
-                'name' => 'Bilal Hussain',
-                'vehicle_type' => 'ac_car',
-                'vehicle_make' => 'Honda',
-                'vehicle_model' => 'Civic 2022',
-                'vehicle_color' => 'Silver',
-                'plate_number' => 'LHR-9012',
-                'rating' => 4.7,
-                'total_rides' => 512,
-                'has_ac' => true,
-                'gender' => 'male',
-            ],
-            [
-                'name' => 'Imran Shah',
-                'vehicle_type' => 'rickshaw',
-                'vehicle_make' => 'Qingqi',
-                'vehicle_model' => 'Standard',
-                'vehicle_color' => 'Green',
-                'plate_number' => 'RWP-3456',
-                'rating' => 4.5,
-                'total_rides' => 678,
-                'has_ac' => false,
-                'gender' => 'male',
-            ],
-            [
-                'name' => 'Farhan Malik',
-                'vehicle_type' => 'bike',
-                'vehicle_make' => 'Honda',
-                'vehicle_model' => 'CD70',
-                'vehicle_color' => 'Red',
-                'plate_number' => 'LHR-7890',
-                'rating' => 4.6,
-                'total_rides' => 156,
-                'has_ac' => false,
-                'gender' => 'male',
-            ],
-        ];
-
-        // More drivers with higher bids
-        $driversToShow = $bidPercentage >= 30 ? 5 : ($bidPercentage >= 10 ? 4 : 3);
-
-        return collect(array_slice($mockDrivers, 0, $driversToShow))->map(function ($driver, $index) use ($distance, $bidPercentage) {
-            $baseFare = $this->calculateFare($driver['vehicle_type'], $distance);
-            $bidAmount = $baseFare * ($bidPercentage / 100);
-            $totalFare = $baseFare + $bidAmount;
-            $distanceAway = round(1.5 + ($index * 0.8), 1); // 1.5km, 2.3km, 3.1km...
-            $eta = ceil($distanceAway * 3);
-
-            return [
-                'id' => 1000 + $index, // Mock IDs starting from 1000
-                'user_id' => 1000 + $index,
-                'name' => $driver['name'],
-                'phone' => '+923001234567',
-                'gender' => $driver['gender'],
-                'vehicle_type' => $driver['vehicle_type'],
-                'vehicle_make' => $driver['vehicle_make'],
-                'vehicle_model' => $driver['vehicle_model'],
-                'vehicle_color' => $driver['vehicle_color'],
-                'plate_number' => $driver['plate_number'],
-                'rating' => $driver['rating'],
-                'total_rides' => $driver['total_rides'],
-                'distance_away' => $distanceAway,
-                'eta_minutes' => $eta,
-                'eta' => $eta,
-                'base_fare' => $baseFare,
-                'bid_amount' => round($bidAmount),
-                'fare' => round($totalFare),
-                'has_ac' => $driver['has_ac'],
-                'accepts_cash' => true,
-                'is_premium' => $driver['rating'] >= 4.8,
-                'avatar' => null,
-                'vehicle' => [
-                    'model' => $driver['vehicle_model'],
-                    'color' => $driver['vehicle_color'],
-                    'plate' => $driver['plate_number'],
-                ],
-                '_is_mock' => true, // Flag to identify mock data
-            ];
-        });
-    }
 }

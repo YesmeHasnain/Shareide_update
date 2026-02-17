@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('ratings', function (Blueprint $table) {
-            $table->json('review_tags')->nullable()->after('comment');
+            $table->json('review_tags')->nullable()->after('rider_comment');
         });
     }
 

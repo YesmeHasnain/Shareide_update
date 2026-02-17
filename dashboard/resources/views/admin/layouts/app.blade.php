@@ -724,14 +724,6 @@
                             </div>
                         </div>
 
-                        <!-- Test Notification -->
-                        <button onclick="ShareideRealtime.testNotification()"
-                            class="p-2.5 rounded-xl transition-all border"
-                            :class="darkMode ? 'bg-white/5 border-white/5 hover:bg-white/10 text-gray-400' : 'bg-white border-[#F0F0F3] hover:border-primary/30 text-gray-500 hover:text-primary'"
-                            style="box-shadow: 0 2px 8px rgba(0,0,0,0.04);"
-                            title="Test Notification">
-                            <i class="fas fa-volume-up text-sm"></i>
-                        </button>
 
                         <!-- Dark Mode Toggle -->
                         <div class="flex items-center gap-1.5 px-2 py-1.5 rounded-pill border transition-all"
@@ -1002,7 +994,6 @@
                 this.requestNotificationPermission();
                 this.startPolling();
                 this.setupVisibilityHandler();
-                console.log('SHAREIDE Real-time Dashboard initialized');
             },
 
             setupVisibilityHandler() {
@@ -1222,21 +1213,9 @@
                 setInterval(() => this.fetchUpdates(), this.pollingInterval);
             },
 
-            testNotification() {
-                this.playNotificationSound();
-                this.showBrowserNotification('SHAREIDE Test Alert', 'Notifications are working!');
-                this.showToast('Test notification sent! Check your desktop.');
-                this.flashTitle('TEST ALERT!');
-            }
         };
 
         document.addEventListener('DOMContentLoaded', () => ShareideRealtime.init());
-        setTimeout(() => {
-            if (!sessionStorage.getItem('testNotifSent')) {
-                ShareideRealtime.testNotification();
-                sessionStorage.setItem('testNotifSent', 'true');
-            }
-        }, 3000);
     </script>
 
     @stack('scripts')

@@ -74,11 +74,6 @@ class AuthController extends Controller
             'is_existing_user' => $existingUser !== null,
         ];
 
-        // Include OTP in dev mode
-        if (isset($result['dev_otp'])) {
-            $response['debug_code'] = $result['dev_otp'];
-        }
-
         return response()->json($response);
     }
 
@@ -124,11 +119,8 @@ class AuthController extends Controller
         $phone = $this->formatPhoneNumber($request->phone);
         $code  = $request->code;
 
-        // DEV MODE: Accept 123456 as universal code for testing
-        $isDevBypass = $code === '123456' && config('app.debug');
-
         // If using Twilio Verify API, let Twilio check the code
-        if (!$isDevBypass && $this->whatsappService->isUsingVerifyAPI()) {
+        if ($this->whatsappService->isUsingVerifyAPI()) {
             $verifyResult = $this->whatsappService->verifyOTPCode($phone, $code);
             if (!$verifyResult['success']) {
                 return response()->json([
@@ -139,37 +131,35 @@ class AuthController extends Controller
             // Twilio verified - DON'T mark local record yet (completeRegistration will do it for new users)
             $verification = PhoneVerification::where('phone', $phone)->first();
         } else {
-            // Local verification (WhatsApp/dev mode)
+            // Local verification (WhatsApp)
             $verification = PhoneVerification::where('phone', $phone)->first();
 
-            if (!$verification && !$isDevBypass) {
+            if (!$verification) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid verification code',
                 ], 401);
             }
 
-            if (!$isDevBypass && $verification->code !== $code) {
+            if ($verification->code !== $code) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid verification code',
                 ], 401);
             }
 
-            if (!$isDevBypass) {
-                if ($verification->isExpired()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Verification code has expired',
-                    ], 401);
-                }
+            if ($verification->isExpired()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Verification code has expired',
+                ], 401);
+            }
 
-                if ($verification->isVerified()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Code already used',
-                    ], 401);
-                }
+            if ($verification->isVerified()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Code already used',
+                ], 401);
             }
         }
 

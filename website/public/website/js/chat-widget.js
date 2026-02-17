@@ -3,7 +3,7 @@
 
 (function() {
 
-  var API_BASE_URL = 'https://api.shareide.com/api';
+  var API_BASE_URL = window.SHAREIDE_API_URL || 'https://api.shareide.com/api';
   var STORAGE_KEY = 'shareide_support';
 
   // ============================================

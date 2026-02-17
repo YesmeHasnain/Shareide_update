@@ -23,6 +23,10 @@ return [
         'https://shareide.com',
         'https://www.shareide.com',
         'https://dashboard.shareide.com',
+        'http://127.0.0.1:8010',
+        'http://localhost:8010',
+        'http://127.0.0.1:8011',
+        'http://localhost:8011',
     ],
 
     'allowed_origins_patterns' => [],

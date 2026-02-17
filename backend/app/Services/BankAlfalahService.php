@@ -58,8 +58,8 @@ class BankAlfalahService
         $this->sandboxUrl = 'https://sandbox.bankalfalah.com';
         $this->productionUrl = env('BANKALFALAH_SANDBOX_URL', 'https://payments.bankalfalah.com');
 
-        // Determine environment: BANKALFALAH_TEST_MODE=true means use sandbox/test
-        $testMode = env('BANKALFALAH_TEST_MODE', true);
+        // Determine environment: BANKALFALAH_TEST_MODE defaults to false (production)
+        $testMode = env('BANKALFALAH_TEST_MODE', false);
         $this->isProduction = ($testMode === false || $testMode === 'false') ? true : false;
 
         Log::info('BankAlfalahService initialized', [

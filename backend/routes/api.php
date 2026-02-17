@@ -64,13 +64,6 @@ Route::prefix('auth')->group(function () {
 Route::match(['get', 'post'], '/payment/callback', [PaymentController::class, 'paymentCallback']);
 Route::match(['get', 'post'], '/wallet/payment-callback', [RiderWalletController::class, 'paymentCallback']);
 
-// Test payment endpoints (for development)
-Route::match(['get', 'post'], '/wallet/test-payment', [RiderWalletController::class, 'testPaymentPage']);
-Route::post('/wallet/test-payment/process', [RiderWalletController::class, 'processTestPayment']);
-
-// Check Bank Alfalah IPN Status (for testing)
-Route::get('/wallet/check-ipn/{orderId}', [RiderWalletController::class, 'checkIPNStatus']);
-Route::get('/wallet/recent-orders', [RiderWalletController::class, 'recentOrders']);
 
 // ============================================
 // WEBSITE CONTACT FORM (Public - No Auth Required)

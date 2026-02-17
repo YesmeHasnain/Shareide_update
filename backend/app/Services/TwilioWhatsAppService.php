@@ -33,11 +33,10 @@ class TwilioWhatsAppService
             $formattedNumber = $this->formatPhoneNumber($phoneNumber);
 
             if (!$this->client) {
-                Log::info("OTP for {$formattedNumber}: {$otp}");
+                Log::warning("Twilio not configured. OTP could not be sent to {$formattedNumber}");
                 return [
-                    'success' => true,
-                    'message' => 'OTP sent (dev mode)',
-                    'dev_otp' => $otp,
+                    'success' => false,
+                    'message' => 'SMS service not configured. Please contact support.',
                 ];
             }
 
