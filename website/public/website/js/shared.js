@@ -71,10 +71,39 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Close menu on link click
-  document.querySelectorAll('.nav__link').forEach(function(link) {
+  // Close menu on link click (direct links only, not dropdowns)
+  document.querySelectorAll('.nav__link:not(.nav__link--dropdown)').forEach(function(link) {
     link.addEventListener('click', function() {
       if (navMenu) navMenu.classList.remove('show');
+    });
+  });
+
+  // Close menu when clicking mega menu items
+  document.querySelectorAll('.mega-menu__item, .nav__dropdown-item').forEach(function(link) {
+    link.addEventListener('click', function() {
+      if (navMenu) navMenu.classList.remove('show');
+    });
+  });
+
+  // ============ MEGA MENU - MOBILE ACCORDION ============
+  document.querySelectorAll('.nav__link--dropdown').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      // Only accordion behavior on mobile
+      if (window.innerWidth <= 992) {
+        e.preventDefault();
+        var parent = this.closest('.nav__dropdown');
+        var isOpen = parent.classList.contains('mobile-open');
+
+        // Close all dropdowns
+        document.querySelectorAll('.nav__dropdown').forEach(function(d) {
+          d.classList.remove('mobile-open');
+        });
+
+        // Toggle clicked
+        if (!isOpen) {
+          parent.classList.add('mobile-open');
+        }
+      }
     });
   });
 

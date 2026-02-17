@@ -6,7 +6,7 @@
 
 @section('content')
     <!-- Page Hero -->
-    <section class="page-hero">
+    <section class="page-hero page-hero--services">
         <canvas class="page-hero__particles" id="pageParticles"></canvas>
         <div class="page-hero__grid"></div>
         <div class="page-hero__orbs">
@@ -15,6 +15,7 @@
             <div class="orb orb--3"></div>
         </div>
         <div class="page-hero__glow"></div>
+        <div class="page-hero__icon"><i class="fas fa-play-circle"></i></div>
         <div class="container">
             <nav class="breadcrumb" data-animate="fade-down">
                 <a href="{{ route('home') }}">Home</a>

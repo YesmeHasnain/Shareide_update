@@ -217,6 +217,251 @@
   .page-hero__glow { width: 250px; height: 120px; }
 }
 
+/* ========== PAGE HERO VARIANTS ========== */
+
+/* --- Floating Page Icon --- */
+.page-hero__icon {
+  position: absolute;
+  top: 50%;
+  right: 10%;
+  transform: translateY(-50%);
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56px;
+  color: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: 32px;
+  z-index: 2;
+  animation: heroIconFloat 6s ease-in-out infinite;
+  backdrop-filter: blur(2px);
+  background: rgba(255,255,255,0.02);
+}
+
+@keyframes heroIconFloat {
+  0%, 100% { transform: translateY(-50%) rotate(0deg); }
+  50% { transform: translateY(calc(-50% - 15px)) rotate(3deg); }
+}
+
+@media (max-width: 768px) {
+  .page-hero__icon {
+    width: 80px;
+    height: 80px;
+    font-size: 32px;
+    right: 5%;
+    top: 30%;
+    border-radius: 20px;
+    opacity: 0.6;
+  }
+}
+
+/* --- Services Pages: Gold (enhanced default) --- */
+.page-hero--services {
+  background: linear-gradient(150deg, #0F0F1A 0%, #1A1A20 40%, #1E1E30 70%, #0F0F1A 100%);
+}
+
+.page-hero--services .page-hero__icon {
+  color: rgba(252,192,20,0.06);
+  border-color: rgba(252,192,20,0.05);
+}
+
+/* --- Company Pages: Blue Tint --- */
+.page-hero--company {
+  background: linear-gradient(150deg, #0F0F1A 0%, #0F1B2E 40%, #1A2744 70%, #0F0F1A 100%);
+}
+
+.page-hero--company::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(59,130,246,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(252,192,20,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 50% at 50% 20%, rgba(59,130,246,0.04) 0%, transparent 50%);
+}
+
+.page-hero--company .orb--1 {
+  background: radial-gradient(circle, rgba(59,130,246,0.10) 0%, transparent 70%) !important;
+}
+
+.page-hero--company .page-hero__icon {
+  color: rgba(59,130,246,0.06);
+  border-color: rgba(59,130,246,0.05);
+}
+
+.page-hero--company .page-hero__glow {
+  background: radial-gradient(ellipse, rgba(59,130,246,0.06) 0%, transparent 70%);
+}
+
+/* --- Safety Page: Red/Warm Tint --- */
+.page-hero--safety {
+  background: linear-gradient(150deg, #0F0F1A 0%, #1A1520 40%, #2A1525 70%, #0F0F1A 100%);
+}
+
+.page-hero--safety::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(239,68,68,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(252,192,20,0.03) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 50% at 50% 20%, rgba(239,68,68,0.04) 0%, transparent 50%);
+}
+
+.page-hero--safety .orb--1 {
+  background: radial-gradient(circle, rgba(239,68,68,0.10) 0%, transparent 70%) !important;
+}
+
+.page-hero--safety .page-hero__glow {
+  background: radial-gradient(ellipse, rgba(239,68,68,0.06) 0%, transparent 70%);
+}
+
+.page-hero--safety .page-hero__icon {
+  color: rgba(239,68,68,0.06);
+  border-color: rgba(239,68,68,0.05);
+}
+
+/* --- Loyalty Page: Purple Tint --- */
+.page-hero--loyalty {
+  background: linear-gradient(150deg, #0F0F1A 0%, #1A152E 40%, #1E1640 70%, #0F0F1A 100%);
+}
+
+.page-hero--loyalty::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(139,92,246,0.07) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(252,192,20,0.03) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 50% at 50% 20%, rgba(139,92,246,0.05) 0%, transparent 50%);
+}
+
+.page-hero--loyalty .orb--1 {
+  background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%) !important;
+}
+
+.page-hero--loyalty .orb--2 {
+  background: radial-gradient(circle, rgba(252,192,20,0.06) 0%, transparent 70%) !important;
+}
+
+.page-hero--loyalty .page-hero__glow {
+  background: radial-gradient(ellipse, rgba(139,92,246,0.06) 0%, transparent 70%);
+}
+
+.page-hero--loyalty .page-hero__icon {
+  color: rgba(139,92,246,0.06);
+  border-color: rgba(139,92,246,0.05);
+}
+
+/* --- Drive Page: Green Tint --- */
+.page-hero--drive {
+  background: linear-gradient(150deg, #0F0F1A 0%, #0F1A18 40%, #142A24 70%, #0F0F1A 100%);
+}
+
+.page-hero--drive::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(16,185,129,0.07) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(252,192,20,0.03) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 50% at 50% 20%, rgba(16,185,129,0.04) 0%, transparent 50%);
+}
+
+.page-hero--drive .orb--1 {
+  background: radial-gradient(circle, rgba(16,185,129,0.10) 0%, transparent 70%) !important;
+}
+
+.page-hero--drive .page-hero__glow {
+  background: radial-gradient(ellipse, rgba(16,185,129,0.06) 0%, transparent 70%);
+}
+
+.page-hero--drive .page-hero__icon {
+  color: rgba(16,185,129,0.06);
+  border-color: rgba(16,185,129,0.05);
+}
+
+/* --- Support Pages: Teal Tint --- */
+.page-hero--support {
+  background: linear-gradient(150deg, #0F0F1A 0%, #0F1A1E 40%, #142E34 70%, #0F0F1A 100%);
+}
+
+.page-hero--support::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(20,184,166,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(252,192,20,0.03) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 50% at 50% 20%, rgba(20,184,166,0.04) 0%, transparent 50%);
+}
+
+.page-hero--support .orb--1 {
+  background: radial-gradient(circle, rgba(20,184,166,0.10) 0%, transparent 70%) !important;
+}
+
+.page-hero--support .page-hero__glow {
+  background: radial-gradient(ellipse, rgba(20,184,166,0.06) 0%, transparent 70%);
+}
+
+.page-hero--support .page-hero__icon {
+  color: rgba(20,184,166,0.06);
+  border-color: rgba(20,184,166,0.05);
+}
+
+/* --- Legal Pages: Muted Neutral --- */
+.page-hero--legal {
+  background: linear-gradient(150deg, #0F0F1A 0%, #151520 40%, #1A1A2E 70%, #0F0F1A 100%);
+  min-height: 40vh;
+  padding: 140px 0 70px;
+}
+
+.page-hero--legal::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(255,255,255,0.02) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(255,255,255,0.01) 0%, transparent 50%);
+}
+
+.page-hero--legal .orb--1 {
+  background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%) !important;
+}
+
+.page-hero--legal .orb--2 {
+  background: radial-gradient(circle, rgba(255,255,255,0.02) 0%, transparent 70%) !important;
+}
+
+.page-hero--legal .page-hero__glow {
+  background: radial-gradient(ellipse, rgba(255,255,255,0.03) 0%, transparent 70%);
+}
+
+.page-hero--legal .page-hero__icon {
+  color: rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.02);
+}
+
+/* --- Gradient Text Color Overrides Per Category --- */
+.page-hero--company .gradient-text {
+  background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 50%, #2563EB 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.page-hero--safety .gradient-text {
+  background: linear-gradient(135deg, #FCA5A5 0%, #EF4444 50%, #DC2626 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.page-hero--loyalty .gradient-text {
+  background: linear-gradient(135deg, #C4B5FD 0%, #8B5CF6 50%, #7C3AED 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.page-hero--drive .gradient-text {
+  background: linear-gradient(135deg, #6EE7B7 0%, #10B981 50%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.page-hero--support .gradient-text {
+  background: linear-gradient(135deg, #5EEAD4 0%, #14B8A6 50%, #0D9488 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 /* ========== CONTENT SECTIONS ========== */
 .content-section {
   padding: 100px 0;
@@ -761,7 +1006,7 @@
   border: 1px solid var(--border);
   border-radius: 50px;
   font-size: 16px;
-  font-family: 'Sora', sans-serif;
+  font-family: 'Inter', sans-serif;
   color: var(--text);
   outline: none;
   transition: all 0.3s ease;
@@ -902,7 +1147,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   font-size: 15px;
-  font-family: 'Sora', sans-serif;
+  font-family: 'Inter', sans-serif;
   color: var(--text);
   outline: none;
   transition: all 0.3s ease;

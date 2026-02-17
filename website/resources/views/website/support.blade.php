@@ -23,7 +23,7 @@
     .ticket-reply-form { display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-light, #E5E7EB); }
     .ticket-reply-form input {
         flex: 1; padding: 12px 16px; background: var(--surface, #F9FAFB); border: 1px solid var(--border-light, #E5E7EB);
-        border-radius: 50px; font-size: 14px; font-family: 'Sora', sans-serif; outline: none; color: var(--text, #1F2937);
+        border-radius: 50px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; color: var(--text, #1F2937);
         transition: border-color 0.3s ease;
     }
     .ticket-reply-form input:focus { border-color: var(--primary, #FCC014); }
@@ -72,7 +72,7 @@
 
 @section('content')
     <!-- Page Hero -->
-    <section class="page-hero">
+    <section class="page-hero page-hero--support">
         <canvas class="page-hero__particles" id="pageParticles"></canvas>
         <div class="page-hero__grid"></div>
         <div class="page-hero__orbs">
@@ -81,6 +81,7 @@
             <div class="orb orb--3"></div>
         </div>
         <div class="page-hero__glow"></div>
+        <div class="page-hero__icon"><i class="fas fa-headset"></i></div>
         <div class="container">
             <nav class="breadcrumb" data-animate="fade-down">
                 <a href="{{ route('home') }}">Home</a>
