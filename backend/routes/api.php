@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\PushNotificationController;
 use App\Http\Controllers\Api\RideBidController;
 use App\Http\Controllers\Api\LoyaltyController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\IntercityController;
 
 // Health check
@@ -71,13 +72,21 @@ Route::match(['get', 'post'], '/wallet/payment-callback', [RiderWalletController
 Route::post('/contact', [ContactController::class, 'submit']);
 
 // ============================================
+// AI CHATBOT (Public - No Auth Required)
+// ============================================
+Route::post('/chatbot/message', [ChatbotController::class, 'chat']);
+
+// ============================================
 // SUPPORT TICKET ACCESS (Public - Token Based)
 // ============================================
 Route::get('/support/ticket/{token}', [ContactController::class, 'viewTicket']);
 Route::post('/support/ticket/{token}/reply', [ContactController::class, 'replyToTicket']);
 Route::post('/support/ticket/{token}/activity', [ContactController::class, 'updateActivity']);
+Route::post('/support/ticket/{token}/offline', [ContactController::class, 'goOffline']);
 Route::post('/support/ticket/{token}/typing', [ContactController::class, 'typing']);
 Route::get('/support/ticket/{token}/messages', [ContactController::class, 'getNewMessages']);
+Route::get('/support/ticket/{token}/file/{messageId}', [ContactController::class, 'getAttachment']);
+Route::post('/support/ticket/{token}/upload', [ContactController::class, 'uploadAttachment']);
 
 // Protected routes (authentication required)
 Route::middleware('auth:sanctum')->group(function () {
@@ -85,6 +94,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth routes
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // ============================================
+    // SUPPORT (Authenticated - App Users)
+    // ============================================
+    Route::post('/support/create', [ContactController::class, 'createAppTicket']);
 
     // Profile routes (for riders)
     Route::prefix('profile')->group(function () {

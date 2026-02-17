@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use App\Models\SupportTicket;
 use App\Models\TicketMessage;
 use App\Mail\NewSupportTicketMail;
@@ -28,7 +29,7 @@ class ContactController extends Controller
             'message' => 'required|string|max:5000',
             'category' => 'nullable|string|in:website_contact,ride_issue,payment,driver_behavior,app_bug,account,other',
             'priority' => 'nullable|string|in:low,medium,high,urgent',
-            'source' => 'nullable|string|in:contact_form,chatbot',
+            'source' => 'nullable|string|in:contact_form,chatbot,chatbot_app_shareide,chatbot_app_fleet,app_shareide,app_fleet',
         ]);
 
         if ($validator->fails()) {
@@ -56,6 +57,8 @@ class ContactController extends Controller
                 'status' => 'open',
                 'description' => $request->message,
                 'source' => $request->input('source', 'contact_form'),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
             ]);
 
             // Create first message
@@ -112,6 +115,9 @@ class ContactController extends Controller
 
         $hasAdminReply = $ticket->messages->where('sender_type', 'admin')->count() > 0;
         $agentName = $ticket->assignedAdmin?->name ?? null;
+        $agentPhoto = $ticket->assignedAdmin?->profile_photo
+            ? asset('storage/' . $ticket->assignedAdmin->profile_photo)
+            : null;
 
         return response()->json([
             'success' => true,
@@ -125,13 +131,16 @@ class ContactController extends Controller
                 'agent' => $agentName ? [
                     'name' => $agentName,
                     'initial' => strtoupper(substr($agentName, 0, 1)),
+                    'profile_picture' => $agentPhoto,
                 ] : null,
-                'messages' => $ticket->messages->map(function($msg) {
+                'messages' => $ticket->messages->map(function($msg) use ($token) {
                     return [
                         'id' => $msg->id,
                         'sender' => $msg->sender_type === 'admin' ? ($msg->user?->name ?? 'Support Team') : 'You',
                         'sender_initial' => $msg->sender_type === 'admin' ? strtoupper(substr($msg->user?->name ?? 'S', 0, 1)) : null,
                         'message' => $msg->message,
+                        'attachment' => $this->secureAttachmentUrl($token, $msg->id, $msg->attachment),
+                        'attachment_name' => $msg->attachment ? basename($msg->attachment) : null,
                         'created_at' => $msg->created_at->format('h:i A'),
                         'is_admin' => $msg->sender_type === 'admin',
                     ];
@@ -173,11 +182,12 @@ class ContactController extends Controller
             ], 400);
         }
 
-        // Create reply message
+        // Create reply message - use 'user' sender_type if ticket has user_id (app user)
+        $senderType = $ticket->user_id ? 'user' : 'guest';
         $message = TicketMessage::create([
             'support_ticket_id' => $ticket->id,
-            'user_id' => null,
-            'sender_type' => 'guest',
+            'user_id' => $ticket->user_id,
+            'sender_type' => $senderType,
             'message' => $request->message,
             'is_internal' => false,
         ]);
@@ -207,6 +217,54 @@ class ContactController extends Controller
     }
 
     /**
+     * Guest uploads a file/image attachment
+     */
+    public function uploadAttachment(Request $request, $token)
+    {
+        $ticket = SupportTicket::where('reply_token', $token)->first();
+
+        if (!$ticket) {
+            return response()->json(['success' => false, 'message' => 'Ticket not found'], 404);
+        }
+
+        if (in_array($ticket->status, ['closed', 'resolved'])) {
+            return response()->json(['success' => false, 'message' => 'This ticket is closed.'], 400);
+        }
+
+        $request->validate([
+            'file' => 'required|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,txt,zip',
+            'message' => 'nullable|string|max:2000',
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store('ticket-attachments/' . $ticket->id, 'public');
+
+        $senderType = $ticket->user_id ? 'user' : 'guest';
+        $message = TicketMessage::create([
+            'support_ticket_id' => $ticket->id,
+            'user_id' => $ticket->user_id,
+            'sender_type' => $senderType,
+            'message' => $request->input('message', ''),
+            'attachment' => $path,
+            'is_internal' => false,
+        ]);
+
+        Cache::forget("ticket_typing_guest_{$ticket->id}");
+
+        $ticket->update([
+            'status' => 'open',
+            'last_reply_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'File sent successfully!',
+            'message_id' => $message->id,
+            'attachment_url' => $this->secureAttachmentUrl($token, $message->id, $path),
+        ]);
+    }
+
+    /**
      * Guest typing indicator - POST sets cache, returns admin typing status
      */
     public function typing($token)
@@ -230,7 +288,9 @@ class ContactController extends Controller
      */
     public function getNewMessages(Request $request, $token)
     {
-        $ticket = SupportTicket::where('reply_token', $token)->first();
+        $ticket = SupportTicket::where('reply_token', $token)
+            ->with('assignedAdmin')
+            ->first();
 
         if (!$ticket) {
             return response()->json(['success' => false, 'message' => 'Ticket not found'], 404);
@@ -247,22 +307,34 @@ class ContactController extends Controller
             $query->where('id', '>', $afterId);
         }
 
-        $messages = $query->get()->map(function ($msg) {
+        $messages = $query->get()->map(function ($msg) use ($token) {
             return [
                 'id' => $msg->id,
                 'sender' => $msg->sender_type === 'admin' ? ($msg->user?->name ?? 'Support Team') : 'You',
                 'sender_initial' => $msg->sender_type === 'admin' ? strtoupper(substr($msg->user?->name ?? 'S', 0, 1)) : null,
                 'message' => $msg->message,
+                'attachment' => $this->secureAttachmentUrl($token, $msg->id, $msg->attachment),
+                'attachment_name' => $msg->attachment ? basename($msg->attachment) : null,
                 'created_at' => $msg->created_at->format('h:i A'),
                 'is_admin' => $msg->sender_type === 'admin',
             ];
         });
+
+        $agentName = $ticket->assignedAdmin?->name ?? null;
+        $agentPhoto = $ticket->assignedAdmin?->profile_photo
+            ? asset('storage/' . $ticket->assignedAdmin->profile_photo)
+            : null;
 
         return response()->json([
             'success' => true,
             'messages' => $messages,
             'admin_typing' => (bool) Cache::get("ticket_typing_admin_{$ticket->id}", false),
             'ticket_status' => $ticket->status,
+            'agent' => $agentName ? [
+                'name' => $agentName,
+                'initial' => strtoupper(substr($agentName, 0, 1)),
+                'profile_picture' => $agentPhoto,
+            ] : null,
         ]);
     }
 
@@ -285,5 +357,139 @@ class ContactController extends Controller
         return response()->json([
             'success' => true,
         ]);
+    }
+
+    /**
+     * Mark guest as offline (called on tab close via sendBeacon)
+     */
+    public function goOffline($token)
+    {
+        $ticket = SupportTicket::where('reply_token', $token)->first();
+
+        if (!$ticket) {
+            return response()->json(['success' => false], 404);
+        }
+
+        Cache::forget("ticket_online_{$ticket->id}");
+        Cache::forget("ticket_typing_guest_{$ticket->id}");
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Serve attachment file securely (validates ticket token)
+     */
+    public function getAttachment($token, $messageId)
+    {
+        $ticket = SupportTicket::where('reply_token', $token)->first();
+
+        if (!$ticket) {
+            abort(404);
+        }
+
+        $message = TicketMessage::where('id', $messageId)
+            ->where('support_ticket_id', $ticket->id)
+            ->whereNotNull('attachment')
+            ->first();
+
+        if (!$message) {
+            abort(404);
+        }
+
+        if (!Storage::disk('public')->exists($message->attachment)) {
+            abort(404);
+        }
+
+        $path = Storage::disk('public')->path($message->attachment);
+        $mime = Storage::disk('public')->mimeType($message->attachment);
+        $filename = basename($message->attachment);
+
+        return response()->file($path, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
+    }
+
+    /**
+     * Generate secure attachment URL (token-protected)
+     */
+    private function secureAttachmentUrl($token, $messageId, $attachment)
+    {
+        if (!$attachment) return null;
+        return url("/api/support/ticket/{$token}/file/{$messageId}");
+    }
+
+    /**
+     * Create support ticket from authenticated app user (rider/driver)
+     */
+    public function createAppTicket(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'subject' => 'required|string|max:200',
+            'message' => 'required|string|max:5000',
+            'category' => 'nullable|string|in:ride_issue,payment,driver_behavior,app_bug,account,other',
+            'priority' => 'nullable|string|in:low,medium,high,urgent',
+            'source' => 'nullable|string|in:app_shareide,chatbot_app_shareide,app_fleet,chatbot_app_fleet',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $user = $request->user();
+            $replyToken = Str::random(64);
+
+            $ticket = SupportTicket::create([
+                'user_id' => $user->id,
+                'guest_name' => null,
+                'guest_email' => null,
+                'guest_phone' => null,
+                'reply_token' => $replyToken,
+                'subject' => $request->subject,
+                'category' => $request->input('category', 'other'),
+                'priority' => $request->input('priority', 'medium'),
+                'status' => 'open',
+                'description' => $request->message,
+                'source' => $request->input('source', 'app_shareide'),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            TicketMessage::create([
+                'support_ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'sender_type' => 'user',
+                'message' => $request->message,
+                'is_internal' => false,
+            ]);
+
+            // Send email notification to admin
+            try {
+                Mail::to(config('mail.admin_email', 'admin@shareide.com'))
+                    ->send(new NewSupportTicketMail($ticket));
+            } catch (\Exception $e) {
+                \Log::error('Failed to send admin notification: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Support ticket created successfully.',
+                'ticket_number' => $ticket->ticket_number,
+                'reply_token' => $replyToken,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('App ticket creation error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create support ticket. Please try again later.'
+            ], 500);
+        }
     }
 }

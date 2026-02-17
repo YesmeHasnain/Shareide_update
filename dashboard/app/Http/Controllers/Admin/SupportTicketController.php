@@ -9,6 +9,7 @@ use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use App\Mail\TicketReplyMail;
 
 class SupportTicketController extends Controller
@@ -27,6 +28,19 @@ class SupportTicketController extends Controller
 
         if ($request->filled('category')) {
             $query->where('category', $request->category);
+        }
+
+        if ($request->filled('source')) {
+            $source = $request->source;
+            if ($source === 'website') {
+                $query->whereIn('source', ['contact_form', 'chatbot']);
+            } elseif ($source === 'app_shareide') {
+                $query->whereIn('source', ['app_shareide', 'chatbot_app_shareide']);
+            } elseif ($source === 'app_fleet') {
+                $query->whereIn('source', ['app_fleet', 'chatbot_app_fleet']);
+            } else {
+                $query->where('source', $source);
+            }
         }
 
         if ($request->filled('search')) {
@@ -219,12 +233,14 @@ class SupportTicketController extends Controller
             $query->where('id', '>', $afterId);
         }
 
-        $messages = $query->get()->map(function ($msg) {
+        $messages = $query->get()->map(function ($msg) use ($id) {
             return [
                 'id' => $msg->id,
                 'sender_type' => $msg->sender_type,
                 'sender_name' => $msg->sender_type === 'admin' ? ($msg->user->name ?? 'Admin') : null,
                 'message' => $msg->message,
+                'attachment' => $msg->attachment ? route('admin.support.file', [$id, $msg->id]) : null,
+                'attachment_name' => $msg->attachment ? basename($msg->attachment) : null,
                 'is_internal' => (bool) $msg->is_internal,
                 'created_at' => $msg->created_at->format('M d \a\t h:i A'),
             ];
@@ -236,6 +252,75 @@ class SupportTicketController extends Controller
             'guest_typing' => (bool) Cache::get("ticket_typing_guest_{$id}", false),
             'guest_online' => (bool) Cache::get("ticket_online_{$id}", false),
             'ticket_status' => $ticket->status,
+        ]);
+    }
+
+    /**
+     * Admin uploads a file/image attachment
+     */
+    public function uploadAttachment(Request $request, $id)
+    {
+        $ticket = SupportTicket::findOrFail($id);
+
+        $request->validate([
+            'file' => 'required|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,txt,zip',
+            'message' => 'nullable|string|max:2000',
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store('ticket-attachments/' . $ticket->id, 'public');
+
+        $message = TicketMessage::create([
+            'support_ticket_id' => $ticket->id,
+            'user_id' => auth()->id(),
+            'sender_type' => 'admin',
+            'message' => $request->input('message', ''),
+            'attachment' => $path,
+            'is_internal' => false,
+        ]);
+
+        if (!$ticket->assigned_to) {
+            $ticket->update(['assigned_to' => auth()->id()]);
+        }
+
+        $ticket->update(['last_reply_at' => now()]);
+
+        Cache::forget("ticket_typing_admin_{$id}");
+
+        AuditLog::log('ticket_attachment', "Attachment sent on ticket #{$ticket->ticket_number}", $ticket);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'File sent successfully.',
+            'message_id' => $message->id,
+            'attachment_url' => route('admin.support.file', [$ticket->id, $message->id]),
+        ]);
+    }
+
+    /**
+     * Serve attachment file securely (admin auth required)
+     */
+    public function getAttachment($id, $messageId)
+    {
+        $ticket = SupportTicket::findOrFail($id);
+
+        $message = TicketMessage::where('id', $messageId)
+            ->where('support_ticket_id', $ticket->id)
+            ->whereNotNull('attachment')
+            ->firstOrFail();
+
+        if (!Storage::disk('public')->exists($message->attachment)) {
+            abort(404);
+        }
+
+        $path = Storage::disk('public')->path($message->attachment);
+        $mime = Storage::disk('public')->mimeType($message->attachment);
+        $filename = basename($message->attachment);
+
+        return response()->file($path, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'Cache-Control' => 'private, max-age=3600',
         ]);
     }
 

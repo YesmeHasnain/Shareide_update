@@ -141,7 +141,7 @@ const SupportScreen = ({ navigation }) => {
         subject: `[App] ${CATEGORIES.find(c => c.id === selectedCategory)?.label || 'Support'} Issue`,
         message: message.trim(),
         category: selectedCategory,
-        source: 'contact_form',
+        source: 'app_shareide',
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -186,6 +186,28 @@ const SupportScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        {/* AI Chat Support */}
+        <TouchableOpacity
+          style={[styles.aiChatCard, shadows.md]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            navigation.navigate('SupportChat');
+          }}
+          activeOpacity={0.9}
+        >
+          <LinearGradient
+            colors={['#7C3AED', '#A855F7']}
+            style={styles.aiChatIconContainer}
+          >
+            <Ionicons name="sparkles" size={28} color="#fff" />
+          </LinearGradient>
+          <View style={styles.aiChatInfo}>
+            <Text style={styles.aiChatTitle}>Chat with AI Support</Text>
+            <Text style={styles.aiChatText}>Instant help with AI + live agent escalation</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color="#7C3AED" />
+        </TouchableOpacity>
+
         {/* Contact Options */}
         <View
                     style={styles.section}
@@ -580,6 +602,38 @@ const styles = StyleSheet.create({
   linkLabel: {
     fontSize: typography.body,
     fontWeight: '500',
+  },
+  aiChatCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F3FF',
+    padding: spacing.lg,
+    borderRadius: borderRadius.xl,
+    gap: spacing.md,
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: '#DDD6FE',
+  },
+  aiChatIconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  aiChatInfo: {
+    flex: 1,
+  },
+  aiChatTitle: {
+    fontSize: typography.body,
+    fontWeight: '700',
+    color: '#5B21B6',
+    marginBottom: 2,
+  },
+  aiChatText: {
+    fontSize: typography.bodySmall,
+    color: '#7C3AED',
+    opacity: 0.8,
   },
   emergencyCard: {
     flexDirection: 'row',

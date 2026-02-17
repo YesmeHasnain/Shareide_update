@@ -29,6 +29,8 @@ class SupportTicket extends Model
         'resolution_note',
         'last_reply_at',
         'source',
+        'ip_address',
+        'user_agent',
     ];
 
     protected $casts = [
@@ -142,6 +144,48 @@ class SupportTicket extends Model
             'resolved' => 'green',
             'closed' => 'gray',
             default => 'gray'
+        };
+    }
+
+    // Source helper: human-readable label
+    public function getSourceLabelAttribute()
+    {
+        return match($this->source) {
+            'contact_form' => 'Website',
+            'chatbot' => 'Website (Bot)',
+            'app_shareide' => 'ShareIde App',
+            'chatbot_app_shareide' => 'ShareIde (Bot)',
+            'app_fleet' => 'Fleet App',
+            'chatbot_app_fleet' => 'Fleet (Bot)',
+            default => 'Website'
+        };
+    }
+
+    // Source helper: badge color
+    public function getSourceColorAttribute()
+    {
+        return match($this->source) {
+            'contact_form' => 'blue',
+            'chatbot' => 'indigo',
+            'app_shareide' => 'green',
+            'chatbot_app_shareide' => 'emerald',
+            'app_fleet' => 'orange',
+            'chatbot_app_fleet' => 'amber',
+            default => 'blue'
+        };
+    }
+
+    // Source helper: icon class
+    public function getSourceIconAttribute()
+    {
+        return match($this->source) {
+            'contact_form' => 'ti-world',
+            'chatbot' => 'ti-robot',
+            'app_shareide' => 'ti-device-mobile',
+            'chatbot_app_shareide' => 'ti-robot',
+            'app_fleet' => 'ti-truck',
+            'chatbot_app_fleet' => 'ti-robot',
+            default => 'ti-world'
         };
     }
 }

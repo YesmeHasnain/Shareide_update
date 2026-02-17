@@ -10,7 +10,7 @@
         <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm p-4 border border-gray-100 dark:border-dark-100">
             <div class="flex items-center gap-3">
                 <div class="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                    <i class="fas fa-inbox text-yellow-600"></i>
+                    <i class="ti ti-inbox text-yellow-600"></i>
                 </div>
                 <div>
                     <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['open'] }}</p>
@@ -21,7 +21,7 @@
         <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm p-4 border border-gray-100 dark:border-dark-100">
             <div class="flex items-center gap-3">
                 <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                    <i class="fas fa-clock text-blue-600"></i>
+                    <i class="ti ti-clock text-blue-600"></i>
                 </div>
                 <div>
                     <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['in_progress'] }}</p>
@@ -32,7 +32,7 @@
         <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm p-4 border border-gray-100 dark:border-dark-100">
             <div class="flex items-center gap-3">
                 <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                    <i class="fas fa-check-circle text-green-600"></i>
+                    <i class="ti ti-circle-check text-green-600"></i>
                 </div>
                 <div>
                     <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['resolved'] }}</p>
@@ -43,11 +43,53 @@
         <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm p-4 border border-gray-100 dark:border-dark-100 {{ $stats['urgent'] > 0 ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : '' }}">
             <div class="flex items-center gap-3">
                 <div class="p-2 {{ $stats['urgent'] > 0 ? 'bg-red-200 dark:bg-red-900/50' : 'bg-red-100 dark:bg-red-900/30' }} rounded-lg">
-                    <i class="fas fa-exclamation-triangle text-red-600"></i>
+                    <i class="ti ti-alert-triangle text-red-600"></i>
                 </div>
                 <div>
                     <p class="text-2xl font-bold {{ $stats['urgent'] > 0 ? 'text-red-600' : 'text-gray-900 dark:text-white' }}">{{ $stats['urgent'] }}</p>
                     <p class="text-sm {{ $stats['urgent'] > 0 ? 'text-red-600' : 'text-gray-500 dark:text-gray-400' }}">Urgent</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Source Stat Cards -->
+    @php
+        $appShareideCount = \App\Models\SupportTicket::whereIn('status', ['open', 'in_progress'])->whereIn('source', ['app_shareide', 'chatbot_app_shareide'])->count();
+        $appFleetCount = \App\Models\SupportTicket::whereIn('status', ['open', 'in_progress'])->whereIn('source', ['app_fleet', 'chatbot_app_fleet'])->count();
+        $websiteCount = \App\Models\SupportTicket::whereIn('status', ['open', 'in_progress'])->whereIn('source', ['contact_form', 'chatbot'])->count();
+    @endphp
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm p-4 border border-gray-100 dark:border-dark-100">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                    <i class="ti ti-device-mobile text-green-600"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $appShareideCount }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">ShareIde App</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm p-4 border border-gray-100 dark:border-dark-100">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                    <i class="ti ti-truck text-orange-600"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $appFleetCount }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Fleet App</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm p-4 border border-gray-100 dark:border-dark-100">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <i class="ti ti-world text-blue-600"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $websiteCount }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Website</p>
                 </div>
             </div>
         </div>
@@ -73,6 +115,12 @@
                 <option value="medium" {{ request('priority') === 'medium' ? 'selected' : '' }}>Medium</option>
                 <option value="low" {{ request('priority') === 'low' ? 'selected' : '' }}>Low</option>
             </select>
+            <select name="source" class="rounded-lg border-gray-300 dark:border-dark-100 dark:bg-dark-300 dark:text-white focus:border-yellow-500 focus:ring-yellow-500">
+                <option value="">All Sources</option>
+                <option value="website" {{ request('source') === 'website' ? 'selected' : '' }}>Website</option>
+                <option value="app_shareide" {{ request('source') === 'app_shareide' ? 'selected' : '' }}>ShareIde App</option>
+                <option value="app_fleet" {{ request('source') === 'app_fleet' ? 'selected' : '' }}>Fleet App</option>
+            </select>
             <select name="category" class="rounded-lg border-gray-300 dark:border-dark-100 dark:bg-dark-300 dark:text-white focus:border-yellow-500 focus:ring-yellow-500">
                 <option value="">All Categories</option>
                 <option value="website_contact" {{ request('category') === 'website_contact' ? 'selected' : '' }}>Website Contact</option>
@@ -84,11 +132,11 @@
                 <option value="other" {{ request('category') === 'other' ? 'selected' : '' }}>Other</option>
             </select>
             <button type="submit" class="px-4 py-2 bg-gray-100 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-100 transition-colors">
-                <i class="fas fa-filter mr-1"></i>Filter
+                <i class="ti ti-filter mr-1"></i>Filter
             </button>
-            @if(request()->hasAny(['search', 'status', 'priority', 'category']))
+            @if(request()->hasAny(['search', 'status', 'priority', 'category', 'source']))
                 <a href="{{ route('admin.support.index') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
-                    <i class="fas fa-times mr-1"></i>Clear
+                    <i class="ti ti-x mr-1"></i>Clear
                 </a>
             @endif
         </form>
@@ -103,6 +151,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Ticket</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">User</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Subject</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Source</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Category</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Priority</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
@@ -121,7 +170,7 @@
                                 <div class="flex items-center gap-2">
                                     @if($ticket->is_guest)
                                         <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-medium">
-                                            <i class="fas fa-globe"></i>
+                                            <i class="ti ti-world"></i>
                                         </span>
                                     @endif
                                     <div>
@@ -137,14 +186,22 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <p class="text-gray-900 dark:text-white max-w-xs truncate">{{ $ticket->subject }}</p>
-                                    @if($ticket->source === 'chatbot')
-                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 whitespace-nowrap">
-                                            <i class="fas fa-robot mr-1" style="font-size:9px;"></i>Bot
-                                        </span>
-                                    @endif
-                                </div>
+                                <p class="text-gray-900 dark:text-white max-w-xs truncate">{{ $ticket->subject }}</p>
+                            </td>
+                            <td class="px-6 py-4">
+                                @php
+                                    $sourceStyles = [
+                                        'blue' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                                        'indigo' => 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+                                        'green' => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                                        'emerald' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+                                        'orange' => 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+                                        'amber' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+                                    ];
+                                @endphp
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold {{ $sourceStyles[$ticket->source_color] ?? $sourceStyles['blue'] }} whitespace-nowrap">
+                                    <i class="ti {{ $ticket->source_icon }} mr-1" style="font-size:10px;"></i>{{ $ticket->source_label }}
+                                </span>
                             </td>
                             <td class="px-6 py-4">
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
@@ -186,14 +243,14 @@
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <a href="{{ route('admin.support.show', $ticket->id) }}" class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300 font-medium">
-                                    <i class="fas fa-eye mr-1"></i>View
+                                    <i class="ti ti-eye mr-1"></i>View
                                 </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                                <i class="fas fa-ticket-alt text-4xl mb-2 opacity-50"></i>
+                            <td colspan="10" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                                <i class="ti ti-ticket text-4xl mb-2 opacity-50"></i>
                                 <p>No tickets found.</p>
                             </td>
                         </tr>

@@ -85,7 +85,7 @@
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div class="flex items-center gap-3">
             <a href="{{ route('admin.support.index') }}" class="w-9 h-9 rounded-xl flex items-center justify-center bg-white dark:bg-dark-200 border border-gray-200 dark:border-dark-100 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition-all">
-                <i class="fas fa-arrow-left text-sm"></i>
+                <i class="ti ti-arrow-left text-sm"></i>
             </a>
             <div>
                 <div class="flex items-center gap-2">
@@ -136,7 +136,7 @@
                 @endphp
                 <details class="mb-3 bg-white dark:bg-dark-200 rounded-xl shadow-sm border border-gray-100 dark:border-dark-100 overflow-hidden flex-shrink-0">
                     <summary class="px-4 py-3 cursor-pointer text-sm font-medium text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors flex items-center gap-2">
-                        <i class="fas fa-robot"></i>
+                        <i class="ti ti-robot"></i>
                         <span>Bot Conversation Transcript ({{ count($transcriptLines) }} messages)</span>
                         @if($beforeTranscript)
                             <span class="ml-auto text-xs text-gray-400 dark:text-gray-500 font-normal truncate max-w-[200px]">{{ Str::limit($beforeTranscript, 50) }}</span>
@@ -191,7 +191,7 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <span id="chatOnlineText" class="text-xs text-gray-400 dark:text-gray-500 hidden">
-                            <i class="fas fa-circle text-[6px] align-middle"></i> <span></span>
+                            <i class="ti ti-circle text-[6px] align-middle"></i> <span></span>
                         </span>
                         <span class="text-xs text-gray-400 dark:text-gray-500">{{ $ticket->messages->count() }} messages</span>
                     </div>
@@ -233,14 +233,30 @@
                                     @if($message->is_internal)
                                         <div class="px-3 py-2 rounded-2xl rounded-br-sm bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 shadow-sm">
                                             <div class="flex items-center gap-1.5 mb-1">
-                                                <i class="fas fa-lock text-[9px] text-amber-500"></i>
+                                                <i class="ti ti-lock text-[9px] text-amber-500"></i>
                                                 <p class="text-xs font-medium text-amber-600 dark:text-amber-400">Internal Note</p>
                                             </div>
                                             <p class="text-sm text-amber-800 dark:text-amber-200 whitespace-pre-line">{{ $message->message }}</p>
                                         </div>
                                     @else
                                         <div class="px-3 py-2 rounded-2xl rounded-br-sm bg-gradient-to-br from-yellow-400 to-orange-400 shadow-sm">
-                                            <p class="text-sm text-black whitespace-pre-line">{{ $message->message }}</p>
+                                            @if($message->attachment)
+                                                @php $fileUrl = route('admin.support.file', [$ticket->id, $message->id]); @endphp
+                                                @if(in_array(strtolower(pathinfo($message->attachment, PATHINFO_EXTENSION)), ['jpg','jpeg','png','gif','webp']))
+                                                    <a href="{{ $fileUrl }}" target="_blank" class="block mb-1">
+                                                        <img src="{{ $fileUrl }}" alt="Attachment" class="max-w-[220px] rounded-lg">
+                                                    </a>
+                                                @else
+                                                    <a href="{{ $fileUrl }}" target="_blank" class="flex items-center gap-2 p-2 bg-black/10 rounded-lg mb-1 hover:bg-black/20 transition-colors">
+                                                        <i class="ti ti-file text-lg"></i>
+                                                        <span class="text-xs font-medium truncate">{{ basename($message->attachment) }}</span>
+                                                        <i class="ti ti-download text-xs ml-auto"></i>
+                                                    </a>
+                                                @endif
+                                            @endif
+                                            @if($message->message)
+                                                <p class="text-sm text-black whitespace-pre-line">{{ $message->message }}</p>
+                                            @endif
                                         </div>
                                     @endif
                                     <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1 mr-1 text-right">
@@ -259,7 +275,23 @@
                                 </div>
                                 <div class="max-w-[75%]">
                                     <div class="px-3 py-2 rounded-2xl rounded-bl-sm bg-white dark:bg-dark-300 border border-gray-200 dark:border-dark-100 shadow-sm">
-                                        <p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-line">{{ $message->message }}</p>
+                                        @if($message->attachment)
+                                            @php $fileUrl = route('admin.support.file', [$ticket->id, $message->id]); @endphp
+                                            @if(in_array(strtolower(pathinfo($message->attachment, PATHINFO_EXTENSION)), ['jpg','jpeg','png','gif','webp']))
+                                                <a href="{{ $fileUrl }}" target="_blank" class="block mb-1">
+                                                    <img src="{{ $fileUrl }}" alt="Attachment" class="max-w-[220px] rounded-lg">
+                                                </a>
+                                            @else
+                                                <a href="{{ $fileUrl }}" target="_blank" class="flex items-center gap-2 p-2 bg-gray-100 dark:bg-dark-100 rounded-lg mb-1 hover:bg-gray-200 dark:hover:bg-dark-200 transition-colors">
+                                                    <i class="ti ti-file text-lg text-gray-500"></i>
+                                                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{{ basename($message->attachment) }}</span>
+                                                    <i class="ti ti-download text-xs text-gray-400 ml-auto"></i>
+                                                </a>
+                                            @endif
+                                        @endif
+                                        @if($message->message)
+                                            <p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-line">{{ $message->message }}</p>
+                                        @endif
                                     </div>
                                     <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">{{ $message->created_at->format('M d \a\t h:i A') }}</p>
                                 </div>
@@ -290,14 +322,35 @@
                         <div class="flex items-center gap-3 mb-2">
                             <label class="flex items-center gap-1.5 cursor-pointer select-none">
                                 <input type="checkbox" id="internalNoteToggle" class="rounded border-gray-300 dark:border-dark-100 text-yellow-600 focus:ring-yellow-500 w-3.5 h-3.5">
-                                <span class="text-[11px] text-gray-500 dark:text-gray-400"><i class="fas fa-lock mr-0.5"></i> Internal note</span>
+                                <span class="text-[11px] text-gray-500 dark:text-gray-400"><i class="ti ti-lock mr-0.5"></i> Internal note</span>
                             </label>
                             <div id="internalNoteHint" class="text-[10px] text-amber-500 dark:text-amber-400 hidden">
-                                <i class="fas fa-eye-slash mr-0.5"></i> Not visible to user
+                                <i class="ti ti-eye-off mr-0.5"></i> Not visible to user
+                            </div>
+                        </div>
+                        {{-- File preview bar --}}
+                        <div id="filePreview" class="hidden mb-2 p-2 bg-white dark:bg-dark-300 rounded-xl border border-gray-200 dark:border-dark-100">
+                            <div class="flex items-center gap-2">
+                                <div id="filePreviewThumb" class="w-10 h-10 rounded-lg bg-gray-100 dark:bg-dark-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                    <i class="ti ti-file text-gray-400"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p id="filePreviewName" class="text-xs font-medium text-gray-700 dark:text-gray-300 truncate"></p>
+                                    <p id="filePreviewSize" class="text-[10px] text-gray-400"></p>
+                                </div>
+                                <button id="filePreviewRemove" type="button" class="w-6 h-6 rounded-full hover:bg-gray-100 dark:hover:bg-dark-100 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors flex-shrink-0">
+                                    <i class="ti ti-x text-xs"></i>
+                                </button>
                             </div>
                         </div>
                         {{-- Input row --}}
                         <div class="flex items-end gap-2">
+                            <input type="file" id="fileInput" class="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip">
+                            <button id="attachBtn" type="button"
+                                class="w-10 h-10 rounded-full bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-yellow-600 transition-all flex-shrink-0"
+                                title="Attach file">
+                                <i class="ti ti-paperclip text-sm"></i>
+                            </button>
                             <div class="flex-1 relative">
                                 <textarea id="chatInput"
                                     rows="1"
@@ -309,13 +362,13 @@
                             <button id="sendBtn"
                                 class="send-btn w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 flex items-center justify-center text-black shadow-md hover:shadow-lg transition-all flex-shrink-0"
                                 title="Send message">
-                                <i class="fas fa-paper-plane text-sm"></i>
+                                <i class="ti ti-send text-sm"></i>
                             </button>
                         </div>
                     </div>
                 @else
                     <div class="flex-shrink-0 border-t border-gray-100 dark:border-dark-100 bg-gray-50 dark:bg-dark-300/50 px-4 py-3 text-center">
-                        <p class="text-sm text-gray-400 dark:text-gray-500"><i class="fas fa-lock mr-1"></i> This ticket is closed</p>
+                        <p class="text-sm text-gray-400 dark:text-gray-500"><i class="ti ti-lock mr-1"></i> This ticket is closed</p>
                     </div>
                 @endif
             </div>
@@ -331,7 +384,7 @@
                 <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm border border-gray-100 dark:border-dark-100 p-4" id="guestStatusCard">
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            <i class="fas fa-wifi mr-1"></i> Guest Status
+                            <i class="ti ti-wifi mr-1"></i> Guest Status
                         </span>
                         <span id="guestOnlineIndicator" class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
                             <span class="w-2 h-2 rounded-full bg-gray-400"></span> Checking...
@@ -343,17 +396,17 @@
             {{-- User Info --}}
             <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm border border-gray-100 dark:border-dark-100 p-5">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                    <i class="fas fa-user text-yellow-500 text-xs"></i>
+                    <i class="ti ti-user text-yellow-500 text-xs"></i>
                     @if($ticket->is_guest) Website Contact @else User Details @endif
                 </h3>
                 @if($ticket->is_guest)
                     <div class="mb-3 flex flex-wrap gap-1.5">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
-                            <i class="fas fa-globe mr-1"></i>Website
+                            <i class="ti ti-world mr-1"></i>Website
                         </span>
                         @if($ticket->source === 'chatbot')
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">
-                                <i class="fas fa-robot mr-1"></i>AI Bot
+                                <i class="ti ti-robot mr-1"></i>AI Bot
                             </span>
                         @endif
                     </div>
@@ -398,21 +451,55 @@
                         @if($ticket->user)
                             <div class="pt-1">
                                 <a href="{{ route('admin.users.show', $ticket->user->id) }}" class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300 text-xs font-medium">
-                                    <i class="fas fa-external-link-alt mr-1"></i>View Full Profile
+                                    <i class="ti ti-external-link mr-1"></i>View Full Profile
                                 </a>
                             </div>
                         @endif
                     </div>
+                @endif
+
+                {{-- IP Address --}}
+                @if($ticket->ip_address)
+                <div class="mt-3 pt-3 border-t border-gray-100 dark:border-dark-100">
+                    <div class="space-y-2 text-sm">
+                        <div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">IP Address</p>
+                            <code class="text-[12px] bg-gray-100 dark:bg-dark-100 px-2 py-1 rounded text-gray-700 dark:text-gray-300">{{ $ticket->ip_address }}</code>
+                        </div>
+                        @if($ticket->user_agent)
+                        <div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Browser</p>
+                            <p class="text-[11px] text-gray-500 dark:text-gray-400 break-all">{{ Str::limit($ticket->user_agent, 80) }}</p>
+                        </div>
+                        @endif
+                    </div>
+                </div>
                 @endif
             </div>
 
             {{-- Ticket Details --}}
             <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm border border-gray-100 dark:border-dark-100 p-5">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                    <i class="fas fa-ticket-alt text-yellow-500 text-xs"></i>
+                    <i class="ti ti-ticket text-yellow-500 text-xs"></i>
                     Ticket Details
                 </h3>
                 <div class="space-y-2.5 text-sm">
+                    <div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Source</p>
+                        @php
+                            $sourceStyles = [
+                                'blue' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                                'indigo' => 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+                                'green' => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                                'emerald' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+                                'orange' => 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+                                'amber' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+                            ];
+                        @endphp
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold {{ $sourceStyles[$ticket->source_color] ?? $sourceStyles['blue'] }} whitespace-nowrap mt-1">
+                            <i class="ti {{ $ticket->source_icon }} mr-1" style="font-size:10px;"></i>{{ $ticket->source_label }}
+                        </span>
+                    </div>
                     <div>
                         <p class="text-xs text-gray-500 dark:text-gray-400">Category</p>
                         <p class="font-medium text-gray-900 dark:text-white">{{ ucfirst(str_replace('_', ' ', $ticket->category)) }}</p>
@@ -434,7 +521,7 @@
                     @if($ticket->ride_request_id)
                         <div class="pt-1">
                             <a href="{{ route('admin.rides.show', $ticket->ride_request_id) }}" class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300 text-xs font-medium">
-                                <i class="fas fa-car mr-1"></i>View Related Ride
+                                <i class="ti ti-car mr-1"></i>View Related Ride
                             </a>
                         </div>
                     @endif
@@ -444,23 +531,23 @@
             {{-- Quick Actions --}}
             <div class="bg-white dark:bg-dark-200 rounded-xl shadow-sm border border-gray-100 dark:border-dark-100 p-5">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                    <i class="fas fa-bolt text-yellow-500 text-xs"></i>
+                    <i class="ti ti-bolt text-yellow-500 text-xs"></i>
                     Quick Actions
                 </h3>
                 <div class="space-y-2" id="quickActions">
                     @if($ticket->status !== 'resolved' && $ticket->status !== 'closed')
                         <button onclick="quickAction('status', 'resolved', this)" class="w-full px-3 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 text-xs font-medium transition-colors flex items-center justify-center gap-2">
-                            <i class="fas fa-check"></i> Mark as Resolved
+                            <i class="ti ti-check"></i> Mark as Resolved
                         </button>
                     @endif
                     @if($ticket->status !== 'closed')
                         <button onclick="quickAction('status', 'closed', this)" class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 text-xs font-medium transition-colors flex items-center justify-center gap-2">
-                            <i class="fas fa-times"></i> Close Ticket
+                            <i class="ti ti-x"></i> Close Ticket
                         </button>
                     @endif
                     @if(!$ticket->assigned_to)
                         <button onclick="quickAction('assign', '{{ auth()->id() }}', this)" class="w-full px-3 py-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-900/50 text-xs font-medium transition-colors flex items-center justify-center gap-2">
-                            <i class="fas fa-hand-point-up"></i> Assign to Me
+                            <i class="ti ti-hand-finger"></i> Assign to Me
                         </button>
                     @endif
                 </div>
@@ -494,6 +581,7 @@
     var ASSIGN_URL = '{{ route("admin.support.assign", $ticket->id) }}';
     var TYPING_URL = '{{ route("admin.support.typing", $ticket->id) }}';
     var MESSAGES_URL = '{{ route("admin.support.messages", $ticket->id) }}';
+    var UPLOAD_URL = '{{ route("admin.support.upload", $ticket->id) }}';
 
     // =============================================
     // DOM REFERENCES
@@ -506,6 +594,14 @@
     var statusSelect = document.getElementById('statusSelect');
     var prioritySelect = document.getElementById('prioritySelect');
     var guestTypingEl = document.getElementById('guestTypingIndicator');
+    var fileInput = document.getElementById('fileInput');
+    var attachBtn = document.getElementById('attachBtn');
+    var filePreview = document.getElementById('filePreview');
+    var filePreviewThumb = document.getElementById('filePreviewThumb');
+    var filePreviewName = document.getElementById('filePreviewName');
+    var filePreviewSize = document.getElementById('filePreviewSize');
+    var filePreviewRemove = document.getElementById('filePreviewRemove');
+    var pendingFile = null;
 
     // =============================================
     // AUTO-SCROLL TO BOTTOM
@@ -593,6 +689,67 @@
     }
 
     // =============================================
+    // FILE ATTACHMENT HANDLING
+    // =============================================
+    if (attachBtn) {
+        attachBtn.addEventListener('click', function() {
+            if (fileInput) fileInput.click();
+        });
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            var file = this.files[0];
+            if (!file) return;
+            if (file.size > 10 * 1024 * 1024) {
+                showToast('File too large. Max 10MB.', 'error');
+                this.value = '';
+                return;
+            }
+            pendingFile = file;
+            showFilePreview(file);
+        });
+    }
+
+    if (filePreviewRemove) {
+        filePreviewRemove.addEventListener('click', function() {
+            clearFilePreview();
+        });
+    }
+
+    function showFilePreview(file) {
+        if (!filePreview) return;
+        filePreview.classList.remove('hidden');
+        filePreviewName.textContent = file.name;
+        filePreviewSize.textContent = formatFileSize(file.size);
+
+        var isImage = file.type.startsWith('image/');
+        if (isImage) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                filePreviewThumb.innerHTML = '<img src="' + e.target.result + '" class="w-10 h-10 object-cover rounded-lg">';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            var ext = file.name.split('.').pop().toLowerCase();
+            var icons = { pdf: 'ti-file-type-pdf', doc: 'ti-file-type-doc', docx: 'ti-file-type-doc', xls: 'ti-file-type-xls', xlsx: 'ti-file-type-xls', zip: 'ti-file-type-zip', txt: 'ti-file-type-txt' };
+            filePreviewThumb.innerHTML = '<i class="ti ' + (icons[ext] || 'ti-file') + ' text-gray-400 text-lg"></i>';
+        }
+    }
+
+    function clearFilePreview() {
+        pendingFile = null;
+        if (fileInput) fileInput.value = '';
+        if (filePreview) filePreview.classList.add('hidden');
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // =============================================
     // SEND MESSAGE (AJAX)
     // =============================================
     if (sendBtn) {
@@ -606,72 +763,144 @@
         if (!chatInput) return;
 
         var message = chatInput.value.trim();
-        if (!message) return;
+        var hasFile = pendingFile !== null;
+
+        if (!message && !hasFile) return;
 
         var isInternal = internalToggle ? internalToggle.checked : false;
 
         isSending = true;
         sendBtn.disabled = true;
-        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-sm"></i>';
+        sendBtn.innerHTML = '<i class="ti ti-loader fa-spin text-sm"></i>';
 
-        // Optimistic UI: append bubble immediately
         var tempId = 'temp-' + Date.now();
-        appendAdminBubble(message, isInternal, ADMIN_NAME, new Date(), tempId);
-        chatInput.value = '';
-        chatInput.style.height = 'auto';
-        scrollToBottom(true);
 
-        fetch(REPLY_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': CSRF_TOKEN,
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({
-                message: message,
-                is_internal: isInternal ? 1 : 0
+        if (hasFile) {
+            // File upload via FormData
+            var formData = new FormData();
+            formData.append('file', pendingFile);
+            if (message) formData.append('message', message);
+
+            // Optimistic UI for file
+            appendAdminBubble(message, false, ADMIN_NAME, new Date(), tempId, pendingFile.type.startsWith('image/') ? URL.createObjectURL(pendingFile) : null, pendingFile.name);
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+            clearFilePreview();
+            scrollToBottom(true);
+
+            fetch(UPLOAD_URL, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': CSRF_TOKEN,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
             })
-        })
-        .then(function(response) {
-            if (!response.ok) throw new Error('Send failed: ' + response.status);
-            return response.json().catch(function() { return {}; });
-        })
-        .then(function(data) {
-            if (data && data.message_id) {
-                LAST_MESSAGE_ID = data.message_id;
-                var tempEl = document.querySelector('[data-message-id="' + tempId + '"]');
-                if (tempEl) {
-                    tempEl.setAttribute('data-message-id', data.message_id);
+            .then(function(response) {
+                if (!response.ok) throw new Error('Upload failed: ' + response.status);
+                return response.json();
+            })
+            .then(function(data) {
+                if (data && data.message_id) {
+                    LAST_MESSAGE_ID = data.message_id;
+                    var tempEl = document.querySelector('[data-message-id="' + tempId + '"]');
+                    if (tempEl) tempEl.setAttribute('data-message-id', data.message_id);
+                    // Update image src to server URL
+                    if (data.attachment_url) {
+                        var img = tempEl ? tempEl.querySelector('img[data-temp]') : null;
+                        if (img) { img.src = data.attachment_url; img.removeAttribute('data-temp'); }
+                        var link = tempEl ? tempEl.querySelector('a[data-temp]') : null;
+                        if (link) { link.href = data.attachment_url; link.removeAttribute('data-temp'); }
+                    }
                 }
-            }
-        })
-        .catch(function(err) {
-            var tempEl = document.querySelector('[data-message-id="' + tempId + '"]');
-            if (tempEl) tempEl.remove();
-            showToast('Failed to send message. Please try again.', 'error');
-            if (chatInput) chatInput.value = message;
-        })
-        .finally(function() {
-            isSending = false;
-            sendBtn.disabled = false;
-            sendBtn.innerHTML = '<i class="fas fa-paper-plane text-sm"></i>';
-        });
+            })
+            .catch(function(err) {
+                var tempEl = document.querySelector('[data-message-id="' + tempId + '"]');
+                if (tempEl) tempEl.remove();
+                showToast('Failed to upload file. Please try again.', 'error');
+            })
+            .finally(function() {
+                isSending = false;
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '<i class="ti ti-send text-sm"></i>';
+            });
+        } else {
+            // Text-only message
+            appendAdminBubble(message, isInternal, ADMIN_NAME, new Date(), tempId);
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+            scrollToBottom(true);
+
+            fetch(REPLY_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': CSRF_TOKEN,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    message: message,
+                    is_internal: isInternal ? 1 : 0
+                })
+            })
+            .then(function(response) {
+                if (!response.ok) throw new Error('Send failed: ' + response.status);
+                return response.json().catch(function() { return {}; });
+            })
+            .then(function(data) {
+                if (data && data.message_id) {
+                    LAST_MESSAGE_ID = data.message_id;
+                    var tempEl = document.querySelector('[data-message-id="' + tempId + '"]');
+                    if (tempEl) tempEl.setAttribute('data-message-id', data.message_id);
+                }
+            })
+            .catch(function(err) {
+                var tempEl = document.querySelector('[data-message-id="' + tempId + '"]');
+                if (tempEl) tempEl.remove();
+                showToast('Failed to send message. Please try again.', 'error');
+                if (chatInput) chatInput.value = message;
+            })
+            .finally(function() {
+                isSending = false;
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '<i class="ti ti-send text-sm"></i>';
+            });
+        }
     }
 
     // =============================================
     // APPEND CHAT BUBBLES
     // =============================================
-    function appendAdminBubble(message, isInternal, adminName, date, msgId) {
+    function buildAttachmentHtml(attachUrl, attachName, isAdmin) {
+        if (!attachUrl) return '';
+        var ext = (attachName || '').split('.').pop().toLowerCase();
+        var isImage = ['jpg','jpeg','png','gif','webp'].indexOf(ext) !== -1;
+        var isTemp = attachUrl.startsWith('blob:');
+        if (isImage) {
+            return '<a href="' + escapeAttr(attachUrl) + '" target="_blank" class="block mb-1"' + (isTemp ? ' data-temp="1"' : '') + '>' +
+                '<img src="' + escapeAttr(attachUrl) + '" alt="Attachment" class="max-w-[220px] rounded-lg"' + (isTemp ? ' data-temp="1"' : '') + '></a>';
+        }
+        var bgClass = isAdmin ? 'bg-black/10 hover:bg-black/20' : 'bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-200';
+        var textClass = isAdmin ? '' : 'text-gray-700 dark:text-gray-300';
+        return '<a href="' + escapeAttr(attachUrl) + '" target="_blank" class="flex items-center gap-2 p-2 ' + bgClass + ' rounded-lg mb-1 transition-colors"' + (isTemp ? ' data-temp="1"' : '') + '>' +
+            '<i class="ti ti-file text-lg"></i>' +
+            '<span class="text-xs font-medium ' + textClass + ' truncate">' + escapeHtml(attachName || 'File') + '</span>' +
+            '<i class="ti ti-download text-xs ml-auto"></i></a>';
+    }
+
+    function appendAdminBubble(message, isInternal, adminName, date, msgId, attachUrl, attachName) {
         var timeStr = typeof date === 'string' ? date : formatTime(date);
+        var attachHtml = buildAttachmentHtml(attachUrl, attachName, true);
+        var msgHtml = message ? '<p class="text-sm text-black whitespace-pre-line">' + escapeHtml(message) + '</p>' : '';
         var html = '';
         if (isInternal) {
             html = '<div class="flex justify-end items-end gap-2 chat-bubble-in" data-message-id="' + escapeAttr(msgId) + '">' +
                 '<div class="max-w-[75%]">' +
                     '<div class="px-3 py-2 rounded-2xl rounded-br-sm bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 shadow-sm">' +
                         '<div class="flex items-center gap-1.5 mb-1">' +
-                            '<i class="fas fa-lock text-[9px] text-amber-500"></i>' +
+                            '<i class="ti ti-lock text-[9px] text-amber-500"></i>' +
                             '<p class="text-xs font-medium text-amber-600 dark:text-amber-400">Internal Note</p>' +
                         '</div>' +
                         '<p class="text-sm text-amber-800 dark:text-amber-200 whitespace-pre-line">' + escapeHtml(message) + '</p>' +
@@ -686,7 +915,7 @@
             html = '<div class="flex justify-end items-end gap-2 chat-bubble-in" data-message-id="' + escapeAttr(msgId) + '">' +
                 '<div class="max-w-[75%]">' +
                     '<div class="px-3 py-2 rounded-2xl rounded-br-sm bg-gradient-to-br from-yellow-400 to-orange-400 shadow-sm">' +
-                        '<p class="text-sm text-black whitespace-pre-line">' + escapeHtml(message) + '</p>' +
+                        attachHtml + msgHtml +
                     '</div>' +
                     '<p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1 mr-1 text-right">' + escapeHtml(adminName) + ' &middot; ' + timeStr + '</p>' +
                 '</div>' +
@@ -695,7 +924,6 @@
                 '</div>' +
             '</div>';
         }
-        // Insert before the typing indicator
         if (guestTypingEl) {
             guestTypingEl.insertAdjacentHTML('beforebegin', html);
         } else {
@@ -703,21 +931,22 @@
         }
     }
 
-    function appendGuestBubble(message, date, msgId) {
+    function appendGuestBubble(message, date, msgId, attachUrl, attachName) {
         var timeStr = typeof date === 'string' ? date : formatTime(date);
         var avatarGradient = IS_GUEST_USER ? 'from-purple-400 to-purple-600' : 'from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700';
+        var attachHtml = buildAttachmentHtml(attachUrl, attachName, false);
+        var msgHtml = message ? '<p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-line">' + escapeHtml(message) + '</p>' : '';
         var html = '<div class="flex justify-start items-end gap-2 chat-bubble-in" data-message-id="' + escapeAttr(msgId) + '">' +
             '<div class="w-7 h-7 rounded-full bg-gradient-to-br ' + avatarGradient + ' flex items-center justify-center flex-shrink-0">' +
                 '<span class="text-white text-xs font-semibold">' + GUEST_INITIAL + '</span>' +
             '</div>' +
             '<div class="max-w-[75%]">' +
                 '<div class="px-3 py-2 rounded-2xl rounded-bl-sm bg-white dark:bg-dark-300 border border-gray-200 dark:border-dark-100 shadow-sm">' +
-                    '<p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-line">' + escapeHtml(message) + '</p>' +
+                    attachHtml + msgHtml +
                 '</div>' +
                 '<p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">' + timeStr + '</p>' +
             '</div>' +
         '</div>';
-        // Insert before the typing indicator
         if (guestTypingEl) {
             guestTypingEl.insertAdjacentHTML('beforebegin', html);
         } else {
@@ -768,9 +997,9 @@
                     if (document.querySelector('[data-message-id="' + msg.id + '"]')) return;
 
                     if (msg.sender_type === 'admin') {
-                        appendAdminBubble(msg.message, msg.is_internal, msg.sender_name || 'Admin', msg.created_at, msg.id);
+                        appendAdminBubble(msg.message, msg.is_internal, msg.sender_name || 'Admin', msg.created_at, msg.id, msg.attachment, msg.attachment_name);
                     } else {
-                        appendGuestBubble(msg.message, msg.created_at, msg.id);
+                        appendGuestBubble(msg.message, msg.created_at, msg.id, msg.attachment, msg.attachment_name);
                         newCount++;
                     }
 
@@ -845,10 +1074,10 @@
             var dot = chatOnlineText.querySelector('i');
             var span = chatOnlineText.querySelector('span');
             if (isOnline) {
-                if (dot) dot.className = 'fas fa-circle text-[6px] align-middle text-green-500';
+                if (dot) dot.className = 'ti ti-circle text-[6px] align-middle text-green-500';
                 if (span) span.textContent = 'Online now';
             } else {
-                if (dot) dot.className = 'fas fa-circle text-[6px] align-middle text-gray-400';
+                if (dot) dot.className = 'ti ti-circle text-[6px] align-middle text-gray-400';
                 if (span) span.textContent = 'Offline';
             }
         }
@@ -890,7 +1119,7 @@
 
         var originalHTML = btnEl.innerHTML;
         btnEl.disabled = true;
-        btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        btnEl.innerHTML = '<i class="ti ti-loader fa-spin"></i> Processing...';
 
         fetch(url, {
             method: 'POST',

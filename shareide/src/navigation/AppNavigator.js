@@ -75,6 +75,7 @@ import RideChatScreen from '../screens/chat/RideChatScreen';
 // New Feature Screens
 import NegotiationScreen from '../screens/booking/NegotiationScreen';
 import FAQScreen from '../screens/support/FAQScreen';
+import SupportChatScreen from '../screens/support/SupportChatScreen';
 import IntercitySearchScreen from '../screens/intercity/IntercitySearchScreen';
 import EmergencyContactsScreen from '../screens/safety/EmergencyContactsScreen';
 
@@ -389,6 +390,7 @@ const AppNavigator = () => {
 
             {/* Help & Support */}
             <Stack.Screen name="FAQ" component={FAQScreen} />
+            <Stack.Screen name="SupportChat" component={SupportChatScreen} />
 
             {/* Intercity */}
             <Stack.Screen name="IntercitySearch" component={IntercitySearchScreen} />

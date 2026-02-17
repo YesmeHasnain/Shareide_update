@@ -33,7 +33,7 @@
                         surface: '#F3F4F6',
                     },
                     fontFamily: {
-                        sora: ['Sora', 'sans-serif'],
+                        inter: ['Inter', 'sans-serif'],
                     },
                     borderRadius: {
                         'xl': '12px',
@@ -55,18 +55,18 @@
         }
     </script>
 
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tabler Icons (clean line icons) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css">
 
-    <!-- Google Fonts - Sora (matching website) -->
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts - Inter (professional SaaS font) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         [x-cloak] { display: none !important; }
-        body { font-family: 'Sora', sans-serif; }
+        body { font-family: 'Inter', sans-serif; }
 
         /* ============================================
            WEBSITE-MATCHING DESIGN SYSTEM
@@ -94,52 +94,142 @@
 
         /* Sidebar */
         .sidebar-link.active {
-            background: linear-gradient(135deg, #FCC014 0%, #F5A623 100%);
-            color: #000;
+            background: rgba(252, 192, 20, 0.1);
+            color: #FCC014;
             font-weight: 600;
-            box-shadow: 0 4px 15px rgba(252, 192, 20, 0.35);
+        }
+        .dark .sidebar-link.active {
+            background: rgba(252, 192, 20, 0.1);
+            color: #FCC014;
         }
         .sidebar-link.active i {
-            color: #000;
+            color: #FCC014;
         }
 
-        /* Primary Button (Website-matching pill style) */
+        /* Primary Button */
         .btn-primary {
-            background: linear-gradient(135deg, #FCC014 0%, #F5A623 100%);
+            background: #FCC014;
             color: #000;
             font-weight: 600;
-            border-radius: 50px;
-            transition: all 0.3s ease;
+            border-radius: 8px;
+            transition: all 0.15s ease;
         }
         .btn-primary:hover {
-            background: linear-gradient(135deg, #E3AD12 0%, #E8930C 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(252, 192, 20, 0.4);
+            background: #E3AD12;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
         }
 
-        /* Glass Button (Website-matching) */
+        /* Glass Button */
         .btn-glass {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
+            background: #fff;
             border: 1px solid #E5E7EB;
-            border-radius: 50px;
-            transition: all 0.3s ease;
+            border-radius: 8px;
+            transition: all 0.15s ease;
         }
         .btn-glass:hover {
-            background: #fff;
-            border-color: #FCC014;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            background: #F6F6F7;
+            border-color: #D1D5DB;
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #F8F9FC; }
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, #FCC014 0%, #F5A623 100%);
-            border-radius: 3px;
+        /* ============================================
+           PROFESSIONAL SCROLLBAR DESIGN
+           Modern thin scrollbar - appears on interaction
+           ============================================ */
+
+        /* Firefox scrollbar */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: transparent transparent;
         }
-        .dark ::-webkit-scrollbar-track { background: #0F0F1A; }
+        *:hover, *:focus-within {
+            scrollbar-color: rgba(0,0,0,0.15) transparent;
+        }
+        .dark *:hover, .dark *:focus-within {
+            scrollbar-color: rgba(255,255,255,0.12) transparent;
+        }
+
+        /* Webkit (Chrome, Safari, Edge) scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.12);
+            border-radius: 100px;
+            border: 1px solid transparent;
+            background-clip: padding-box;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0,0.25);
+            border: 1px solid transparent;
+            background-clip: padding-box;
+        }
+        ::-webkit-scrollbar-thumb:active {
+            background: rgba(0,0,0,0.35);
+        }
+        ::-webkit-scrollbar-corner {
+            background: transparent;
+        }
+
+        /* Dark mode scrollbar */
+        .dark ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid transparent;
+            background-clip: padding-box;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.18);
+            border: 1px solid transparent;
+            background-clip: padding-box;
+        }
+        .dark ::-webkit-scrollbar-thumb:active {
+            background: rgba(255,255,255,0.28);
+        }
+
+        /* Sidebar scrollbar - extra subtle */
+        aside nav::-webkit-scrollbar {
+            width: 4px;
+        }
+        aside nav::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.08);
+            border-radius: 100px;
+        }
+        aside nav::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0,0.18);
+        }
+        .dark aside nav::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.06);
+        }
+        .dark aside nav::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.14);
+        }
+
+        /* Table/content overflow areas */
+        .overflow-x-auto::-webkit-scrollbar,
+        .overflow-y-auto::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        .overflow-x-auto::-webkit-scrollbar-thumb,
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.1);
+            border-radius: 100px;
+        }
+        .overflow-x-auto::-webkit-scrollbar-thumb:hover,
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0,0.2);
+        }
+        .dark .overflow-x-auto::-webkit-scrollbar-thumb,
+        .dark .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.06);
+        }
+        .dark .overflow-x-auto::-webkit-scrollbar-thumb:hover,
+        .dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.14);
+        }
 
         /* Badge */
         .badge-gold {
@@ -207,84 +297,42 @@
 
         /* Sidebar Link Effects */
         .sidebar-link {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            border-radius: 12px;
-        }
-        .sidebar-link::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 3px;
-            height: 100%;
-            background: linear-gradient(180deg, #FCC014 0%, #F5A623 100%);
-            transform: scaleY(0);
-            transition: transform 0.3s ease;
-            border-radius: 0 4px 4px 0;
-        }
-        .sidebar-link:hover::before,
-        .sidebar-link.active::before {
-            transform: scaleY(1);
+            transition: all 0.15s ease;
+            border-radius: 8px;
         }
         .sidebar-link:hover {
-            transform: translateX(4px);
+            background: #F6F6F7;
         }
         .dark .sidebar-link:hover {
-            background: rgba(252, 192, 20, 0.08) !important;
-        }
-        :not(.dark) .sidebar-link:hover {
-            background: #F8F9FC !important;
-        }
-        .sidebar-link:hover i {
-            transform: scale(1.15);
-            color: #FCC014;
+            background: rgba(255, 255, 255, 0.06);
         }
         .sidebar-link i {
-            transition: all 0.3s ease;
+            transition: color 0.15s ease;
         }
 
-        /* Card Hover Effects (Website-matching) */
+        /* Card Hover Effects */
         .hover-card {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
             border: 1px solid #F0F0F3;
         }
         .hover-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 0 40px rgba(252, 192, 20, 0.1);
-            border-color: rgba(252, 192, 20, 0.3);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+            border-color: #E0E0E0;
         }
         .dark .hover-card {
             border-color: rgba(255, 255, 255, 0.06);
         }
         .dark .hover-card:hover {
-            border-color: rgba(252, 192, 20, 0.3);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 40px rgba(252, 192, 20, 0.15);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
         /* Stat Card Effects */
         .stat-card {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-        .stat-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
-            transition: left 0.6s ease;
-        }
-        .stat-card:hover::after {
-            left: 100%;
+            transition: all 0.2s ease;
         }
         .stat-card:hover {
-            transform: translateY(-4px) scale(1.01);
-            box-shadow: 0 12px 35px rgba(252, 192, 20, 0.2);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
         }
 
         /* Table Row Hover */
@@ -297,17 +345,24 @@
 
         /* Input Focus Effects */
         input, select, textarea {
-            transition: all 0.3s ease;
+            transition: all 0.15s ease;
+            font-size: 13px !important;
+            font-family: 'Inter', sans-serif !important;
         }
         input:focus, select:focus, textarea:focus {
-            box-shadow: 0 0 0 3px rgba(252, 192, 20, 0.15);
+            box-shadow: 0 0 0 2px rgba(252, 192, 20, 0.2);
             border-color: #FCC014 !important;
+        }
+        input::placeholder, textarea::placeholder {
+            font-size: 13px;
+        }
+        label {
+            font-size: 13px !important;
+            font-weight: 500 !important;
         }
 
         /* Badge Pulse */
-        .badge-pulse {
-            animation: pulse-glow 2s infinite;
-        }
+        .badge-pulse { }
 
         /* Loading Skeleton */
         .skeleton {
@@ -322,9 +377,7 @@
         }
 
         /* Float Animation */
-        .float-icon {
-            animation: float 3s ease-in-out infinite;
-        }
+        .float-icon { }
 
         /* Glass Morphism (Website-matching) */
         .glass {
@@ -340,7 +393,7 @@
 
         /* Glow Effect */
         .glow-hover:hover {
-            box-shadow: 0 0 40px rgba(252, 192, 20, 0.3);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         /* Stagger Animation */
@@ -394,23 +447,15 @@
         /* Counter */
         .counter {
             display: inline-block;
-            transition: all 0.3s ease;
-        }
-        .counter:hover {
-            transform: scale(1.05);
-            color: #FCC014;
         }
 
         /* Notification Badge */
-        .notification-badge {
-            animation: float 2s ease-in-out infinite;
-        }
+        .notification-badge { }
 
         /* Profile Hover */
-        .profile-hover { transition: all 0.3s ease; }
+        .profile-hover { transition: all 0.15s ease; }
         .profile-hover:hover {
-            transform: scale(1.03);
-            box-shadow: 0 5px 20px rgba(252, 192, 20, 0.25);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }
 
         /* Modal Backdrop */
@@ -435,15 +480,51 @@
 
         /* Header glass effect on scroll */
         .header-glass {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
         .dark .header-glass {
-            background: rgba(26, 26, 46, 0.9);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
+
+        /* ============================================
+           SHOPIFY-LIKE CONTENT OVERRIDES
+           Global rules to make all content pages clean
+           ============================================ */
+
+        /* Reduce all heading/stat font sizes in content area */
+        main .text-3xl { font-size: 1.375rem !important; line-height: 1.75rem !important; }
+        main .text-2xl { font-size: 1.125rem !important; line-height: 1.5rem !important; }
+        main .text-xl { font-size: 1rem !important; line-height: 1.375rem !important; }
+        main .text-lg { font-size: 0.875rem !important; line-height: 1.25rem !important; }
+
+        /* Make bold text lighter (600 instead of 700) */
+        main .font-bold { font-weight: 600 !important; }
+        main .font-extrabold { font-weight: 600 !important; }
+
+        /* Tone down shadows */
+        main .shadow-lg { box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04) !important; }
+        main .shadow-md { box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important; }
+        main .shadow-xl { box-shadow: 0 2px 6px rgba(0,0,0,0.06) !important; }
+
+        /* Reduce border radius */
+        main .rounded-2xl { border-radius: 10px !important; }
+        main .rounded-xl { border-radius: 8px !important; }
+
+        /* Remove hover translate effects in content */
+        main .hover\:-translate-y-1:hover { transform: none !important; }
+        main .group-hover\:scale-110:hover { transform: none !important; }
+
+        /* Cleaner icon sizes in content */
+        main .fas, main .far, main .fab { font-size: inherit; }
+
+        /* Shopify-like table styling */
+        main table { font-size: 0.8125rem; }
+        main th { font-weight: 500 !important; text-transform: uppercase; font-size: 0.6875rem; letter-spacing: 0.05em; color: #6B7280; }
+        .dark main th { color: #9CA3AF; }
     </style>
 
     <!-- Alpine.js -->
@@ -451,7 +532,7 @@
 
     @stack('styles')
 </head>
-<body class="bg-[#F8F9FC] dark:bg-dark-400 font-sora" x-data="{
+<body class="bg-[#F8F9FC] dark:bg-dark-400 font-inter" x-data="{
     sidebarOpen: true,
     darkMode: localStorage.getItem('darkMode') === 'true',
     toggleDarkMode() {
@@ -461,31 +542,14 @@
 }" x-init="$watch('darkMode', val => document.documentElement.classList.toggle('dark', val)); if(darkMode) document.documentElement.classList.add('dark')" :class="{ 'dark': darkMode }">
     <div class="min-h-screen flex">
         <!-- Sidebar -->
-        <aside :class="[sidebarOpen ? 'w-[270px]' : 'w-20']"
-            class="fixed h-full z-30 flex flex-col transition-all duration-300"
+        <aside class="w-[270px] fixed h-full z-30 flex flex-col"
             :style="darkMode ? 'background: #1A1A2E; border-right: 1px solid rgba(255,255,255,0.06);' : 'background: #fff; border-right: 1px solid #F0F0F3;'">
 
             <!-- Logo Section -->
             <div class="px-5 py-5 border-b" :class="darkMode ? 'border-white/5' : 'border-[#F0F0F3]'">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3" x-show="sidebarOpen">
-                        <div class="w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-primary to-secondary shadow-md">
-                            <img src="{{ asset('images/logo/icon.png') }}" alt="SHAREIDE" class="w-8 h-8 object-contain">
-                        </div>
-                        <div>
-                            <h1 class="text-lg font-bold gradient-gold-text tracking-tight">SHAREIDE</h1>
-                            <p class="text-[11px] font-medium" :class="darkMode ? 'text-gray-500' : 'text-gray-400'">Admin Panel</p>
-                        </div>
-                    </div>
-                    <div x-show="!sidebarOpen" class="w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-primary to-secondary shadow-md mx-auto">
-                        <img src="{{ asset('images/logo/icon.png') }}" alt="S" class="w-8 h-8 object-contain">
-                    </div>
-                    <button @click="sidebarOpen = !sidebarOpen"
-                        class="p-2 rounded-xl transition-all duration-200"
-                        :class="darkMode ? 'hover:bg-white/5 text-gray-500 hover:text-primary' : 'hover:bg-[#F8F9FC] text-gray-400 hover:text-primary'"
-                        x-show="sidebarOpen">
-                        <i class="fas fa-bars text-sm"></i>
-                    </button>
+                <div class="flex items-center">
+                    <img x-show="!darkMode" src="{{ asset('images/logo/logo-black.png') }}" alt="SHAREIDE" class="h-9 object-contain">
+                    <img x-show="darkMode" src="{{ asset('images/logo/logo-white.png') }}" alt="SHAREIDE" class="h-9 object-contain">
                 </div>
             </div>
 
@@ -495,8 +559,8 @@
                 <a href="{{ route('admin.dashboard') }}"
                     class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="fas fa-th-large w-5 text-[15px]"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Dashboard</span>
+                    <i class="ti ti-layout-dashboard w-5 text-[19px]"></i>
+                    <span class="ml-3 text-[13px] font-medium">Dashboard</span>
                 </a>
 
                 <!-- Drivers -->
@@ -504,59 +568,59 @@
                     class="sidebar-link flex items-center justify-between px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.drivers.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
                     <div class="flex items-center">
-                        <i class="fas fa-car w-5 text-[15px]"></i>
-                        <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Drivers</span>
+                        <i class="ti ti-car w-5 text-[19px]"></i>
+                        <span class="ml-3 text-[13px] font-medium">Drivers</span>
                     </div>
                     @php $pendingCount = \App\Models\Driver::where('status', 'pending')->count(); @endphp
-                    <span x-show="sidebarOpen" data-badge="pending-drivers" class="badge-gold text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm {{ $pendingCount > 0 ? '' : 'hidden' }}">{{ $pendingCount }}</span>
+                    <span data-badge="pending-drivers" class="badge-gold text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm {{ $pendingCount > 0 ? '' : 'hidden' }}">{{ $pendingCount }}</span>
                 </a>
 
                 <!-- Users -->
                 <a href="{{ route('admin.users.index') }}"
                     class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="fas fa-users w-5 text-[15px]"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Users</span>
+                    <i class="ti ti-users w-5 text-[19px]"></i>
+                    <span class="ml-3 text-[13px] font-medium">Users</span>
                 </a>
 
                 <!-- Rides -->
                 <a href="{{ route('admin.rides.index') }}"
                     class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.rides.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="fas fa-route w-5 text-[15px]"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Rides</span>
+                    <i class="ti ti-route w-5 text-[19px]"></i>
+                    <span class="ml-3 text-[13px] font-medium">Rides</span>
                 </a>
 
                 <!-- Shared Rides / Carpooling -->
                 <a href="{{ route('admin.shared-rides.index') }}"
                     class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.shared-rides.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="fas fa-user-friends w-5 text-[15px]"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Carpooling</span>
+                    <i class="ti ti-users-group w-5 text-[19px]"></i>
+                    <span class="ml-3 text-[13px] font-medium">Carpooling</span>
                 </a>
 
                 <!-- Chats -->
                 <a href="{{ route('admin.chats.index') }}"
                     class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.chats.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="fas fa-comments w-5 text-[15px]"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Chats</span>
+                    <i class="ti ti-messages w-5 text-[19px]"></i>
+                    <span class="ml-3 text-[13px] font-medium">Chats</span>
                 </a>
 
                 <!-- Payments -->
                 <a href="{{ route('admin.payments.index') }}"
                     class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.payments.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="fas fa-wallet w-5 text-[15px]"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Payments</span>
+                    <i class="ti ti-wallet w-5 text-[19px]"></i>
+                    <span class="ml-3 text-[13px] font-medium">Payments</span>
                 </a>
 
                 <!-- Promo Codes -->
                 <a href="{{ route('admin.promo-codes.index') }}"
                     class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.promo-codes.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="fas fa-ticket-alt w-5 text-[15px]"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Promo Codes</span>
+                    <i class="ti ti-ticket w-5 text-[19px]"></i>
+                    <span class="ml-3 text-[13px] font-medium">Promo Codes</span>
                 </a>
 
                 <!-- SOS Alerts -->
@@ -564,19 +628,19 @@
                     class="sidebar-link flex items-center justify-between px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.sos.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
                     <div class="flex items-center">
-                        <i class="fas fa-exclamation-triangle w-5 text-[15px]"></i>
-                        <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">SOS Alerts</span>
+                        <i class="ti ti-alert-triangle w-5 text-[19px]"></i>
+                        <span class="ml-3 text-[13px] font-medium">SOS Alerts</span>
                     </div>
                     @php $activeAlerts = \App\Models\SosAlert::where('status', 'active')->count(); @endphp
-                    <span x-show="sidebarOpen" data-badge="sos-alerts" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse {{ $activeAlerts > 0 ? '' : 'hidden' }}">{{ $activeAlerts }}</span>
+                    <span data-badge="sos-alerts" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse {{ $activeAlerts > 0 ? '' : 'hidden' }}">{{ $activeAlerts }}</span>
                 </a>
 
                 <!-- Reports -->
                 <a href="{{ route('admin.reports.revenue') }}"
                     class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="fas fa-chart-pie w-5 text-[15px]"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Reports</span>
+                    <i class="ti ti-chart-pie w-5 text-[19px]"></i>
+                    <span class="ml-3 text-[13px] font-medium">Reports</span>
                 </a>
 
                 <!-- Divider -->
@@ -589,24 +653,24 @@
                 <a href="{{ route('admin.analytics.index') }}"
                     class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="fas fa-chart-line w-5 text-[15px]"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Analytics</span>
+                    <i class="ti ti-chart-line w-5 text-[19px]"></i>
+                    <span class="ml-3 text-[13px] font-medium">Analytics</span>
                 </a>
 
                 <!-- Live Map -->
                 <a href="{{ route('admin.map.index') }}"
                     class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.map.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="fas fa-map-marked-alt w-5 text-[15px]"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Live Map</span>
+                    <i class="ti ti-map-pin w-5 text-[19px]"></i>
+                    <span class="ml-3 text-[13px] font-medium">Live Map</span>
                 </a>
 
                 <!-- Fare Management -->
                 <a href="{{ route('admin.fare.index') }}"
                     class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.fare.*') || request()->routeIs('admin.surge.*') || request()->routeIs('admin.commission.*') || request()->routeIs('admin.zone.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="fas fa-calculator w-5 text-[15px]"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Fare Management</span>
+                    <i class="ti ti-calculator w-5 text-[19px]"></i>
+                    <span class="ml-3 text-[13px] font-medium">Fare Management</span>
                 </a>
 
                 <!-- Support Tickets -->
@@ -614,11 +678,11 @@
                     class="sidebar-link flex items-center justify-between px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.support.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
                     <div class="flex items-center">
-                        <i class="fas fa-headset w-5 text-[15px]"></i>
-                        <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Support</span>
+                        <i class="ti ti-headset w-5 text-[19px]"></i>
+                        <span class="ml-3 text-[13px] font-medium">Support</span>
                     </div>
                     @php $openTickets = \App\Models\SupportTicket::where('status', 'open')->count(); @endphp
-                    <span x-show="sidebarOpen" data-badge="open-tickets" class="badge-gold text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm {{ $openTickets > 0 ? '' : 'hidden' }}">{{ $openTickets }}</span>
+                    <span data-badge="open-tickets" class="badge-gold text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm {{ $openTickets > 0 ? '' : 'hidden' }}">{{ $openTickets }}</span>
                 </a>
 
                 <!-- System Alerts -->
@@ -626,35 +690,35 @@
                     class="sidebar-link flex items-center justify-between px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.alerts.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
                     <div class="flex items-center">
-                        <i class="fas fa-bell w-5 text-[15px]"></i>
-                        <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Alerts</span>
+                        <i class="ti ti-bell w-5 text-[19px]"></i>
+                        <span class="ml-3 text-[13px] font-medium">Alerts</span>
                     </div>
                     @php $unresolvedAlerts = \App\Models\SystemAlert::where('is_resolved', false)->where('severity', 'critical')->count(); @endphp
-                    <span x-show="sidebarOpen" data-badge="critical-alerts" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse {{ $unresolvedAlerts > 0 ? '' : 'hidden' }}">{{ $unresolvedAlerts }}</span>
+                    <span data-badge="critical-alerts" class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse {{ $unresolvedAlerts > 0 ? '' : 'hidden' }}">{{ $unresolvedAlerts }}</span>
                 </a>
 
                 <!-- Audit Logs -->
                 <a href="{{ route('admin.audit.index') }}"
                     class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.audit.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="fas fa-history w-5 text-[15px]"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Audit Logs</span>
+                    <i class="ti ti-history w-5 text-[19px]"></i>
+                    <span class="ml-3 text-[13px] font-medium">Audit Logs</span>
                 </a>
 
                 <!-- Loyalty & Rewards -->
                 <a href="{{ route('admin.loyalty.index') }}"
                     class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.loyalty.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="fas fa-crown w-5 text-[15px] text-primary"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Loyalty Program</span>
+                    <i class="ti ti-crown w-5 text-[19px] text-primary"></i>
+                    <span class="ml-3 text-[13px] font-medium">Loyalty Program</span>
                 </a>
 
                 <!-- Admin Roles -->
                 <a href="{{ route('admin.roles.index') }}"
                     class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="fas fa-user-shield w-5 text-[15px]"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Admin Roles</span>
+                    <i class="ti ti-shield-check w-5 text-[19px]"></i>
+                    <span class="ml-3 text-[13px] font-medium">Admin Roles</span>
                 </a>
 
                 <!-- Divider -->
@@ -666,8 +730,8 @@
                 <a href="{{ route('admin.settings.index') }}"
                     class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="fas fa-cog w-5 text-[15px]"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-[13px] font-medium">Settings</span>
+                    <i class="ti ti-settings w-5 text-[19px]"></i>
+                    <span class="ml-3 text-[13px] font-medium">Settings</span>
                 </a>
             </nav>
 
@@ -695,17 +759,12 @@
         </aside>
 
         <!-- Main Content -->
-        <div :class="sidebarOpen ? 'ml-[270px]' : 'ml-20'" class="flex-1 transition-all duration-300">
+        <div class="ml-[270px] flex-1">
             <!-- Top Navbar (Glass effect like website header) -->
             <header class="header-glass sticky top-0 z-20 transition-all duration-300 border-b"
                 :class="darkMode ? 'border-white/5' : 'border-[#F0F0F3]'">
                 <div class="flex items-center justify-between px-6 py-4">
                     <div class="flex items-center space-x-4">
-                        <button @click="sidebarOpen = !sidebarOpen"
-                            class="lg:hidden p-2.5 rounded-xl transition-all"
-                            :class="darkMode ? 'hover:bg-white/5 text-gray-400' : 'hover:bg-[#F8F9FC] text-gray-500'">
-                            <i class="fas fa-bars"></i>
-                        </button>
                         <div>
                             <h2 class="text-lg font-bold tracking-tight" :class="darkMode ? 'text-white' : 'text-[#1A1A2E]'">@yield('title', 'Dashboard')</h2>
                             <p class="text-[12px] mt-0.5" :class="darkMode ? 'text-gray-500' : 'text-[#6B7280]'">@yield('subtitle', '')</p>
@@ -729,17 +788,17 @@
                         <div class="flex items-center gap-1.5 px-2 py-1.5 rounded-pill border transition-all"
                             :class="darkMode ? 'bg-white/5 border-white/5' : 'bg-white border-[#F0F0F3]'"
                             style="box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                            <i class="fas fa-sun text-xs" :class="darkMode ? 'text-gray-500' : 'text-primary'"></i>
+                            <i class="ti ti-sun text-xs" :class="darkMode ? 'text-gray-500' : 'text-primary'"></i>
                             <button @click="toggleDarkMode()"
                                 class="relative w-11 h-6 rounded-full transition-all duration-300 focus:outline-none"
                                 :class="darkMode ? 'bg-dark-100' : 'bg-[#F0F0F3]'">
                                 <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full shadow-sm transition-all duration-300 flex items-center justify-center"
                                     :class="darkMode ? 'translate-x-5 bg-primary text-black' : 'translate-x-0 bg-white text-gray-400'"
                                     style="font-size: 9px;">
-                                    <i class="fas" :class="darkMode ? 'fa-moon' : 'fa-sun'"></i>
+                                    <i class="ti" :class="darkMode ? 'ti-moon' : 'ti-sun'"></i>
                                 </span>
                             </button>
-                            <i class="fas fa-moon text-xs" :class="darkMode ? 'text-primary' : 'text-gray-300'"></i>
+                            <i class="ti ti-moon text-xs" :class="darkMode ? 'text-primary' : 'text-gray-300'"></i>
                         </div>
 
                         <!-- Notifications -->
@@ -748,13 +807,16 @@
                                 $pendingDrivers = \App\Models\Driver::where('status', 'pending')->count();
                                 $activeSOS = \App\Models\SosAlert::where('status', 'active')->count() ?? 0;
                                 $openTickets = \App\Models\SupportTicket::where('status', 'open')->count();
+                                $chatbotEscalations = \App\Models\SupportTicket::where('status', 'open')->whereIn('source', ['chatbot', 'chatbot_app_shareide', 'chatbot_app_fleet'])->count();
+                                $appShareideTickets = \App\Models\SupportTicket::where('status', 'open')->whereIn('source', ['app_shareide', 'chatbot_app_shareide'])->count();
+                                $appFleetTickets = \App\Models\SupportTicket::where('status', 'open')->whereIn('source', ['app_fleet', 'chatbot_app_fleet'])->count();
                                 $totalNotifs = $pendingDrivers + $activeSOS + $openTickets;
                             @endphp
                             <button @click="open = !open"
                                 class="p-2.5 rounded-xl transition-all relative border"
                                 :class="darkMode ? 'bg-white/5 border-white/5 hover:bg-white/10 text-gray-400' : 'bg-white border-[#F0F0F3] hover:border-primary/30 text-gray-500 hover:text-primary'"
                                 style="box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                                <i class="fas fa-bell text-sm"></i>
+                                <i class="ti ti-bell text-sm"></i>
                                 <span data-badge="header-notifications" class="absolute -top-1 -right-1 w-4.5 h-4.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center {{ $totalNotifs > 0 ? '' : 'hidden' }}" style="min-width: 18px; height: 18px;">{{ $totalNotifs }}</span>
                             </button>
                             <div x-show="open" @click.away="open = false" x-cloak
@@ -774,7 +836,7 @@
                                         <a href="{{ route('admin.sos.active') }}" class="block px-4 py-3 transition-colors border-l-4 border-red-500" :class="darkMode ? 'hover:bg-red-900/10' : 'hover:bg-red-50'">
                                             <div class="flex items-center gap-3">
                                                 <div class="w-9 h-9 rounded-xl flex items-center justify-center" :class="darkMode ? 'bg-red-900/20' : 'bg-red-100'">
-                                                    <i class="fas fa-exclamation-triangle text-red-500 text-sm"></i>
+                                                    <i class="ti ti-alert-triangle text-red-500 text-sm"></i>
                                                 </div>
                                                 <div>
                                                     <p class="text-[13px] font-semibold" :class="darkMode ? 'text-red-400' : 'text-red-700'">{{ $activeSOS }} Active SOS Alert(s)!</p>
@@ -783,11 +845,50 @@
                                             </div>
                                         </a>
                                     @endif
+                                    @if($chatbotEscalations > 0)
+                                        <a href="{{ route('admin.support.index', ['status' => 'open']) }}" class="block px-4 py-3 transition-colors border-l-4 border-orange-500 animate-pulse" :class="darkMode ? 'hover:bg-orange-900/10 bg-orange-900/5' : 'hover:bg-orange-50 bg-orange-50/50'">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-9 h-9 rounded-xl flex items-center justify-center" :class="darkMode ? 'bg-orange-900/20' : 'bg-orange-100'">
+                                                    <i class="ti ti-robot text-orange-500 text-sm"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="text-[13px] font-semibold" :class="darkMode ? 'text-orange-400' : 'text-orange-700'">{{ $chatbotEscalations }} Chatbot Escalation(s)!</p>
+                                                    <p class="text-[11px] text-orange-500">User needs live agent</p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    @endif
+                                    @if($appShareideTickets > 0)
+                                        <a href="{{ route('admin.support.index', ['status' => 'open', 'source' => 'app_shareide']) }}" class="block px-4 py-3 transition-colors border-l-4 border-green-500" :class="darkMode ? 'hover:bg-green-900/10' : 'hover:bg-green-50'">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-9 h-9 rounded-xl flex items-center justify-center" :class="darkMode ? 'bg-green-900/20' : 'bg-green-100'">
+                                                    <i class="ti ti-device-mobile text-green-500 text-sm"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="text-[13px] font-semibold" :class="darkMode ? 'text-green-400' : 'text-green-700'">{{ $appShareideTickets }} ShareIde App Ticket(s)</p>
+                                                    <p class="text-[11px] text-green-500">From rider app</p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    @endif
+                                    @if($appFleetTickets > 0)
+                                        <a href="{{ route('admin.support.index', ['status' => 'open', 'source' => 'app_fleet']) }}" class="block px-4 py-3 transition-colors border-l-4 border-orange-400" :class="darkMode ? 'hover:bg-orange-900/10' : 'hover:bg-orange-50'">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-9 h-9 rounded-xl flex items-center justify-center" :class="darkMode ? 'bg-orange-900/20' : 'bg-orange-100'">
+                                                    <i class="ti ti-truck text-orange-400 text-sm"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="text-[13px] font-semibold" :class="darkMode ? 'text-orange-300' : 'text-orange-600'">{{ $appFleetTickets }} Fleet App Ticket(s)</p>
+                                                    <p class="text-[11px] text-orange-400">From driver app</p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    @endif
                                     @if($openTickets > 0)
                                         <a href="{{ route('admin.support.index', ['status' => 'open']) }}" class="block px-4 py-3 transition-colors border-l-4 border-purple-500" :class="darkMode ? 'hover:bg-purple-900/10' : 'hover:bg-purple-50'">
                                             <div class="flex items-center gap-3">
                                                 <div class="w-9 h-9 rounded-xl flex items-center justify-center" :class="darkMode ? 'bg-purple-900/20' : 'bg-purple-100'">
-                                                    <i class="fas fa-envelope text-purple-500 text-sm"></i>
+                                                    <i class="ti ti-mail text-purple-500 text-sm"></i>
                                                 </div>
                                                 <div>
                                                     <p class="text-[13px] font-semibold" :class="darkMode ? 'text-purple-400' : 'text-purple-700'">{{ $openTickets }} Open Support Ticket(s)</p>
@@ -800,7 +901,7 @@
                                         <a href="{{ route('admin.drivers.pending') }}" class="block px-4 py-3 transition-colors border-l-4 border-primary" :class="darkMode ? 'hover:bg-yellow-900/10' : 'hover:bg-yellow-50'">
                                             <div class="flex items-center gap-3">
                                                 <div class="w-9 h-9 rounded-xl flex items-center justify-center" :class="darkMode ? 'bg-yellow-900/20' : 'bg-yellow-100'">
-                                                    <i class="fas fa-user-clock text-primary text-sm"></i>
+                                                    <i class="ti ti-user-plus text-primary text-sm"></i>
                                                 </div>
                                                 <div>
                                                     <p class="text-[13px] font-semibold" :class="darkMode ? 'text-yellow-400' : 'text-yellow-700'">{{ $pendingDrivers }} Pending Driver(s)</p>
@@ -812,7 +913,7 @@
                                     @if($totalNotifs == 0)
                                         <div class="px-4 py-8 text-center">
                                             <div class="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3" :class="darkMode ? 'bg-green-900/20' : 'bg-green-50'">
-                                                <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                                                <i class="ti ti-circle-check text-green-500 text-xl"></i>
                                             </div>
                                             <p class="text-[13px] font-medium" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">All caught up!</p>
                                         </div>
@@ -839,7 +940,7 @@
                                 @endif
                                 <span class="hidden md:block text-[13px] font-semibold pr-1"
                                     :class="darkMode ? 'text-gray-200' : 'text-[#1A1A2E]'">{{ auth()->user()->name ?? 'Admin' }}</span>
-                                <i class="fas fa-chevron-down text-[10px] pr-1"
+                                <i class="ti ti-chevron-down text-[10px] pr-1"
                                     :class="darkMode ? 'text-gray-500' : 'text-gray-400'"></i>
                             </button>
 
@@ -879,12 +980,12 @@
                                 <div class="py-1">
                                     <a href="{{ route('admin.settings.profile') }}" class="flex items-center px-4 py-2.5 text-[13px] transition-colors rounded-lg mx-2"
                                         :class="darkMode ? 'text-gray-300 hover:bg-white/5' : 'text-gray-600 hover:bg-[#F8F9FC]'">
-                                        <i class="fas fa-user w-5 text-gray-400 text-xs"></i>
+                                        <i class="ti ti-user w-5 text-gray-400 text-xs"></i>
                                         <span class="ml-3">My Profile</span>
                                     </a>
                                     <a href="{{ route('admin.settings.index') }}" class="flex items-center px-4 py-2.5 text-[13px] transition-colors rounded-lg mx-2"
                                         :class="darkMode ? 'text-gray-300 hover:bg-white/5' : 'text-gray-600 hover:bg-[#F8F9FC]'">
-                                        <i class="fas fa-cog w-5 text-gray-400 text-xs"></i>
+                                        <i class="ti ti-settings w-5 text-gray-400 text-xs"></i>
                                         <span class="ml-3">Settings</span>
                                     </a>
                                 </div>
@@ -893,7 +994,7 @@
                                     <form action="{{ route('admin.logout') }}" method="POST">
                                         @csrf
                                         <button type="submit" class="w-full flex items-center px-4 py-2.5 text-[13px] text-red-500 transition-colors rounded-lg mx-2 hover:bg-red-50 dark:hover:bg-red-900/10" style="width: calc(100% - 16px);">
-                                            <i class="fas fa-sign-out-alt w-5 text-xs"></i>
+                                            <i class="ti ti-logout w-5 text-xs"></i>
                                             <span class="ml-3">Logout</span>
                                         </button>
                                     </form>
@@ -915,7 +1016,7 @@
                         x-transition:leave-end="opacity-0">
                         <div class="flex items-center">
                             <div class="w-8 h-8 rounded-xl flex items-center justify-center mr-3" :class="darkMode ? 'bg-green-900/20' : 'bg-green-100'">
-                                <i class="fas fa-check-circle text-green-500 text-sm"></i>
+                                <i class="ti ti-circle-check text-green-500 text-sm"></i>
                             </div>
                             <span class="text-[13px] font-medium">{{ session('success') }}</span>
                         </div>
@@ -932,7 +1033,7 @@
                         x-transition:leave-end="opacity-0">
                         <div class="flex items-center">
                             <div class="w-8 h-8 rounded-xl flex items-center justify-center mr-3" :class="darkMode ? 'bg-red-900/20' : 'bg-red-100'">
-                                <i class="fas fa-exclamation-circle text-red-500 text-sm"></i>
+                                <i class="ti ti-alert-circle text-red-500 text-sm"></i>
                             </div>
                             <span class="text-[13px] font-medium">{{ session('error') }}</span>
                         </div>
@@ -983,6 +1084,7 @@
                 activeAlerts: {{ \App\Models\SosAlert::where('status', 'active')->count() ?? 0 }},
                 criticalAlerts: {{ \App\Models\SystemAlert::where('is_resolved', false)->where('severity', 'critical')->count() ?? 0 }},
                 openTickets: {{ \App\Models\SupportTicket::where('status', 'open')->count() ?? 0 }},
+                chatbotEscalations: {{ \App\Models\SupportTicket::where('status', 'open')->whereIn('source', ['chatbot', 'chatbot_app_shareide', 'chatbot_app_fleet'])->count() ?? 0 }},
                 onlineDrivers: {{ \App\Models\Driver::where('is_online', true)->count() }}
             },
             pollingInterval: 10000,
@@ -1107,9 +1209,24 @@
                     notifications.push(`${data.criticalAlerts - this.lastCounts.criticalAlerts} new critical alert(s)!`);
                     hasNewData = true;
                 }
-                if (data.openTickets > this.lastCounts.openTickets) {
-                    notifications.push(`${data.openTickets - this.lastCounts.openTickets} new support ticket(s)!`);
+                if (data.chatbotEscalations > (this.lastCounts.chatbotEscalations || 0)) {
+                    const newEscalations = data.chatbotEscalations - (this.lastCounts.chatbotEscalations || 0);
+                    notifications.push(`${newEscalations} chatbot escalation(s) - user needs live agent!`);
                     hasNewData = true;
+                } else if (data.openTickets > this.lastCounts.openTickets) {
+                    const ticketName = data.latestTicketName || 'Someone';
+                    const ticketSource = data.latestTicketSource || 'Unknown';
+                    notifications.push(`New ticket from ${ticketName} via ${ticketSource}`);
+                    hasNewData = true;
+                }
+                // Source-specific new ticket alerts
+                if ((data.appShareideTickets || 0) > (this.lastCounts.appShareideTickets || 0)) {
+                    const diff = (data.appShareideTickets || 0) - (this.lastCounts.appShareideTickets || 0);
+                    if (!hasNewData) { notifications.push(`${diff} new ShareIde App ticket(s)`); hasNewData = true; }
+                }
+                if ((data.appFleetTickets || 0) > (this.lastCounts.appFleetTickets || 0)) {
+                    const diff = (data.appFleetTickets || 0) - (this.lastCounts.appFleetTickets || 0);
+                    if (!hasNewData) { notifications.push(`${diff} new Fleet App ticket(s)`); hasNewData = true; }
                 }
 
                 this.updateBadges(data);
@@ -1174,7 +1291,7 @@
                 toast.innerHTML = `
                     <div class="flex items-start gap-3">
                         <div class="w-10 h-10 bg-gradient-to-br ${colors[type]} rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
-                            <i class="fas fa-bell text-white text-sm"></i>
+                            <i class="ti ti-bell text-white text-sm"></i>
                         </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-1">
@@ -1185,7 +1302,7 @@
                             <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1.5">${new Date().toLocaleTimeString()}</p>
                         </div>
                         <button onclick="this.parentElement.parentElement.remove()" class="text-gray-300 hover:text-gray-500 transition-colors p-1">
-                            <i class="fas fa-times text-xs"></i>
+                            <i class="ti ti-x text-xs"></i>
                         </button>
                     </div>
                     <div class="mt-3 h-0.5 bg-gray-100 dark:bg-dark-100 rounded-full overflow-hidden">

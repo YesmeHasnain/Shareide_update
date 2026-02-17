@@ -99,6 +99,7 @@ import AvailableRequestsScreen from '../screens/rides/AvailableRequestsScreen';
 // New Feature Screens
 import HeatMapScreen from '../screens/map/HeatMapScreen';
 import DriverFAQScreen from '../screens/support/DriverFAQScreen';
+import SupportChatScreen from '../screens/support/SupportChatScreen';
 import IntercityOffersScreen from '../screens/intercity/IntercityOffersScreen';
 
 const Stack = createNativeStackNavigator();
@@ -320,6 +321,7 @@ const AppNavigator = () => {
         <Stack.Screen name="AvailableRequests" component={withApprovalGuard(AvailableRequestsScreen, 'Available Requests')} />
         <Stack.Screen name="HeatMap" component={HeatMapScreen} />
         <Stack.Screen name="DriverFAQ" component={DriverFAQScreen} />
+        <Stack.Screen name="SupportChat" component={SupportChatScreen} />
         <Stack.Screen name="IntercityOffers" component={withApprovalGuard(IntercityOffersScreen, 'Intercity Offers')} />
       </Stack.Navigator>
     </NavigationContainer>

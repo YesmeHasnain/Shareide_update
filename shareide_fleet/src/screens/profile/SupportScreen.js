@@ -8,12 +8,14 @@ import {
   TextInput,
   Alert,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import Header from '../../components/Header';
 import Card from '../../components/Card';
 import { spacing, typography, borderRadius } from '../../theme/colors';
+import { createTicket } from '../../api/support';
 
 const CONTACT_ICONS = {
   call: { name: 'call', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)' },
@@ -32,6 +34,7 @@ const SupportScreen = ({ navigation }) => {
   const { colors } = useTheme();
   const [expandedFaq, setExpandedFaq] = useState(null);
   const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const faqs = [
     {
@@ -87,17 +90,31 @@ const SupportScreen = ({ navigation }) => {
     }},
   ];
 
-  const handleSubmitQuery = () => {
+  const handleSubmitQuery = async () => {
     if (!message.trim()) {
       Alert.alert('Error', 'Please enter your message');
       return;
     }
 
-    Alert.alert(
-      'Query Submitted',
-      'Your message has been sent. Our support team will respond within 24 hours.',
-      [{ text: 'OK', onPress: () => setMessage('') }]
-    );
+    setSubmitting(true);
+    try {
+      await createTicket({
+        subject: 'Driver Support Query',
+        message: message.trim(),
+        category: 'other',
+        priority: 'medium',
+        source: 'app_fleet',
+      });
+      Alert.alert(
+        'Query Submitted',
+        'Your message has been sent. Our support team will respond within 24 hours.',
+        [{ text: 'OK', onPress: () => setMessage('') }]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send your message. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -105,6 +122,22 @@ const SupportScreen = ({ navigation }) => {
       <Header title="Help & Support" onLeftPress={() => navigation.goBack()} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* AI Chat Support */}
+        <TouchableOpacity
+          style={styles.aiChatCard}
+          onPress={() => navigation.navigate('SupportChat')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.aiChatIconContainer}>
+            <Ionicons name="chatbubbles" size={28} color="#fff" />
+          </View>
+          <View style={styles.aiChatInfo}>
+            <Text style={styles.aiChatTitle}>Chat with AI Support</Text>
+            <Text style={styles.aiChatText}>Get instant help from our AI assistant</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={22} color="#fff" />
+        </TouchableOpacity>
+
         {/* Contact Options */}
         <Card style={styles.contactCard}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Us</Text>
@@ -171,11 +204,16 @@ const SupportScreen = ({ navigation }) => {
             textAlignVertical="top"
           />
           <TouchableOpacity
-            style={[styles.submitButton, { backgroundColor: colors.primary }]}
+            style={[styles.submitButton, { backgroundColor: colors.primary, opacity: submitting ? 0.7 : 1 }]}
             onPress={handleSubmitQuery}
             activeOpacity={0.7}
+            disabled={submitting}
           >
-            <Text style={styles.submitText}>Submit</Text>
+            {submitting ? (
+              <ActivityIndicator size="small" color="#000" />
+            ) : (
+              <Text style={styles.submitText}>Submit</Text>
+            )}
           </TouchableOpacity>
         </Card>
 
@@ -365,6 +403,37 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   emergencyText: {
+    fontSize: typography.bodySmall - 1,
+    color: '#fff',
+    opacity: 0.9,
+  },
+  aiChatCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.xl,
+    backgroundColor: '#7C3AED',
+  },
+  aiChatIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.lg,
+  },
+  aiChatInfo: {
+    flex: 1,
+  },
+  aiChatTitle: {
+    fontSize: typography.h6,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: spacing.xs,
+  },
+  aiChatText: {
     fontSize: typography.bodySmall - 1,
     color: '#fff',
     opacity: 0.9,

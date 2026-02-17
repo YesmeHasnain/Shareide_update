@@ -113,11 +113,27 @@ class DashboardController extends Controller
      */
     public function realtimeStats()
     {
+        // Get latest open ticket info for notification text
+        $latestTicket = \App\Models\SupportTicket::where('status', 'open')
+            ->with('user')
+            ->latest()
+            ->first();
+
         return response()->json([
             'pendingDrivers' => Driver::where('status', 'pending')->count(),
             'activeAlerts' => SosAlert::where('status', 'active')->count(),
             'criticalAlerts' => \App\Models\SystemAlert::where('is_resolved', false)->where('severity', 'critical')->count(),
             'openTickets' => \App\Models\SupportTicket::where('status', 'open')->count(),
+            'chatbotEscalations' => \App\Models\SupportTicket::where('status', 'open')
+                ->whereIn('source', ['chatbot', 'chatbot_app_shareide', 'chatbot_app_fleet'])->count(),
+            'appShareideTickets' => \App\Models\SupportTicket::where('status', 'open')
+                ->whereIn('source', ['app_shareide', 'chatbot_app_shareide'])->count(),
+            'appFleetTickets' => \App\Models\SupportTicket::where('status', 'open')
+                ->whereIn('source', ['app_fleet', 'chatbot_app_fleet'])->count(),
+            'websiteTickets' => \App\Models\SupportTicket::where('status', 'open')
+                ->whereIn('source', ['contact_form', 'chatbot'])->count(),
+            'latestTicketName' => $latestTicket ? $latestTicket->display_name : null,
+            'latestTicketSource' => $latestTicket ? $latestTicket->source_label : null,
             'onlineDrivers' => Driver::where('is_online', true)->count(),
             'activeRides' => RideRequest::whereIn('status', ['searching', 'driver_assigned', 'driver_arrived', 'in_progress'])->count(),
             'todayRides' => RideRequest::whereDate('created_at', Carbon::today())->count(),
