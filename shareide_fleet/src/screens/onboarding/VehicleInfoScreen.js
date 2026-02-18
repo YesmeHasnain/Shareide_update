@@ -7,10 +7,11 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../context/ThemeContext';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
@@ -23,7 +24,7 @@ const VEHICLE_TYPE_ICONS = {
   rickshaw: { name: 'bus', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)' },
 };
 
-const VehicleInfoScreen = ({ navigation }) => {
+const VehicleInfoScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
 
   const [loading, setLoading] = useState(false);
@@ -72,70 +73,25 @@ const VehicleInfoScreen = ({ navigation }) => {
     }
   };
 
-  const pickImage = async (key) => {
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Please allow access to photos');
-        return;
+  // Handle captured image returned from DocumentCaptureScreen
+  React.useEffect(() => {
+    if (route?.params?.capturedImage && route?.params?.docType) {
+      setVehicleImages(prev => ({
+        ...prev,
+        [route.params.docType]: route.params.capturedImage,
+      }));
+      if (errors.images) {
+        setErrors(prev => ({ ...prev, images: null }));
       }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled) {
-        setVehicleImages({ ...vehicleImages, [key]: result.assets[0] });
-        if (errors.images) {
-          setErrors({ ...errors, images: null });
-        }
-      }
-    } catch (error) {
-      console.error('Image picker error:', error);
-      Alert.alert('Error', 'Failed to pick image');
+      navigation.setParams({ capturedImage: undefined, docType: undefined });
     }
-  };
+  }, [route?.params?.capturedImage, route?.params?.docType]);
 
-  const takePhoto = async (key) => {
-    try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Please allow camera access');
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled) {
-        setVehicleImages({ ...vehicleImages, [key]: result.assets[0] });
-        if (errors.images) {
-          setErrors({ ...errors, images: null });
-        }
-      }
-    } catch (error) {
-      console.error('Camera error:', error);
-      Alert.alert('Error', 'Failed to take photo');
-    }
-  };
-
-  const showImageOptions = (key) => {
-    Alert.alert(
-      'Select Image',
-      'Choose an option',
-      [
-        { text: 'Take Photo', onPress: () => takePhoto(key) },
-        { text: 'Choose from Gallery', onPress: () => pickImage(key) },
-        { text: 'Cancel', style: 'cancel' },
-      ],
-      { cancelable: true }
-    );
+  const openDocumentCapture = (key) => {
+    navigation.navigate('DocumentCapture', {
+      docType: key,
+      returnScreen: 'VehicleInfo',
+    });
   };
 
   const validate = () => {
@@ -216,6 +172,7 @@ const VehicleInfoScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView showsVerticalScrollIndicator={false} style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
@@ -334,7 +291,7 @@ const VehicleInfoScreen = ({ navigation }) => {
                     borderColor: vehicleImages[imgType.key] ? colors.primary : colors.border,
                   },
                 ]}
-                onPress={() => showImageOptions(imgType.key)}
+                onPress={() => openDocumentCapture(imgType.key)}
                 activeOpacity={0.7}
               >
                 {vehicleImages[imgType.key] ? (
@@ -403,6 +360,7 @@ const VehicleInfoScreen = ({ navigation }) => {
           />
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

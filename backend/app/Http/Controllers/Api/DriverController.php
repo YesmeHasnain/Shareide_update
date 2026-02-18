@@ -521,6 +521,17 @@ class DriverController extends Controller
         // Broadcast ride status change
         broadcast(new RideStatusChanged($ride))->toOthers();
 
+        // Notify rider that a driver accepted their ride
+        if ($ride->rider_id) {
+            PushNotificationController::sendToUser(
+                $ride->rider_id,
+                'Driver Found!',
+                ($user->name ?? 'A driver') . ' has accepted your ride. They are on their way!',
+                ['ride_id' => $ride->id, 'type' => 'ride_accepted', 'channel' => 'rides'],
+                'ride_status'
+            );
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Ride accepted',

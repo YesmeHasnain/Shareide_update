@@ -139,11 +139,11 @@ class User extends Authenticatable
         return $this->hasMany(AuditLog::class);
     }
 
-    // Get profile photo URL
+    // Get profile photo URL (AWS S3)
     public function getProfilePhotoUrlAttribute()
     {
         if ($this->profile_photo) {
-            return asset('storage/' . $this->profile_photo);
+            return \Storage::disk('s3')->url($this->profile_photo);
         }
         return null;
     }

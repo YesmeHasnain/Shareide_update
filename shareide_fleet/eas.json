@@ -12,9 +12,8 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk",
-        "credentialsSource": "remote"
-      },
-      "credentialsSource": "remote"
+        "credentialsSource": "local"
+      }
     },
     "production": {
       "autoIncrement": true,

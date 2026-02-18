@@ -1,18 +1,11 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 
 // PRODUCTION MODE - Real API calls enabled
 const USE_MOCK_DATA = false;
 
-// API Configuration - Change this to your server IP
-// For development: Use ngrok URL for mobile testing
-// For production: Use your actual server URL
-const DEV_API_URL = 'http://192.168.18.9:8000/api';
-const PROD_API_URL = 'https://api.shareide.com/api';
-
-// Development mode - using local server for testing
-const API_BASE_URL = DEV_API_URL;
+// API Configuration
+const API_BASE_URL = 'https://api.shareide.com/api';
 
 // Mock data for testing UI
 const MOCK_RESPONSES = {
@@ -153,20 +146,8 @@ const realApiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    'ngrok-skip-browser-warning': 'true',
   },
 });
-
-// DEV: Set local test token for local server testing
-// Remove this block when switching back to production
-const LOCAL_TEST_TOKEN = '12|9DSl1IO9ObKSc2k2kBFNoVDxJfDoQwcqpqvIs5iV59223722';
-if (__DEV__ && API_BASE_URL === DEV_API_URL) {
-  AsyncStorage.setItem('token', LOCAL_TEST_TOKEN);
-  console.log('📡 API URL:', API_BASE_URL, '(LOCAL - test token set)');
-} else {
-  console.log('📡 API URL:', API_BASE_URL);
-}
-console.log('🧪 Mock Mode:', USE_MOCK_DATA ? 'ENABLED' : 'DISABLED');
 
 // Request interceptor to add auth token (only if not already set)
 realApiClient.interceptors.request.use(

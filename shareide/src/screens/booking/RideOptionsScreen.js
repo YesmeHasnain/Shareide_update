@@ -7,7 +7,6 @@ import {
   ScrollView,
   Switch,
   Platform,
-  Animated,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -66,7 +65,7 @@ const RideTypeOption = ({ type, isSelected, onPress, colors }) => {
 };
 
 // Vehicle Type Card Component
-const VehicleCard = ({ vehicle, isSelected, onPress, colors, showPrice = true }) => {
+const VehicleCard = ({ vehicle, isSelected, onPress, colors }) => {
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onPress(vehicle.id);
@@ -144,19 +143,12 @@ const VehicleCard = ({ vehicle, isSelected, onPress, colors, showPrice = true })
             </View>
           </View>
 
-          {/* Price */}
-          {showPrice && (
-            <View style={styles.vehiclePriceContainer}>
-              <Text style={[styles.vehiclePrice, { color: colors.primary }]}>
-                Rs. {vehicle.price}
-              </Text>
-              {vehicle.originalPrice && (
-                <Text style={[styles.vehicleOriginalPrice, { color: colors.textTertiary }]}>
-                  Rs. {vehicle.originalPrice}
-                </Text>
-              )}
-            </View>
-          )}
+          {/* Driver sets price */}
+          <View style={styles.vehiclePriceContainer}>
+            <Text style={[styles.vehiclePriceNote, { color: colors.textSecondary }]}>
+              Driver sets price
+            </Text>
+          </View>
         </View>
 
         {/* Selection indicator */}
@@ -339,13 +331,10 @@ const RideOptionsScreen = ({ navigation, route }) => {
   const [femaleDriverPreferred, setFemaleDriverPreferred] = useState(false);
   const [luggageSpace, setLuggageSpace] = useState(false);
 
-  // Surge pricing state
-  const [surgeMultiplier, setSurgeMultiplier] = useState(1.0);
-  const [surgeReason, setSurgeReason] = useState('');
-  const [fareEstimate, setFareEstimate] = useState(null);
-
-  // Animation for fare
-  const [fareAnimation] = useState(new Animated.Value(1));
+  // Fare state - InDrive style: show suggested fare, rider can adjust
+  const [suggestedFare, setSuggestedFare] = useState(0);
+  const [offeredFare, setOfferedFare] = useState(0);
+  const [fareLoading, setFareLoading] = useState(true);
 
   // Ride types data
   const rideTypes = [
@@ -354,7 +343,7 @@ const RideOptionsScreen = ({ navigation, route }) => {
     { id: 'package', name: 'Multi-Day', icon: 'layers-outline' },
   ];
 
-  // Default vehicle types (fallback when API fails)
+  // Default vehicle types (fallback when API fails) - driver sets the price
   const defaultVehicleTypes = [
     {
       id: 'bike',
@@ -364,9 +353,6 @@ const RideOptionsScreen = ({ navigation, route }) => {
       seats: 1,
       maxSeats: 1,
       eta: 3,
-      price: 80,
-      baseFare: 30,
-      perKm: 12,
     },
     {
       id: 'car_economy',
@@ -376,9 +362,6 @@ const RideOptionsScreen = ({ navigation, route }) => {
       seats: 4,
       maxSeats: 4,
       eta: 5,
-      price: 200,
-      baseFare: 100,
-      perKm: 22,
       popular: true,
     },
     {
@@ -389,10 +372,6 @@ const RideOptionsScreen = ({ navigation, route }) => {
       seats: 4,
       maxSeats: 4,
       eta: 7,
-      price: 350,
-      originalPrice: 400,
-      baseFare: 150,
-      perKm: 35,
     },
     {
       id: 'van',
@@ -402,9 +381,6 @@ const RideOptionsScreen = ({ navigation, route }) => {
       seats: '6-8',
       maxSeats: 8,
       eta: 10,
-      price: 500,
-      baseFare: 200,
-      perKm: 45,
     },
   ];
 
@@ -423,7 +399,7 @@ const RideOptionsScreen = ({ navigation, route }) => {
       const response = await ridesAPI.getVehicleTypes(pickupLat, pickupLng);
 
       if (response.success && response.data?.vehicleTypes?.length > 0) {
-        // Map API response to local format with prices
+        // Map API response to local format - driver sets the price
         const mappedVehicleTypes = response.data.vehicleTypes.map(vt => ({
           id: vt.id,
           name: vt.name,
@@ -434,9 +410,6 @@ const RideOptionsScreen = ({ navigation, route }) => {
           minSeats: vt.minSeats || 1,
           availableSeats: vt.availableSeats || [],
           eta: vt.eta,
-          price: vt.baseFare * 2, // Estimate base price
-          baseFare: vt.baseFare,
-          perKm: vt.perKm,
           popular: vt.popular || false,
           hasDynamicSeats: vt.hasDynamicSeats || false,
           driverCount: vt.driverCount || 0,
@@ -455,19 +428,36 @@ const RideOptionsScreen = ({ navigation, route }) => {
     }
   };
 
-  // Fetch fare estimate (includes surge info)
+  // Fetch suggested fare from API based on distance (InDrive style)
   const fetchFareEstimate = async () => {
     if (!pickup?.latitude || !dropoff?.latitude) return;
+    setFareLoading(true);
     try {
-      const res = await ridesAPI.estimateFare(pickup, dropoff, 'car');
+      const res = await ridesAPI.estimateFare(pickup, dropoff, selectedVehicle);
       if (res.success && res.data) {
-        setFareEstimate(res.data);
-        if (res.data.breakdown?.surge_multiplier > 1) {
-          setSurgeMultiplier(res.data.breakdown.surge_multiplier);
-          setSurgeReason(res.data.breakdown.surge_reason || 'High demand in your area');
-        }
+        const fare = res.data.total_fare || 0;
+        setSuggestedFare(fare);
+        setOfferedFare(fare); // Start with suggested fare
       }
-    } catch (e) { /* silent */ }
+    } catch (e) {
+      // Fallback: rough estimate based on distance
+      setSuggestedFare(200);
+      setOfferedFare(200);
+    } finally {
+      setFareLoading(false);
+    }
+  };
+
+  // Re-fetch fare estimate when vehicle type changes
+  useEffect(() => {
+    fetchFareEstimate();
+  }, [selectedVehicle]);
+
+  // Adjust offered fare (InDrive style +/- buttons)
+  const adjustFare = (amount) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newFare = Math.max(50, offeredFare + amount); // Minimum Rs. 50
+    setOfferedFare(Math.round(newFare / 10) * 10); // Round to nearest 10
   };
 
   // Get selected vehicle data
@@ -476,63 +466,6 @@ const RideOptionsScreen = ({ navigation, route }) => {
     return activeVehicleTypes.find((v) => v.id === selectedVehicle) || activeVehicleTypes[1] || activeVehicleTypes[0];
   };
 
-  // Calculate total fare
-  const calculateFare = () => {
-    const vehicle = getSelectedVehicle();
-    let baseFare = vehicle.price;
-
-    // AC surcharge
-    if (acEnabled && vehicle.id !== 'bike') {
-      baseFare += 50;
-    }
-
-    // Female driver - no extra charge
-
-    // Luggage surcharge
-    if (luggageSpace) {
-      baseFare += 20;
-    }
-
-    // Reserved vehicle multiplier
-    if (reserveEntireVehicle) {
-      const seatMultiplier = typeof vehicle.maxSeats === 'number' ? vehicle.maxSeats : 4;
-      baseFare = Math.round(baseFare * (seatMultiplier * 0.8));
-    } else {
-      // Per-seat calculation for carpooling vehicles
-      if (selectedSeats > 1 && (vehicle.id === 'van' || vehicle.id === 'high_roof')) {
-        baseFare = Math.round(baseFare * (1 + (selectedSeats - 1) * 0.25));
-      }
-    }
-
-    // Apply surge multiplier
-    if (surgeMultiplier > 1) {
-      baseFare = Math.round(baseFare * surgeMultiplier);
-    }
-
-    // Package discount
-    if (rideType === 'package') {
-      const days = Math.ceil((packageEndDate - packageStartDate) / (24 * 60 * 60 * 1000)) + 1;
-      baseFare = Math.round(baseFare * days * 0.85); // 15% package discount
-    }
-
-    return baseFare;
-  };
-
-  // Animate fare when it changes
-  useEffect(() => {
-    Animated.sequence([
-      Animated.timing(fareAnimation, {
-        toValue: 1.1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fareAnimation, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [selectedVehicle, acEnabled, femaleDriverPreferred, luggageSpace, reserveEntireVehicle, selectedSeats, rideType]);
 
   // Date/Time formatting
   const formatDate = (date) => {
@@ -603,8 +536,8 @@ const RideOptionsScreen = ({ navigation, route }) => {
       acEnabled,
       femaleDriverPreferred,
       luggageSpace,
-      estimatedFare: calculateFare(),
-      surgeMultiplier,
+      offeredFare, // Rider's proposed fare (InDrive style)
+      suggestedFare, // API suggested fare for reference
     };
 
     // Add schedule info for scheduled rides
@@ -681,23 +614,6 @@ const RideOptionsScreen = ({ navigation, route }) => {
           </View>
         </Card>
 
-        {/* Surge Pricing Banner */}
-        {surgeMultiplier > 1 && (
-          <View style={[styles.surgeBanner, { backgroundColor: '#FEF3C7', borderColor: '#F59E0B' }]}>
-            <View style={styles.surgeLeft}>
-              <View style={styles.surgeIconBg}>
-                <Ionicons name="flash" size={20} color="#F59E0B" />
-              </View>
-              <View style={styles.surgeTextContainer}>
-                <Text style={[styles.surgeTitle, { color: '#92400E' }]}>Surge Pricing Active</Text>
-                <Text style={[styles.surgeDesc, { color: '#B45309' }]}>{surgeReason || 'High demand in your area'}</Text>
-              </View>
-            </View>
-            <View style={styles.surgeMultiplierBadge}>
-              <Text style={styles.surgeMultiplierText}>{surgeMultiplier.toFixed(1)}x</Text>
-            </View>
-          </View>
-        )}
 
         {/* Ride Type Selection */}
         <Card style={styles.section} shadow="md">
@@ -923,7 +839,7 @@ const RideOptionsScreen = ({ navigation, route }) => {
               value={acEnabled}
               onToggle={setAcEnabled}
               colors={colors}
-              badge={{ text: '+Rs.50', bgColor: colors.infoLight, textColor: colors.info }}
+              badge={null}
             />
           )}
 
@@ -947,7 +863,6 @@ const RideOptionsScreen = ({ navigation, route }) => {
             value={luggageSpace}
             onToggle={setLuggageSpace}
             colors={colors}
-            badge={{ text: '+Rs.20', bgColor: colors.successLight, textColor: colors.success }}
           />
         </Card>
       </ScrollView>
@@ -963,50 +878,49 @@ const RideOptionsScreen = ({ navigation, route }) => {
           shadows.xl,
         ]}
       >
+        {/* Offer Your Fare - InDrive Style */}
         <View style={styles.fareContainer}>
-          <View style={styles.fareLeft}>
-            <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>Estimated Fare</Text>
-            <Animated.Text
-              style={[
-                styles.fareAmount,
-                { color: colors.text, transform: [{ scale: fareAnimation }] },
-              ]}
+          <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>
+            Offer your fare
+          </Text>
+          <View style={styles.fareAdjustRow}>
+            <TouchableOpacity
+              onPress={() => adjustFare(-10)}
+              style={[styles.fareAdjustBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
             >
-              Rs. {calculateFare()}
-            </Animated.Text>
-            {surgeMultiplier > 1 && (
-              <View style={[styles.discountBadge, { backgroundColor: '#FEF3C7' }]}>
-                <Ionicons name="flash" size={12} color="#F59E0B" />
-                <Text style={[styles.discountText, { color: '#F59E0B' }]}>{surgeMultiplier.toFixed(1)}x Surge</Text>
-              </View>
-            )}
-            {rideType === 'package' && (
-              <View style={[styles.discountBadge, { backgroundColor: colors.successLight }]}>
-                <Ionicons name="pricetag" size={12} color={colors.success} />
-                <Text style={[styles.discountText, { color: colors.success }]}>15% Package Discount</Text>
-              </View>
-            )}
-          </View>
-          <View style={styles.fareRight}>
-            <Text style={[styles.vehicleTypeLabel, { color: colors.textSecondary }]}>
-              {selectedVehicleData.name}
-            </Text>
-            <View style={styles.fareDetails}>
-              <Ionicons name="people-outline" size={14} color={colors.textTertiary} />
-              <Text style={[styles.fareDetailText, { color: colors.textTertiary }]}>
-                {reserveEntireVehicle ? 'Private' : `${selectedSeats} seat${selectedSeats > 1 ? 's' : ''}`}
-              </Text>
+              <Ionicons name="remove" size={22} color={colors.text} />
+            </TouchableOpacity>
+            <View style={styles.fareDisplayBox}>
+              {fareLoading ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Text style={[styles.fareAmountText, { color: colors.text }]}>
+                  Rs. {offeredFare}
+                </Text>
+              )}
             </View>
+            <TouchableOpacity
+              onPress={() => adjustFare(10)}
+              style={[styles.fareAdjustBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            >
+              <Ionicons name="add" size={22} color={colors.text} />
+            </TouchableOpacity>
           </View>
+          {suggestedFare > 0 && !fareLoading && (
+            <Text style={[styles.suggestedFareText, { color: colors.textTertiary }]}>
+              Suggested: Rs. {suggestedFare}
+            </Text>
+          )}
         </View>
 
         <TouchableOpacity
           style={[styles.findButton, { backgroundColor: colors.primary }]}
           onPress={handleFindDrivers}
           activeOpacity={0.8}
+          disabled={fareLoading || offeredFare < 50}
         >
           <Ionicons name="search" size={20} color="#000" />
-          <Text style={styles.findButtonText}>Find Drivers</Text>
+          <Text style={styles.findButtonText}>Find Drivers - Rs. {offeredFare}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -1102,52 +1016,6 @@ const styles = StyleSheet.create({
     height: 6,
   },
 
-  // Surge pricing styles
-  surgeBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-  },
-  surgeLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: spacing.sm,
-  },
-  surgeIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FEF3C7',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  surgeTextContainer: {
-    flex: 1,
-  },
-  surgeTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  surgeDesc: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  surgeMultiplierBadge: {
-    backgroundColor: '#F59E0B',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-  },
-  surgeMultiplierText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '800',
-  },
 
   // Ride type styles
   rideTypeGrid: {
@@ -1292,13 +1160,10 @@ const styles = StyleSheet.create({
   vehiclePriceContainer: {
     alignItems: 'flex-end',
   },
-  vehiclePrice: {
-    fontSize: typography.h5,
-    fontWeight: '800',
-  },
-  vehicleOriginalPrice: {
+  vehiclePriceNote: {
     fontSize: typography.caption,
-    textDecorationLine: 'line-through',
+    fontWeight: '600',
+    fontStyle: 'italic',
   },
   popularBadge: {
     position: 'absolute',
@@ -1460,51 +1325,40 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   fareContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.lg,
-  },
-  fareLeft: {
-    flex: 1,
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
   fareLabel: {
     fontSize: typography.caption,
-    marginBottom: spacing.xs,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
   },
-  fareAmount: {
-    fontSize: typography.h2,
+  fareAdjustRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  fareAdjustBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fareDisplayBox: {
+    minWidth: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+  },
+  fareAmountText: {
+    fontSize: typography.h3 || 24,
     fontWeight: '800',
   },
-  discountBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    gap: 4,
+  suggestedFareText: {
+    fontSize: typography.caption,
     marginTop: spacing.xs,
-    alignSelf: 'flex-start',
-  },
-  discountText: {
-    fontSize: typography.tiny,
-    fontWeight: '600',
-  },
-  fareRight: {
-    alignItems: 'flex-end',
-  },
-  vehicleTypeLabel: {
-    fontSize: typography.caption,
-    fontWeight: '600',
-    marginBottom: spacing.xs,
-  },
-  fareDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  fareDetailText: {
-    fontSize: typography.caption,
   },
   findButton: {
     flexDirection: 'row',

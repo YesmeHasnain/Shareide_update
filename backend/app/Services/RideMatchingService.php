@@ -162,7 +162,7 @@ class RideMatchingService
         // Fare calculation
         $baseFare = 50; // Rs. 50 base fare
         $perKmRate = 30; // Rs. 30 per km
-        $commissionRate = 0.20; // 20% commission
+        $commissionRate = 0.10; // 10% commission (InDrive-style)
 
         $fare = $baseFare + ($distance * $perKmRate);
         $commission = $fare * $commissionRate;

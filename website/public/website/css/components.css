@@ -689,6 +689,64 @@ section {
   color: var(--white);
 }
 
+/* APK button - dark solid style for visibility on all backgrounds */
+.store-button--apk {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 1px solid rgba(61, 220, 132, 0.4);
+}
+
+.store-button--apk:hover {
+  background: linear-gradient(135deg, #16213e, #0f3460);
+  border-color: #3DDC84;
+  box-shadow: 0 10px 30px rgba(61, 220, 132, 0.25);
+  transform: translateY(-3px);
+}
+
+.store-button--apk i {
+  color: #3DDC84;
+}
+
+.store-button--apk span {
+  color: rgba(255,255,255,0.6);
+}
+
+.store-button--apk strong {
+  color: #fff;
+}
+
+/* Store buttons inside download cards need dark background */
+.download-app-card .store-button {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 1px solid rgba(252, 192, 20, 0.3);
+}
+
+.download-app-card .store-button:hover {
+  background: linear-gradient(135deg, #16213e, #0f3460);
+  border-color: var(--primary);
+  box-shadow: 0 10px 30px rgba(252, 192, 20, 0.2);
+}
+
+.download-app-card .store-button i {
+  color: #fff;
+}
+
+.download-app-card .store-button span {
+  color: rgba(255,255,255,0.6);
+}
+
+.download-app-card .store-button strong {
+  color: #fff;
+}
+
+.download-app-card .store-button--apk {
+  border-color: rgba(61, 220, 132, 0.4);
+}
+
+.download-app-card .store-button--apk:hover {
+  border-color: #3DDC84;
+  box-shadow: 0 10px 30px rgba(61, 220, 132, 0.25);
+}
+
 .download-cta__trust {
   display: flex;
   justify-content: center;

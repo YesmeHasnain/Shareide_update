@@ -75,7 +75,7 @@
                             <div class="flex items-center">
                                 @if($user->profile_photo)
                                     <div class="w-10 h-10 rounded-lg overflow-hidden">
-                                        <img src="{{ asset('storage/' . $user->profile_photo) }}" alt="{{ $user->name }}" class="w-full h-full object-cover">
+                                        <img src="{{ config('app.api_storage_url') }}/{{ $user->profile_photo }}" alt="{{ $user->name }}" class="w-full h-full object-cover">
                                     </div>
                                 @else
                                     <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">

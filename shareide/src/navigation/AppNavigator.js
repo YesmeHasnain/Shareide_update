@@ -1,8 +1,8 @@
 import React from 'react';
-import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, StyleSheet, Platform, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Platform, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../context/AuthContext';
@@ -96,25 +96,7 @@ const TabIcon = ({ focused, icon, iconFocused, color, label }) => {
   );
 };
 
-// Center Location Button Component
-const CenterLocationButton = ({ onPress }) => {
-  return (
-    <TouchableOpacity
-      style={styles.centerButton}
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
-      <View style={styles.centerButtonInner}>
-        <Ionicons name="location" size={28} color="#000" />
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-// Dummy screen for center button (won't actually show)
-const DummyScreen = () => null;
-
-// Modern 5-tab navigator with center location button
+// Clean 4-tab navigator
 const MainTabs = () => {
   const theme = useTheme();
   const colors = theme?.colors || {
@@ -136,6 +118,7 @@ const MainTabs = () => {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
+        tabBarHideOnKeyboard: true,
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopWidth: 0,
@@ -184,27 +167,6 @@ const MainTabs = () => {
         listeners={tabBarListeners}
       />
       <Tab.Screen
-        name="LocationTab"
-        component={DummyScreen}
-        options={({ navigation }) => ({
-          tabBarIcon: () => (
-            <CenterLocationButton
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                navigation.navigate('LocationSearch', { type: 'dropoff' });
-              }}
-            />
-          ),
-        })}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            navigation.navigate('LocationSearch', { type: 'dropoff' });
-          },
-        })}
-      />
-      <Tab.Screen
         name="WalletTab"
         component={WalletScreen}
         options={{
@@ -250,25 +212,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     marginTop: 4,
-  },
-  centerButton: {
-    position: 'absolute',
-    top: -25,
-    alignSelf: 'center',
-    zIndex: 10,
-  },
-  centerButtonInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#FCC014',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#FCC014',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
   },
 });
 

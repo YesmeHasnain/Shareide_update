@@ -13,7 +13,7 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { ridesAPI } from '../../api/rides';
-import { Card, Avatar, Rating, Badge, EmptyState, SkeletonDriver, BiddingCard } from '../../components/common';
+import { Card, Avatar, Rating, Badge, EmptyState, SkeletonDriver } from '../../components/common';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
 // Default colors fallback
@@ -90,9 +90,7 @@ const DriverCard = ({ driver, colors, onPress }) => {
     return time;
   };
 
-  const displayFare = driver.fare || driver.base_fare || 350;
-  const baseFareAmount = driver.base_fare || driver.fare || 350;
-  const hasBid = driver.bid_amount > 0;
+  const displayFare = driver.fare || driver.bid_amount || driver.base_fare || null;
 
   return (
     <TouchableOpacity
@@ -129,12 +127,13 @@ const DriverCard = ({ driver, colors, onPress }) => {
           </View>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
-          <Text style={[styles.fareAmount, { color: colors.price || '#F5A623' }]}>
-            Rs. {displayFare}
-          </Text>
-          {hasBid && (
-            <Text style={{ fontSize: 10, color: colors.textTertiary, textDecorationLine: 'line-through' }}>
-              Rs. {baseFareAmount}
+          {displayFare ? (
+            <Text style={[styles.fareAmount, { color: colors.price || '#F5A623' }]}>
+              Rs. {displayFare}
+            </Text>
+          ) : (
+            <Text style={[styles.awaitingOffer, { color: colors.textTertiary }]}>
+              Awaiting offer
             </Text>
           )}
         </View>
@@ -171,42 +170,24 @@ const SearchResultsScreen = ({ route, navigation }) => {
   const colors = theme?.colors || defaultColors;
   const insets = useSafeAreaInsets();
   const params = route?.params || {};
-  const { pickup, dropoff } = params;
+  const { pickup, dropoff, rideOptions } = params;
+  const offeredFare = rideOptions?.offeredFare || 0;
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedBid, setSelectedBid] = useState(0);
-  const [searchRadius, setSearchRadius] = useState(5);
-  const [baseFare, setBaseFare] = useState(0);
   const [activeFilter, setActiveFilter] = useState('all');
 
   useEffect(() => {
     fetchDrivers();
   }, []);
 
-  // Refetch when bid changes
-  useEffect(() => {
-    if (!loading) {
-      fetchDrivers();
-    }
-  }, [selectedBid]);
-
   const fetchDrivers = async () => {
     try {
       setError(null);
-      // Use bidding API for search
-      const response = await ridesAPI.searchWithBidding(pickup, dropoff, null, selectedBid);
+      const response = await ridesAPI.searchWithBidding(pickup, dropoff, null, 0);
       const driversData = response.data?.drivers || response.drivers || [];
       setDrivers(driversData);
-      setSearchRadius(response.data?.search_radius || 5);
-
-      // Set base fare from first driver if available
-      if (driversData.length > 0 && driversData[0].base_fare) {
-        setBaseFare(driversData[0].base_fare);
-      } else if (driversData.length > 0) {
-        setBaseFare(driversData[0].fare || 300);
-      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch available drivers');
       setDrivers([]);
@@ -222,22 +203,11 @@ const SearchResultsScreen = ({ route, navigation }) => {
     fetchDrivers();
   };
 
-  const handleBidChange = (newBid) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setSelectedBid(newBid);
-    setLoading(true);
-  };
-
   const selectDriver = (driver) => {
     navigation.navigate('DriverProfile', {
-      driver: {
-        ...driver,
-        baseFare: driver.base_fare || baseFare,
-        bidPercentage: selectedBid,
-      },
+      driver,
       pickup,
       dropoff,
-      bidPercentage: selectedBid,
     });
   };
 
@@ -248,7 +218,7 @@ const SearchResultsScreen = ({ route, navigation }) => {
         pickup,
         dropoff,
         rideType: 'rider',
-        seats: 1,
+        seats: rideOptions?.seats || 1,
       });
       const rideRequestId = response.data?.id || response.id;
       if (rideRequestId) {
@@ -256,7 +226,7 @@ const SearchResultsScreen = ({ route, navigation }) => {
           rideRequestId,
           pickup,
           dropoff,
-          proposedFare: baseFare || 300,
+          proposedFare: offeredFare,
         });
       }
     } catch (err) {
@@ -323,12 +293,12 @@ const SearchResultsScreen = ({ route, navigation }) => {
           ListHeaderComponent={
             <>
               <RouteHeader pickup={pickup} dropoff={dropoff} colors={colors} />
-              <BiddingCard
-                baseFare={baseFare}
-                selectedBid={selectedBid}
-                onBidChange={handleBidChange}
-                searchRadius={searchRadius}
-              />
+              {offeredFare > 0 && (
+                <View style={[styles.offeredFareBanner, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
+                  <Text style={[styles.offeredFareLabel, { color: colors.textSecondary }]}>Your offered fare</Text>
+                  <Text style={[styles.offeredFareAmount, { color: colors.primary }]}>Rs. {offeredFare}</Text>
+                </View>
+              )}
               {/* Negotiate Fare Button */}
               <TouchableOpacity
                 style={[styles.negotiateBtn, { backgroundColor: colors.primary }]}
@@ -501,6 +471,27 @@ const styles = StyleSheet.create({
   fareAmount: {
     fontSize: typography.h5,
     fontWeight: '700',
+  },
+  awaitingOffer: {
+    fontSize: typography.caption,
+    fontStyle: 'italic',
+  },
+  offeredFareBanner: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    marginBottom: spacing.md,
+  },
+  offeredFareLabel: {
+    fontSize: typography.bodySmall,
+    fontWeight: '600',
+  },
+  offeredFareAmount: {
+    fontSize: typography.h5,
+    fontWeight: '800',
   },
   negotiateBtn: {
     flexDirection: 'row',

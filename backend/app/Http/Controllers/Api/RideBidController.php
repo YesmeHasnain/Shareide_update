@@ -36,14 +36,12 @@ class RideBidController extends Controller
             ], 400);
         }
 
-        // Check bid limits
-        $minBid = $rideRequest->min_bid_amount ?? ($rideRequest->estimated_fare * 0.7);
-        $maxBid = $rideRequest->max_bid_amount ?? ($rideRequest->estimated_fare * 1.5);
-
-        if ($request->bid_amount < $minBid || $request->bid_amount > $maxBid) {
+        // Minimum bid check - driver is free to set any reasonable price
+        $minBid = 50;
+        if ($request->bid_amount < $minBid) {
             return response()->json([
                 'success' => false,
-                'message' => "Bid must be between {$minBid} and {$maxBid}",
+                'message' => "Bid must be at least Rs. {$minBid}",
             ], 400);
         }
 

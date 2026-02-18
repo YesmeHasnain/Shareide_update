@@ -7,12 +7,14 @@ import {
   FlatList,
   Switch,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
+import apiClient from '../../api/client';
 import { shadows, spacing, borderRadius, typography } from '../../theme/colors';
 
 // Default colors fallback
@@ -34,6 +36,7 @@ const NotificationsScreen = ({ navigation }) => {
   const colors = theme?.colors || defaultColors;
   const insets = useSafeAreaInsets();
   const [notifications, setNotifications] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
   const [settings, setSettings] = useState({
     push: true,
     email: false,
@@ -44,21 +47,62 @@ const NotificationsScreen = ({ navigation }) => {
   });
 
   useEffect(() => {
-    // Notifications will be fetched from API
-    // Empty by default - real data only
-    setNotifications([]);
+    fetchNotifications();
   }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await apiClient.get('/push-notifications');
+      if (res.data?.success) {
+        const items = res.data.data?.data || res.data.data || [];
+        setNotifications(items.map(n => ({
+          id: n.id,
+          title: n.title,
+          message: n.body,
+          type: n.type || 'general',
+          read: n.is_read,
+          time: formatTimeAgo(n.created_at),
+          data: n.data,
+        })));
+      }
+    } catch (e) {
+      // Silent - show empty state
+    }
+  };
+
+  const formatTimeAgo = (dateStr) => {
+    if (!dateStr) return '';
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now - date;
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'Just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h ago`;
+    const diffDay = Math.floor(diffHr / 24);
+    return `${diffDay}d ago`;
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchNotifications();
+    setRefreshing(false);
+  };
 
   const toggleSetting = (key) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const markAsRead = (id) => {
+  const markAsRead = async (id) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+    try {
+      await apiClient.post(`/push-notifications/${id}/read`);
+    } catch (e) { /* silent */ }
   };
 
   const clearAll = () => {
@@ -68,9 +112,12 @@ const NotificationsScreen = ({ navigation }) => {
       {
         text: 'Clear',
         style: 'destructive',
-        onPress: () => {
+        onPress: async () => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           setNotifications([]);
+          try {
+            await apiClient.post('/push-notifications/read-all');
+          } catch (e) { /* silent */ }
         },
       },
     ]);
@@ -249,6 +296,9 @@ const NotificationsScreen = ({ navigation }) => {
         renderItem={renderNotification}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+        }
         ListHeaderComponent={
           <>
             <ListHeader />

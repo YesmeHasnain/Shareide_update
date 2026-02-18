@@ -33,4 +33,46 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], 401);
             }
         });
+
+        // Handle validation exceptions
+        $exceptions->render(function (\Illuminate\Validation\ValidationException $e, Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed.',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+        });
+
+        // Handle model not found (404)
+        $exceptions->render(function (\Illuminate\Database\Eloquent\ModelNotFoundException $e, Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Resource not found.',
+                ], 404);
+            }
+        });
+
+        // Handle rate limiting (429)
+        $exceptions->render(function (\Illuminate\Http\Exceptions\ThrottleRequestsException $e, Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Too many requests. Please try again later.',
+                ], 429);
+            }
+        });
+
+        // Handle all other exceptions for API
+        $exceptions->render(function (\Throwable $e, Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+                return response()->json([
+                    'success' => false,
+                    'message' => $statusCode === 500 ? 'Internal server error.' : $e->getMessage(),
+                ], $statusCode);
+            }
+        });
     })->create();

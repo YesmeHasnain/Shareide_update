@@ -79,6 +79,40 @@
     var chatPendingFile = null;
 
     // ============================================
+    // IMAGE LIGHTBOX MODAL
+    // ============================================
+    var lightbox = document.createElement('div');
+    lightbox.className = 'chat-lightbox';
+    lightbox.innerHTML = '<button class="chat-lightbox__close"><i class="fas fa-times"></i></button><img src="" alt="Image">';
+    document.body.appendChild(lightbox);
+
+    var lightboxImg = lightbox.querySelector('img');
+    var lightboxClose = lightbox.querySelector('.chat-lightbox__close');
+
+    function openLightbox(src) {
+      lightboxImg.src = src;
+      lightbox.classList.add('active');
+    }
+
+    function closeLightbox() {
+      lightbox.classList.remove('active');
+      setTimeout(function() { lightboxImg.src = ''; }, 250);
+    }
+
+    lightboxClose.addEventListener('click', function(e) { e.stopPropagation(); closeLightbox(); });
+    lightbox.addEventListener('click', function(e) { if (e.target === lightbox) closeLightbox(); });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLightbox(); });
+
+    // Delegate click on chat images to open lightbox
+    document.addEventListener('click', function(e) {
+      var target = e.target.closest('[data-lightbox]');
+      if (target) {
+        e.preventDefault();
+        openLightbox(target.getAttribute('data-lightbox'));
+      }
+    });
+
+    // ============================================
     // UI HELPERS
     // ============================================
     function scrollToBottom() {
@@ -97,7 +131,7 @@
         var ext = (attachName || attachUrl).split('.').pop().toLowerCase().split('?')[0];
         var isImage = ['jpg','jpeg','png','gif','webp'].indexOf(ext) !== -1;
         if (isImage) {
-          html += '<a href="' + escapeHtml(attachUrl) + '" target="_blank" class="chat-attachment-img"><img src="' + escapeHtml(attachUrl) + '" alt="Image"></a>';
+          html += '<span class="chat-attachment-img" data-lightbox="' + escapeHtml(attachUrl) + '"><img src="' + escapeHtml(attachUrl) + '" alt="Image"></span>';
         } else {
           html += '<a href="' + escapeHtml(attachUrl) + '" target="_blank" class="chat-attachment-file"><i class="fas fa-file"></i> <span>' + escapeHtml(attachName || 'File') + '</span> <i class="fas fa-download"></i></a>';
         }

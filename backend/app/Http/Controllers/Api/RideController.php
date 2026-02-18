@@ -95,6 +95,17 @@ class RideController extends Controller
         // Broadcast ride cancellation for realtime updates
         broadcast(new RideStatusChanged($ride))->toOthers();
 
+        // Notify driver that rider cancelled
+        if ($ride->driver_id) {
+            PushNotificationController::sendToUser(
+                $ride->driver_id,
+                'Ride Cancelled',
+                'The rider has cancelled the ride request.',
+                ['ride_id' => $ride->id, 'type' => 'ride_cancelled', 'channel' => 'rides'],
+                'ride_status'
+            );
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Ride cancelled successfully'
@@ -248,6 +259,10 @@ class RideController extends Controller
                 $request->drop_lng
             );
 
+            // Calculate 10% commission (Shareide's cut from driver earnings)
+            $commissionAmount = round($request->fare * 0.10, 2);
+            $driverEarning = round($request->fare * 0.90, 2);
+
             $ride = RideRequest::create([
                 'rider_id' => $user->id,
                 'driver_id' => $driver->user_id,
@@ -258,8 +273,11 @@ class RideController extends Controller
                 'drop_lat' => $request->drop_lat,
                 'drop_lng' => $request->drop_lng,
                 'distance_km' => $distance,
-                'base_fare' => $request->fare, // Store original fare as base
+                'base_fare' => $request->fare,
                 'estimated_price' => $request->fare,
+                'commission_amount' => $commissionAmount,
+                'driver_earning' => $driverEarning,
+                'commission_rate' => 10,
                 'bid_amount' => 0,
                 'bid_percentage' => 0,
                 'is_bidding' => false,
@@ -465,16 +483,8 @@ class RideController extends Controller
                 $minimumFare = 80;
             }
 
-            // Check surge pricing
-            $surgeMultiplier = 1.0;
-            $surgeAmount = 0;
-            $surge = \App\Models\SurgePricing::active()->first();
-            if ($surge) {
-                $surgeMultiplier = (float) $surge->multiplier;
-                $surgeAmount = round($subtotal * ($surgeMultiplier - 1));
-            }
-
-            $totalFare = max(ceil(($subtotal + $surgeAmount) / 10) * 10, $minimumFare ?? 80);
+            // No surge pricing - InDrive style, rider sets their own fare
+            $totalFare = max(ceil($subtotal / 10) * 10, $minimumFare ?? 80);
 
             return response()->json([
                 'success' => true,
@@ -482,15 +492,12 @@ class RideController extends Controller
                     'distance_km' => round($distance, 1),
                     'duration_minutes' => $durationEstimate,
                     'total_fare' => $totalFare,
+                    'suggested_fare' => $totalFare,
                     'vehicle_type' => $vehicleType,
                     'breakdown' => [
                         'base_fare' => round($baseFare),
                         'distance_charge' => round($distanceCharge),
                         'time_charge' => round($timeCharge),
-                        'booking_fee' => round($bookingFee),
-                        'surge_multiplier' => $surgeMultiplier,
-                        'surge_amount' => round($surgeAmount),
-                        'surge_reason' => $surge ? $surge->reason : null,
                         'cancellation_fee' => round($cancellationFee ?? 50),
                     ],
                 ]

@@ -97,9 +97,8 @@ const BookingConfirmScreen = ({ route, navigation }) => {
     { id: 'card', icon: 'card-outline', label: 'Card' },
   ];
 
-  const baseFare = driver.fare || 350;
-  const serviceFee = Math.round(baseFare * 0.05);
-  const totalFare = baseFare + serviceFee - discount;
+  const baseFare = driver.fare || driver.bid_amount || 0;
+  const totalFare = baseFare - discount;
 
   const applyPromoCode = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -345,19 +344,10 @@ const BookingConfirmScreen = ({ route, navigation }) => {
 
             <View style={styles.fareRow}>
               <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>
-                Base Fare
+                Ride Fare
               </Text>
               <Text style={[styles.fareValue, { color: colors.text }]}>
                 Rs. {baseFare}
-              </Text>
-            </View>
-
-            <View style={styles.fareRow}>
-              <Text style={[styles.fareLabel, { color: colors.textSecondary }]}>
-                Service Fee
-              </Text>
-              <Text style={[styles.fareValue, { color: colors.text }]}>
-                Rs. {serviceFee}
               </Text>
             </View>
 

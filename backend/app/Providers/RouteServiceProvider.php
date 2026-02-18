@@ -22,11 +22,24 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // General API rate limit: 60 requests/minute
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
-        // Routes are configured in bootstrap/app.php in Laravel 11
-        // This provider is kept for compatibility but not loaded by default
+        // Strict rate limit for auth/OTP: 5 requests/minute per IP
+        RateLimiter::for('auth', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
+
+        // Contact form / chatbot: 10 requests/minute per IP
+        RateLimiter::for('contact', function (Request $request) {
+            return Limit::perMinute(10)->by($request->ip());
+        });
+
+        // Support ticket actions: 30 requests/minute per token
+        RateLimiter::for('support', function (Request $request) {
+            return Limit::perMinute(30)->by($request->route('token') ?: $request->ip());
+        });
     }
 }

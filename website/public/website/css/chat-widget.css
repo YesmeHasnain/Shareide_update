@@ -664,6 +664,65 @@
   opacity: 0.5;
 }
 
+/* Image lightbox modal */
+.chat-lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.85);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s ease;
+  cursor: zoom-out;
+}
+
+.chat-lightbox.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.chat-lightbox img {
+  max-width: 90%;
+  max-height: 85vh;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  transform: scale(0.9);
+  transition: transform 0.25s ease;
+  cursor: default;
+}
+
+.chat-lightbox.active img {
+  transform: scale(1);
+}
+
+.chat-lightbox__close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  border: none;
+}
+
+.chat-lightbox__close:hover {
+  background: rgba(255,255,255,0.3);
+}
+
 @media (max-width: 480px) {
   .chat-popup {
     width: calc(100vw - 50px);

@@ -7,7 +7,6 @@ import {
   Alert,
   StatusBar,
   Animated,
-  Image,
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -242,7 +241,7 @@ const DashboardScreen = ({ navigation }) => {
           domStorageEnabled
         />
 
-        {/* Top Header */}
+        {/* Top Header with integrated toggle */}
         <View style={[styles.topHeader, { paddingTop: insets.top + 8 }]}>
           {/* Left: Menu */}
           <TouchableOpacity
@@ -253,16 +252,38 @@ const DashboardScreen = ({ navigation }) => {
             <Ionicons name="menu" size={22} color={colors.text} />
           </TouchableOpacity>
 
-          {/* Center: Greeting + Status */}
-          <View style={styles.headerCenter}>
-            <Text style={[styles.greetingText, { color: colors.text }]}>Hi, {getUserName()}</Text>
-            <View style={styles.headerStatusRow}>
-              <View style={[styles.headerStatusDot, { backgroundColor: isOnline ? '#10B981' : '#EF4444' }]} />
-              <Text style={[styles.headerStatusText, { color: isOnline ? '#10B981' : colors.textTertiary }]}>
-                {isOnline ? 'Online' : 'Offline'}
-              </Text>
-            </View>
-          </View>
+          {/* Center: Online/Offline Toggle */}
+          <Animated.View style={{ transform: [{ scale: goButtonScale }], opacity: isApproved ? 1 : 0.5 }}>
+            <TouchableOpacity
+              onPress={() => { if (!handleRestrictedAction('go online')) toggleOnline(); }}
+              activeOpacity={0.8}
+              style={styles.toggleOuter}
+            >
+              <LinearGradient
+                colors={isOnline ? ['#10B981', '#059669'] : ['#374151', '#1F2937']}
+                style={styles.toggleTrack}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <View style={[
+                  styles.toggleThumb,
+                  isOnline ? styles.toggleThumbOn : styles.toggleThumbOff,
+                ]}>
+                  {isOnline ? (
+                    <Ionicons name="checkmark" size={14} color="#10B981" />
+                  ) : (
+                    <Ionicons name="close" size={14} color="#9CA3AF" />
+                  )}
+                </View>
+                <Text style={[
+                  styles.toggleLabel,
+                  isOnline ? styles.toggleLabelOn : styles.toggleLabelOff,
+                ]}>
+                  {isOnline ? 'ONLINE' : 'OFFLINE'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
 
           {/* Right: Notifications */}
           <TouchableOpacity
@@ -296,73 +317,29 @@ const DashboardScreen = ({ navigation }) => {
 
         {/* Center Location Button */}
         <TouchableOpacity
-          style={[styles.centerBtn, { bottom: 310 + insets.bottom, backgroundColor: colors.card || colors.surface }]}
+          style={[styles.centerBtn, { bottom: 180 + insets.bottom, backgroundColor: colors.card || colors.surface }]}
           onPress={initializeLocation}
           activeOpacity={0.7}
         >
           <Ionicons name="locate" size={22} color={PRIMARY} />
         </TouchableOpacity>
 
-        {/* Logo + Toggle */}
-        <View style={[styles.logoToggleContainer, { bottom: 250 + insets.bottom }]}>
-          {/* Logo */}
-          <View style={[styles.logoBg, { backgroundColor: colors.background }]}>
-            <Image
-              source={isDark ? require('../../../assets/logodarkmode.png') : require('../../../assets/logolightmode.png')}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-          </View>
-
-          {/* Active Toggle */}
-          <Animated.View style={{ transform: [{ scale: goButtonScale }], opacity: isApproved ? 1 : 0.5 }}>
-            <TouchableOpacity
-              onPress={() => { if (!handleRestrictedAction('go online')) toggleOnline(); }}
-              activeOpacity={0.8}
-              style={styles.toggleOuter}
-            >
-              <LinearGradient
-                colors={isOnline ? ['#10B981', '#059669'] : ['#374151', '#1F2937']}
-                style={styles.toggleTrack}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
-                <View style={[
-                  styles.toggleThumb,
-                  isOnline ? styles.toggleThumbOn : styles.toggleThumbOff,
-                ]}>
-                  {isOnline ? (
-                    <Ionicons name="checkmark" size={16} color="#10B981" />
-                  ) : (
-                    <Ionicons name="close" size={16} color="#9CA3AF" />
-                  )}
-                </View>
-                <Text style={[
-                  styles.toggleLabel,
-                  isOnline ? styles.toggleLabelOn : styles.toggleLabelOff,
-                ]}>
-                  {isOnline ? 'ACTIVE' : 'OFFLINE'}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animated.View>
-
-          {isOnline && (
-            <Animated.View style={[
-              styles.activePulse,
-              {
-                transform: [{ scale: pulseAnim }],
-                opacity: pulseAnim.interpolate({
-                  inputRange: [1, 1.6],
-                  outputRange: [0.4, 0],
-                }),
-              },
-            ]} />
-          )}
-        </View>
+        {isOnline && (
+          <Animated.View style={[
+            styles.activePulse,
+            {
+              bottom: 170 + insets.bottom,
+              transform: [{ scale: pulseAnim }],
+              opacity: pulseAnim.interpolate({
+                inputRange: [1, 1.6],
+                outputRange: [0.3, 0],
+              }),
+            },
+          ]} />
+        )}
       </View>
 
-      {/* Bottom Panel */}
+      {/* Compact Bottom Panel */}
       <Animated.View style={[
         styles.bottomPanel,
         {
@@ -392,10 +369,10 @@ const DashboardScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Action Buttons Row */}
+        {/* Compact Action Buttons Row */}
         <View style={styles.actionRow}>
           <TouchableOpacity
-            style={[styles.actionCard, !isApproved && { opacity: 0.5 }]}
+            style={[styles.actionBtn, { backgroundColor: isDark ? colors.backgroundSecondary : '#0F0F1E' }, !isApproved && { opacity: 0.5 }]}
             onPress={() => {
               if (handleRestrictedAction('view ride requests')) return;
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -403,22 +380,18 @@ const DashboardScreen = ({ navigation }) => {
             }}
             activeOpacity={0.7}
           >
-            <LinearGradient
-              colors={isDark ? ['#1E1E2E', '#2A2A3E'] : ['#0F0F1E', '#1A1A2E']}
-              style={styles.actionCardGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.actionIconBg}>
-                <Ionicons name="people" size={20} color={PRIMARY} />
-              </View>
+            <View style={[styles.actionIconBg, { backgroundColor: '#FCC01420' }]}>
+              <Ionicons name="people" size={18} color={PRIMARY} />
+            </View>
+            <View style={styles.actionTextCol}>
               <Text style={styles.actionTitle}>Ride Requests</Text>
               <Text style={styles.actionSub}>Find passengers</Text>
-            </LinearGradient>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionCard, !isApproved && { opacity: 0.5 }]}
+            style={[styles.actionBtn, { backgroundColor: isDark ? colors.backgroundSecondary : '#0F0F1E' }, !isApproved && { opacity: 0.5 }]}
             onPress={() => {
               if (handleRestrictedAction('post rides')) return;
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -429,111 +402,14 @@ const DashboardScreen = ({ navigation }) => {
             }}
             activeOpacity={0.7}
           >
-            <LinearGradient
-              colors={isDark ? ['#1E1E2E', '#2A2A3E'] : ['#0F0F1E', '#1A1A2E']}
-              style={styles.actionCardGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={[styles.actionIconBg, { backgroundColor: '#10B98120' }]}>
-                <Ionicons name="add-circle" size={20} color="#10B981" />
-              </View>
+            <View style={[styles.actionIconBg, { backgroundColor: '#10B98120' }]}>
+              <Ionicons name="add-circle" size={18} color="#10B981" />
+            </View>
+            <View style={styles.actionTextCol}>
               <Text style={styles.actionTitle}>Post Ride</Text>
               <Text style={styles.actionSub}>Share a trip</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-
-        {/* Quick Links */}
-        <View style={styles.quickLinksRow}>
-          <TouchableOpacity
-            style={[styles.quickLink, { backgroundColor: colors.backgroundSecondary }]}
-            onPress={() => {
-              if (handleRestrictedAction('view available requests')) return;
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              navigation.navigate('AvailableRequests');
-            }}
-          >
-            <Ionicons name="list" size={18} color={PRIMARY} />
-            <Text style={[styles.quickLinkText, { color: colors.text }]}>Bid on Rides</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.quickLink, { backgroundColor: colors.backgroundSecondary }]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              navigation.navigate('IntercityOffers');
-            }}
-          >
-            <Ionicons name="bus" size={18} color="#3B82F6" />
-            <Text style={[styles.quickLinkText, { color: colors.text }]}>Intercity</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.quickLink, { backgroundColor: colors.backgroundSecondary }]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              navigation.navigate('DriverFAQ');
-            }}
-          >
-            <Ionicons name="help-circle" size={18} color="#8B5CF6" />
-            <Text style={[styles.quickLinkText, { color: colors.text }]}>Help</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Stats Row */}
-        <View style={[styles.statsRow, { backgroundColor: colors.backgroundSecondary }]}>
-          <TouchableOpacity
-            style={styles.statCard}
-            onPress={() => navigation.navigate('Wallet')}
-            activeOpacity={0.7}
-          >
-            <LinearGradient
-              colors={['#FCC014', '#FF9500']}
-              style={styles.statIconCircle}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="wallet" size={16} color="#000" />
-            </LinearGradient>
-            <Text style={[styles.statValue, { color: colors.text }]}>Rs. {stats.today_earnings}</Text>
-            <Text style={[styles.statLabel, { color: colors.textTertiary }]}>Earned</Text>
-          </TouchableOpacity>
-
-          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-
-          <TouchableOpacity
-            style={styles.statCard}
-            onPress={() => navigation.navigate('HeatMap')}
-            activeOpacity={0.7}
-          >
-            <LinearGradient
-              colors={['#EF4444', '#DC2626']}
-              style={styles.statIconCircle}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="flame" size={16} color="#FFF" />
-            </LinearGradient>
-            <Text style={[styles.statValue, { color: colors.text }]}>Demand</Text>
-            <Text style={[styles.statLabel, { color: colors.textTertiary }]}>Heatmap</Text>
-          </TouchableOpacity>
-
-          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-
-          <TouchableOpacity
-            style={styles.statCard}
-            onPress={() => navigation.navigate('Ratings')}
-            activeOpacity={0.7}
-          >
-            <LinearGradient
-              colors={['#10B981', '#059669']}
-              style={styles.statIconCircle}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="star" size={16} color="#FFF" />
-            </LinearGradient>
-            <Text style={[styles.statValue, { color: colors.text }]}>{stats.rating.toFixed(1)}</Text>
-            <Text style={[styles.statLabel, { color: colors.textTertiary }]}>Rating</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -568,6 +444,7 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
@@ -583,29 +460,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  greetingText: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  headerStatusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-    gap: 5,
-  },
-  headerStatusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  headerStatusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
   notifDot: {
     position: 'absolute',
     top: 10,
@@ -616,6 +470,59 @@ const styles = StyleSheet.create({
     backgroundColor: '#EF4444',
     borderWidth: 2,
     borderColor: '#FFF',
+  },
+
+  // Toggle in header
+  toggleOuter: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  toggleTrack: {
+    width: 120,
+    height: 40,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  toggleThumb: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  toggleThumbOn: {
+    position: 'absolute',
+    right: 4,
+  },
+  toggleThumbOff: {
+    position: 'absolute',
+    left: 4,
+  },
+  toggleLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
+  toggleLabelOn: {
+    color: '#FFFFFF',
+    position: 'absolute',
+    left: 14,
+  },
+  toggleLabelOff: {
+    color: 'rgba(255,255,255,0.7)',
+    position: 'absolute',
+    right: 12,
   },
 
   // Approval Banner
@@ -662,93 +569,20 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
 
-  // Logo + Toggle
-  logoToggleContainer: {
-    position: 'absolute',
-    alignSelf: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  logoBg: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-    marginBottom: 12,
-  },
-  logoImage: {
-    width: 140,
-    height: 40,
-  },
-  toggleOuter: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  toggleTrack: {
-    width: 130,
-    height: 44,
-    borderRadius: 22,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  toggleThumb: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  toggleThumbOn: {
-    position: 'absolute',
-    right: 4,
-  },
-  toggleThumbOff: {
-    position: 'absolute',
-    left: 4,
-  },
-  toggleLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-  },
-  toggleLabelOn: {
-    color: '#FFFFFF',
-    position: 'absolute',
-    left: 16,
-  },
-  toggleLabelOff: {
-    color: 'rgba(255,255,255,0.7)',
-    position: 'absolute',
-    right: 14,
-  },
   activePulse: {
     position: 'absolute',
-    bottom: -8,
-    width: 150,
-    height: 60,
-    borderRadius: 30,
+    alignSelf: 'center',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: '#10B981',
   },
 
-  // Bottom Panel
+  // Compact Bottom Panel
   bottomPanel: {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    paddingTop: 24,
+    paddingTop: 20,
     paddingHorizontal: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -6 },
@@ -762,17 +596,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 18,
+    marginBottom: 16,
   },
   earningsLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   earningsAmount: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: '800',
     letterSpacing: -0.5,
   },
@@ -791,95 +625,38 @@ const styles = StyleSheet.create({
     color: PRIMARY,
   },
 
-  // Action Cards
+  // Compact Action Buttons
   actionRow: {
+    gap: 10,
+  },
+  actionBtn: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  actionCard: {
-    flex: 1,
-    borderRadius: 18,
-    overflow: 'hidden',
-  },
-  actionCardGradient: {
-    padding: 16,
-    borderRadius: 18,
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: 16,
   },
   actionIconBg: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: '#FCC01420',
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginRight: 12,
+  },
+  actionTextCol: {
+    flex: 1,
   },
   actionTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 2,
   },
   actionSub: {
     fontSize: 11,
     color: 'rgba(255,255,255,0.5)',
     fontWeight: '500',
-  },
-
-  // Stats Row
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 18,
-    paddingVertical: 18,
-    paddingHorizontal: 8,
-  },
-  statCard: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statIconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 2,
-  },
-  statLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  statDivider: {
-    width: 1,
-    height: 40,
-  },
-  quickLinksRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    gap: 10,
-  },
-  quickLink: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    gap: 6,
-  },
-  quickLinkText: {
-    fontSize: 12,
-    fontWeight: '600',
+    marginTop: 1,
   },
 });
 

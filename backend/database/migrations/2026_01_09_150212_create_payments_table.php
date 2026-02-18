@@ -30,7 +30,7 @@ return new class extends Migration
             // Commission breakdown
             $table->decimal('commission_amount', 10, 2)->default(0);
             $table->decimal('driver_earning', 10, 2)->default(0);
-            $table->decimal('commission_rate', 5, 2)->default(20); // 20%
+            $table->decimal('commission_rate', 5, 2)->default(10); // 10%
             
             // Timestamps
             $table->timestamp('paid_at')->nullable();

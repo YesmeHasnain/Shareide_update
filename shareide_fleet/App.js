@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Alert, LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -10,13 +10,12 @@ import notificationService from './src/utils/notificationService';
 
 LogBox.ignoreLogs(['Non-serializable values', 'Reanimated', 'Worklets']);
 
-export default function App() {
-  useEffect(() => {
-    // Initialize push notifications
-    initializeNotifications();
+function App() {
+  const navigationRef = useRef(null);
 
+  useEffect(() => {
+    initializeNotifications();
     return () => {
-      // Cleanup listeners on unmount
       notificationService.removeListeners();
     };
   }, []);
@@ -25,32 +24,54 @@ export default function App() {
     try {
       await notificationService.initialize();
 
-      // Add notification listeners
       notificationService.addListeners(
-        // Handle foreground notification
+        // Foreground notification
         (notification) => {
           const { title, body, data } = notification.request.content;
-          console.log('Foreground notification:', title, body);
 
-          // Show in-app alert for important notifications
+          // Show alert for important notifications
           if (data?.type === 'driver_approved' || data?.type === 'driver_rejected') {
             Alert.alert(title, body);
           }
+          if (data?.type === 'new_ride' || data?.type === 'bid_countered' || data?.type === 'counter_accepted') {
+            Alert.alert(title, body);
+          }
+          if (data?.type === 'ride_cancelled') {
+            Alert.alert(title, body);
+          }
         },
-        // Handle notification tap
+        // Notification tapped - navigate
         (response) => {
           const { data } = response.notification.request.content;
-          console.log('Notification tapped:', data);
+          const nav = navigationRef.current;
+          if (!nav) return;
 
-          // Handle navigation based on notification type
-          if (data?.type === 'driver_approved') {
-            // User will be redirected automatically when app state updates
-            console.log('Driver approved - refresh app state');
+          switch (data?.type) {
+            case 'new_ride':
+              if (data.ride_id) {
+                nav.navigate('RideRequest', { rideId: data.ride_id });
+              }
+              break;
+            case 'bid_countered':
+            case 'counter_accepted':
+              if (data.ride_request_id) {
+                nav.navigate('RideRequest', { rideId: data.ride_request_id });
+              }
+              break;
+            case 'ride_cancelled':
+              nav.navigate('Dashboard');
+              break;
+            case 'driver_approved':
+              // App state will auto-redirect
+              break;
+            default:
+              nav.navigate('Notifications');
+              break;
           }
         }
       );
     } catch (error) {
-      console.error('Failed to initialize notifications:', error);
+      // Silent fail
     }
   };
 
@@ -60,10 +81,12 @@ export default function App() {
         <ThemeProvider>
           <AuthProvider>
             <StatusBar style="auto" />
-            <AppNavigator />
+            <AppNavigator ref={navigationRef} />
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
+
+export default App;

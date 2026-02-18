@@ -36,14 +36,10 @@ export const AuthProvider = ({ children }) => {
       setToken(userToken);
       setUser(userData);
 
-      // Register device for push notifications
-      setTimeout(async () => {
-        try {
-          await notificationService.registerToken();
-        } catch (err) {
-          console.log('Failed to register push token:', err);
-        }
-      }, 1000);
+      // Register device for push notifications (non-blocking)
+      notificationService.registerToken().catch((err) => {
+        console.log('Failed to register push token:', err);
+      });
     } catch (error) {
       console.error('Login error:', error);
       throw error;

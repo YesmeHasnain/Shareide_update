@@ -46,15 +46,15 @@
                 </div>
                 <div class="p-4">
                     @if($driver->documents->{$doc['field']})
-                        <a href="{{ asset('storage/' . $driver->documents->{$doc['field']}) }}" target="_blank" class="block">
-                            <img src="{{ asset('storage/' . $driver->documents->{$doc['field']}) }}" alt="{{ $doc['label'] }}"
+                        <a href="{{ config('app.api_storage_url') }}/{{ $driver->documents->{$doc['field']} }}" target="_blank" class="block">
+                            <img src="{{ config('app.api_storage_url') }}/{{ $driver->documents->{$doc['field']} }}" alt="{{ $doc['label'] }}"
                                 class="w-full h-48 object-contain bg-gray-100 rounded-lg hover:opacity-80 transition">
                         </a>
                         <div class="mt-3 flex justify-between items-center">
-                            <a href="{{ asset('storage/' . $driver->documents->{$doc['field']}) }}" target="_blank" class="text-blue-600 text-sm hover:underline">
+                            <a href="{{ config('app.api_storage_url') }}/{{ $driver->documents->{$doc['field']} }}" target="_blank" class="text-blue-600 text-sm hover:underline">
                                 <i class="ti ti-external-link mr-1"></i>Full Size
                             </a>
-                            <a href="{{ asset('storage/' . $driver->documents->{$doc['field']}) }}" download class="text-gray-600 text-sm hover:underline">
+                            <a href="{{ config('app.api_storage_url') }}/{{ $driver->documents->{$doc['field']} }}" download class="text-gray-600 text-sm hover:underline">
                                 <i class="ti ti-download mr-1"></i>Download
                             </a>
                         </div>

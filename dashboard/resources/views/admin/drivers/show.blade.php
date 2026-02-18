@@ -12,7 +12,7 @@
             <div class="flex items-start justify-between mb-6">
                 <div class="flex items-center space-x-4">
                     @if($driver->documents && $driver->documents->selfie_with_nic)
-                        <img src="{{ asset('storage/' . $driver->documents->selfie_with_nic) }}"
+                        <img src="{{ config('app.api_storage_url') }}/{{ $driver->documents->selfie_with_nic }}"
                             alt="Driver Photo" class="w-20 h-20 rounded-full object-cover border-4 border-primary">
                     @else
                         <div class="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
@@ -134,8 +134,8 @@
                             <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $doc['label'] }}</p>
                         </div>
                         @if($driver->documents->{$doc['field']})
-                            <a href="{{ asset('storage/' . $driver->documents->{$doc['field']}) }}" target="_blank" class="block">
-                                <img src="{{ asset('storage/' . $driver->documents->{$doc['field']}) }}"
+                            <a href="{{ config('app.api_storage_url') }}/{{ $driver->documents->{$doc['field']} }}" target="_blank" class="block">
+                                <img src="{{ config('app.api_storage_url') }}/{{ $driver->documents->{$doc['field']} }}"
                                     alt="{{ $doc['label'] }}" class="w-full h-40 object-cover hover:opacity-80 transition">
                             </a>
                         @else
@@ -163,8 +163,8 @@
                             <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $doc['label'] }}</p>
                         </div>
                         @if($driver->documents->{$doc['field']})
-                            <a href="{{ asset('storage/' . $driver->documents->{$doc['field']}) }}" target="_blank" class="block">
-                                <img src="{{ asset('storage/' . $driver->documents->{$doc['field']}) }}"
+                            <a href="{{ config('app.api_storage_url') }}/{{ $driver->documents->{$doc['field']} }}" target="_blank" class="block">
+                                <img src="{{ config('app.api_storage_url') }}/{{ $driver->documents->{$doc['field']} }}"
                                     alt="{{ $doc['label'] }}" class="w-full h-40 object-cover hover:opacity-80 transition">
                             </a>
                         @else
@@ -195,8 +195,8 @@
                             <p class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ $doc['label'] }}</p>
                         </div>
                         @if($driver->documents->{$doc['field']})
-                            <a href="{{ asset('storage/' . $driver->documents->{$doc['field']}) }}" target="_blank" class="block">
-                                <img src="{{ asset('storage/' . $driver->documents->{$doc['field']}) }}"
+                            <a href="{{ config('app.api_storage_url') }}/{{ $driver->documents->{$doc['field']} }}" target="_blank" class="block">
+                                <img src="{{ config('app.api_storage_url') }}/{{ $driver->documents->{$doc['field']} }}"
                                     alt="{{ $doc['label'] }}" class="w-full h-28 object-cover hover:opacity-80 transition">
                             </a>
                         @else
@@ -219,8 +219,8 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 @foreach($driver->liveSelfieVerifications()->latest()->take(8)->get() as $verification)
                     <div class="border dark:border-dark-100 rounded-lg overflow-hidden">
-                        <a href="{{ asset('storage/' . $verification->selfie_image) }}" target="_blank" class="block">
-                            <img src="{{ asset('storage/' . $verification->selfie_image) }}"
+                        <a href="{{ config('app.api_storage_url') }}/{{ $verification->selfie_image }}" target="_blank" class="block">
+                            <img src="{{ config('app.api_storage_url') }}/{{ $verification->selfie_image }}"
                                 alt="Live Selfie" class="w-full h-28 object-cover hover:opacity-80 transition">
                         </a>
                         <div class="p-2 bg-gray-50 dark:bg-dark-100 text-xs">

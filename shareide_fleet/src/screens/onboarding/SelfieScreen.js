@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/Button';
@@ -65,40 +64,31 @@ const SelfieScreen = ({ navigation, route }) => {
     },
   ];
 
-  const takeSelfie = async (key) => {
-    try {
-      // Request camera permission
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+  // Handle captured image returned from DocumentCaptureScreen
+  useEffect(() => {
+    if (route?.params?.capturedImage && route?.params?.docType) {
+      const key = route.params.docType;
+      const newSelfies = {
+        ...selfies,
+        [key]: route.params.capturedImage,
+      };
+      setSelfies(newSelfies);
 
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Please allow camera access');
-        return;
+      // Auto-verify CNIC when selfie_with_nic is taken
+      if (key === 'selfie_with_nic' && cnic) {
+        verifyCnicFromImage(route.params.capturedImage);
       }
 
-      // Launch camera
-      const result = await ImagePicker.launchCameraAsync({
-        cameraType: ImagePicker.CameraType.front,
-        allowsEditing: true,
-        aspect: [3, 4],
-        quality: 0.8,
-      });
-
-      if (!result.canceled) {
-        const newSelfies = {
-          ...selfies,
-          [key]: result.assets[0],
-        };
-        setSelfies(newSelfies);
-
-        // Auto-verify CNIC when selfie_with_nic is taken
-        if (key === 'selfie_with_nic' && cnic) {
-          verifyCnicFromImage(result.assets[0]);
-        }
-      }
-    } catch (error) {
-      console.error('Camera error:', error);
-      Alert.alert('Error', 'Failed to take photo');
+      navigation.setParams({ capturedImage: undefined, docType: undefined });
     }
+  }, [route?.params?.capturedImage, route?.params?.docType]);
+
+  const openSelfieCapture = (key) => {
+    navigation.navigate('DocumentCapture', {
+      docType: key,
+      cameraFacing: 'front',
+      returnScreen: 'Selfie',
+    });
   };
 
   const verifyCnicFromImage = async (image) => {
@@ -243,7 +233,7 @@ const SelfieScreen = ({ navigation, route }) => {
                     />
                     <TouchableOpacity
                       style={[styles.retakeButton, { backgroundColor: colors.primary }]}
-                      onPress={() => takeSelfie(selfie.key)}
+                      onPress={() => openSelfieCapture(selfie.key)}
                     >
                       <Ionicons name="camera" size={16} color="#000" style={{ marginRight: 4 }} />
                       <Text style={styles.retakeButtonText}>Retake</Text>
@@ -299,7 +289,7 @@ const SelfieScreen = ({ navigation, route }) => {
                   {/* Camera Button */}
                   <Button
                     title={`Take ${selfie.title}`}
-                    onPress={() => takeSelfie(selfie.key)}
+                    onPress={() => openSelfieCapture(selfie.key)}
                     style={styles.cameraButton}
                   />
                 </>

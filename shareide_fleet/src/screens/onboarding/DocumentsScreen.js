@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../context/ThemeContext';
 import Button from '../../components/Button';
 import { onboardingAPI } from '../../api/onboarding';
@@ -24,7 +23,7 @@ const DOC_ICONS = {
   vehicle_registration: { name: 'document-text', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)' },
 };
 
-const DocumentsScreen = ({ navigation }) => {
+const DocumentsScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
 
   const [loading, setLoading] = useState(false);
@@ -44,76 +43,23 @@ const DocumentsScreen = ({ navigation }) => {
     { key: 'vehicle_registration', label: 'Vehicle Registration' },
   ];
 
-  const pickImage = async (key) => {
-    try {
-      // Request permissions
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Please allow access to photos');
-        return;
-      }
-
-      // Launch image picker
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled) {
-        setDocuments({
-          ...documents,
-          [key]: result.assets[0],
-        });
-      }
-    } catch (error) {
-      console.error('Image picker error:', error);
-      Alert.alert('Error', 'Failed to pick image');
+  // Handle captured image returned from DocumentCaptureScreen
+  useEffect(() => {
+    if (route?.params?.capturedImage && route?.params?.docType) {
+      setDocuments(prev => ({
+        ...prev,
+        [route.params.docType]: route.params.capturedImage,
+      }));
+      // Clear params to avoid re-processing
+      navigation.setParams({ capturedImage: undefined, docType: undefined });
     }
-  };
+  }, [route?.params?.capturedImage, route?.params?.docType]);
 
-  const takePhoto = async (key) => {
-    try {
-      // Request permissions
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Please allow camera access');
-        return;
-      }
-
-      // Launch camera
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled) {
-        setDocuments({
-          ...documents,
-          [key]: result.assets[0],
-        });
-      }
-    } catch (error) {
-      console.error('Camera error:', error);
-      Alert.alert('Error', 'Failed to take photo');
-    }
-  };
-
-  const showImageOptions = (key) => {
-    Alert.alert(
-      'Select Image',
-      'Choose an option',
-      [
-        { text: 'Take Photo', onPress: () => takePhoto(key) },
-        { text: 'Choose from Gallery', onPress: () => pickImage(key) },
-        { text: 'Cancel', style: 'cancel' },
-      ],
-      { cancelable: true }
-    );
+  const openDocumentCapture = (key) => {
+    navigation.navigate('DocumentCapture', {
+      docType: key,
+      returnScreen: 'Documents',
+    });
   };
 
   const validate = () => {
@@ -215,7 +161,7 @@ const DocumentsScreen = ({ navigation }) => {
                     <View style={styles.imageOverlay}>
                       <TouchableOpacity
                         style={[styles.overlayButton, { backgroundColor: colors.primary }]}
-                        onPress={() => showImageOptions(doc.key)}
+                        onPress={() => openDocumentCapture(doc.key)}
                       >
                         <Ionicons name="camera" size={16} color="#000" style={{ marginRight: 4 }} />
                         <Text style={styles.overlayButtonText}>Change</Text>
@@ -225,7 +171,7 @@ const DocumentsScreen = ({ navigation }) => {
                 ) : (
                   <TouchableOpacity
                     style={[styles.uploadButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                    onPress={() => showImageOptions(doc.key)}
+                    onPress={() => openDocumentCapture(doc.key)}
                   >
                     <View style={[styles.uploadIconBg, { backgroundColor: 'rgba(107, 114, 128, 0.08)' }]}>
                       <Ionicons name="camera" size={28} color={colors.textSecondary} />

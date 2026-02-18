@@ -43,8 +43,8 @@ class CommissionSetting extends Model
             ->first();
 
         if (!$setting) {
-            // Default 20% commission
-            return $fareAmount * 0.20;
+            // Default 10% commission (InDrive-style)
+            return $fareAmount * 0.10;
         }
 
         $rate = $setting->value;

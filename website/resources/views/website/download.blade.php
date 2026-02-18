@@ -51,6 +51,13 @@
                             <strong>Google Play</strong>
                         </div>
                     </a>
+                    <a href="https://expo.dev/artifacts/eas/xyDxYCTaVTWVMeLZD8ysTa.apk" class="store-button store-button--apk" style="justify-content: center; margin-top: 10px;">
+                        <i class="fab fa-android"></i>
+                        <div>
+                            <span>Direct Download</span>
+                            <strong>APK (Beta)</strong>
+                        </div>
+                    </a>
                 </div>
 
                 <!-- Fleet / Driver App -->
@@ -65,6 +72,13 @@
                         <div>
                             <span>Get it on</span>
                             <strong>Google Play</strong>
+                        </div>
+                    </a>
+                    <a href="https://expo.dev/artifacts/eas/ufVUbhYRp5AsJ4pCPESUB4.apk" class="store-button store-button--apk" style="justify-content: center; margin-top: 10px;">
+                        <i class="fab fa-android"></i>
+                        <div>
+                            <span>Direct Download</span>
+                            <strong>APK (Beta)</strong>
                         </div>
                     </a>
                 </div>
@@ -263,6 +277,22 @@
                         <div>
                             <span>Driver / Fleet App</span>
                             <strong>Google Play</strong>
+                        </div>
+                    </a>
+                </div>
+                <div class="download-cta__buttons" style="margin-top: 15px;">
+                    <a href="https://expo.dev/artifacts/eas/xyDxYCTaVTWVMeLZD8ysTa.apk" class="store-button store-button--apk">
+                        <i class="fab fa-android"></i>
+                        <div>
+                            <span>Passenger APK</span>
+                            <strong>Direct Download</strong>
+                        </div>
+                    </a>
+                    <a href="https://expo.dev/artifacts/eas/ufVUbhYRp5AsJ4pCPESUB4.apk" class="store-button store-button--apk">
+                        <i class="fab fa-android"></i>
+                        <div>
+                            <span>Fleet APK</span>
+                            <strong>Direct Download</strong>
                         </div>
                     </a>
                 </div>

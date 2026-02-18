@@ -50,6 +50,7 @@ import PersonalInfoScreen from '../screens/onboarding/PersonalInfoScreen';
 import VehicleInfoScreen from '../screens/onboarding/VehicleInfoScreen';
 import DocumentsScreen from '../screens/onboarding/DocumentsScreen';
 import SelfieScreen from '../screens/onboarding/SelfieScreen';
+import DocumentCaptureScreen from '../screens/onboarding/DocumentCaptureScreen';
 import PendingScreen from '../screens/onboarding/PendingScreen';
 
 // Main Screens
@@ -147,6 +148,7 @@ const MainTabs = () => {
         headerShown: false,
         tabBarActiveTintColor: colors.tabBarActive || colors.primary,
         tabBarInactiveTintColor: colors.tabBarInactive || colors.textSecondary,
+        tabBarHideOnKeyboard: true,
         tabBarStyle: {
           backgroundColor: colors.tabBarBackground || colors.card,
           borderTopWidth: 0,
@@ -277,6 +279,7 @@ const AppNavigator = () => {
         <Stack.Screen name="VehicleInfo" component={VehicleInfoScreen} />
         <Stack.Screen name="Documents" component={DocumentsScreen} />
         <Stack.Screen name="Selfie" component={SelfieScreen} />
+        <Stack.Screen name="DocumentCapture" component={DocumentCaptureScreen} options={{ animation: 'fade' }} />
         <Stack.Screen name="Pending" component={PendingScreen} />
 
         {/* Main Screens */}

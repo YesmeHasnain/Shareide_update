@@ -126,15 +126,15 @@ class SettingsController extends Controller
             'phone' => $request->phone ?? $admin->phone,
         ];
 
-        // Handle profile photo upload
+        // Handle profile photo upload (AWS S3)
         if ($request->hasFile('profile_photo')) {
-            // Delete old photo if exists
-            if ($admin->profile_photo && \Storage::disk('public')->exists($admin->profile_photo)) {
-                \Storage::disk('public')->delete($admin->profile_photo);
+            // Delete old photo from S3 if exists
+            if ($admin->profile_photo && \Storage::disk('s3')->exists($admin->profile_photo)) {
+                \Storage::disk('s3')->delete($admin->profile_photo);
             }
 
-            // Store new photo
-            $path = $request->file('profile_photo')->store('admin-photos', 'public');
+            // Store new photo on S3
+            $path = $request->file('profile_photo')->store('admin-photos', 's3');
             $data['profile_photo'] = $path;
         }
 
@@ -150,8 +150,8 @@ class SettingsController extends Controller
     {
         $admin = auth()->user();
 
-        if ($admin->profile_photo && \Storage::disk('public')->exists($admin->profile_photo)) {
-            \Storage::disk('public')->delete($admin->profile_photo);
+        if ($admin->profile_photo && \Storage::disk('s3')->exists($admin->profile_photo)) {
+            \Storage::disk('s3')->delete($admin->profile_photo);
         }
 
         $admin->update(['profile_photo' => null]);

@@ -52,8 +52,8 @@ Route::post('/broadcasting/auth', function (\Illuminate\Http\Request $request) {
     return \Illuminate\Support\Facades\Broadcast::auth($request);
 })->middleware('auth:sanctum');
 
-// Public routes (no authentication required)
-Route::prefix('auth')->group(function () {
+// Public routes (no authentication required) - strict rate limiting
+Route::prefix('auth')->middleware('throttle:auth')->group(function () {
     Route::post('/send-code', [AuthController::class, 'sendCode']);
     Route::post('/verify-code', [AuthController::class, 'verifyCode']);
     Route::post('/complete-registration', [AuthController::class, 'completeRegistration']);
@@ -67,29 +67,31 @@ Route::match(['get', 'post'], '/wallet/payment-callback', [RiderWalletController
 
 
 // ============================================
-// WEBSITE CONTACT FORM (Public - No Auth Required)
+// WEBSITE CONTACT FORM (Public - Rate Limited)
 // ============================================
-Route::post('/contact', [ContactController::class, 'submit']);
+Route::post('/contact', [ContactController::class, 'submit'])->middleware('throttle:contact');
 
 // ============================================
-// AI CHATBOT (Public - No Auth Required)
+// AI CHATBOT (Public - Rate Limited)
 // ============================================
-Route::post('/chatbot/message', [ChatbotController::class, 'chat']);
+Route::post('/chatbot/message', [ChatbotController::class, 'chat'])->middleware('throttle:contact');
 
 // ============================================
-// SUPPORT TICKET ACCESS (Public - Token Based)
+// SUPPORT TICKET ACCESS (Public - Token Based, Rate Limited)
 // ============================================
-Route::get('/support/ticket/{token}', [ContactController::class, 'viewTicket']);
-Route::post('/support/ticket/{token}/reply', [ContactController::class, 'replyToTicket']);
-Route::post('/support/ticket/{token}/activity', [ContactController::class, 'updateActivity']);
-Route::post('/support/ticket/{token}/offline', [ContactController::class, 'goOffline']);
-Route::post('/support/ticket/{token}/typing', [ContactController::class, 'typing']);
-Route::get('/support/ticket/{token}/messages', [ContactController::class, 'getNewMessages']);
-Route::get('/support/ticket/{token}/file/{messageId}', [ContactController::class, 'getAttachment']);
-Route::post('/support/ticket/{token}/upload', [ContactController::class, 'uploadAttachment']);
+Route::middleware('throttle:support')->group(function () {
+    Route::get('/support/ticket/{token}', [ContactController::class, 'viewTicket']);
+    Route::post('/support/ticket/{token}/reply', [ContactController::class, 'replyToTicket']);
+    Route::post('/support/ticket/{token}/activity', [ContactController::class, 'updateActivity']);
+    Route::post('/support/ticket/{token}/offline', [ContactController::class, 'goOffline']);
+    Route::post('/support/ticket/{token}/typing', [ContactController::class, 'typing']);
+    Route::get('/support/ticket/{token}/messages', [ContactController::class, 'getNewMessages']);
+    Route::get('/support/ticket/{token}/file/{messageId}', [ContactController::class, 'getAttachment']);
+    Route::post('/support/ticket/{token}/upload', [ContactController::class, 'uploadAttachment']);
+});
 
-// Protected routes (authentication required)
-Route::middleware('auth:sanctum')->group(function () {
+// Protected routes (authentication required + rate limited)
+Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     // Auth routes
     Route::get('/me', [AuthController::class, 'me']);

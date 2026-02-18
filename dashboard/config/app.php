@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'api_storage_url' => env('API_STORAGE_URL', 'https://api.shareide.com/storage'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

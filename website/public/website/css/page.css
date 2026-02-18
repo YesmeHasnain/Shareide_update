@@ -1,10 +1,10 @@
-/* SHAREIDE - Inner Page Styles (Hero, Breadcrumb, Content Layouts) */
+/* SHAREIDE - Inner Page Styles (Premium Hero Banners & Content Layouts) */
 
 /* ========== PAGE HERO ========== */
 .page-hero {
   background: linear-gradient(150deg, #0F0F1A 0%, #1A1A2E 40%, #16213E 70%, #0F0F1A 100%);
-  padding: 160px 0 90px;
-  min-height: 50vh;
+  padding: 160px 0 100px;
+  min-height: 52vh;
   display: flex;
   align-items: center;
   text-align: center;
@@ -18,9 +18,9 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(252,192,20,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(59,130,246,0.04) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 50% at 50% 20%, rgba(139,92,246,0.03) 0%, transparent 50%);
+    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(252,192,20,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(59,130,246,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 50% at 50% 20%, rgba(139,92,246,0.06) 0%, transparent 50%);
   animation: meshShift 12s ease-in-out infinite alternate;
   pointer-events: none;
   z-index: 1;
@@ -44,11 +44,11 @@
 .page-hero__grid {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
   background-size: 40px 40px;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.6;
+  opacity: 1;
 }
 
 /* Orbs container */
@@ -69,8 +69,8 @@
   right: 8%;
   width: 450px;
   height: 450px;
-  background: radial-gradient(circle, rgba(252,192,20,0.12) 0%, transparent 70%);
-  filter: blur(60px);
+  background: radial-gradient(circle, rgba(252,192,20,0.20) 0%, transparent 70%);
+  filter: blur(50px);
   animation: pageOrbFloat 8s ease-in-out infinite;
 }
 
@@ -79,8 +79,8 @@
   left: 3%;
   width: 350px;
   height: 350px;
-  background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
-  filter: blur(60px);
+  background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+  filter: blur(50px);
   animation: pageOrbFloat 10s ease-in-out infinite reverse;
 }
 
@@ -89,8 +89,8 @@
   left: 50%;
   width: 300px;
   height: 300px;
-  background: radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%);
-  filter: blur(70px);
+  background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%);
+  filter: blur(60px);
   animation: pageOrbFloat 12s ease-in-out infinite 2s;
 }
 
@@ -106,9 +106,9 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 400px;
-  height: 200px;
-  background: radial-gradient(ellipse, rgba(252,192,20,0.08) 0%, transparent 70%);
+  width: 500px;
+  height: 250px;
+  background: radial-gradient(ellipse, rgba(252,192,20,0.15) 0%, transparent 70%);
   filter: blur(40px);
   pointer-events: none;
   z-index: 1;
@@ -168,7 +168,7 @@
 
 .page-hero__desc {
   font-size: 18px;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.85);
   max-width: 600px;
   margin: 0 auto;
   line-height: 1.7;
@@ -217,273 +217,137 @@
   .page-hero__glow { width: 250px; height: 120px; }
 }
 
-/* ========== PAGE HERO VARIANTS ========== */
+/* ========== PAGE HERO VARIANTS - Real Image Backgrounds ========== */
 
-/* --- Floating Page Icon --- */
+/* Hide decorative gradient elements when using real image variants */
+[class*="page-hero--"] .page-hero__orbs,
+[class*="page-hero--"] .page-hero__grid,
+[class*="page-hero--"] .page-hero__glow,
+[class*="page-hero--"] .page-hero__particles {
+  display: none;
+}
+
+/* --- Floating Page Icon (Yellow / Black / White only) --- */
 .page-hero__icon {
   position: absolute;
   top: 50%;
-  right: 10%;
+  right: 8%;
   transform: translateY(-50%);
-  width: 140px;
-  height: 140px;
+  width: 100px;
+  height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 56px;
-  color: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.03);
-  border-radius: 32px;
-  z-index: 2;
+  font-size: 40px;
+  color: #FCC014;
+  border: 2px solid rgba(252,192,20,0.35);
+  border-radius: 24px;
+  z-index: 4;
   animation: heroIconFloat 6s ease-in-out infinite;
-  backdrop-filter: blur(2px);
-  background: rgba(255,255,255,0.02);
+  backdrop-filter: blur(16px);
+  background: rgba(0,0,0,0.5);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
 }
 
 @keyframes heroIconFloat {
   0%, 100% { transform: translateY(-50%) rotate(0deg); }
-  50% { transform: translateY(calc(-50% - 15px)) rotate(3deg); }
+  50% { transform: translateY(calc(-50% - 14px)) rotate(3deg); }
 }
 
 @media (max-width: 768px) {
   .page-hero__icon {
-    width: 80px;
-    height: 80px;
-    font-size: 32px;
+    width: 70px;
+    height: 70px;
+    font-size: 28px;
     right: 5%;
     top: 30%;
-    border-radius: 20px;
-    opacity: 0.6;
+    border-radius: 18px;
+    opacity: 0.8;
   }
 }
 
-/* --- Services Pages: Gold (enhanced default) --- */
-.page-hero--services {
-  background: linear-gradient(150deg, #0F0F1A 0%, #1A1A20 40%, #1E1E30 70%, #0F0F1A 100%);
+/* ==========================================
+   ALL PAGE HERO VARIANTS
+   Colors: Yellow (#FCC014), Black, White ONLY
+   Strong dark overlay for text readability
+   ========================================== */
+
+/* -- Shared overlay for ALL variants: strong black -- */
+[class*="page-hero--"]::before {
+  background: rgba(0,0,0,0.65) !important;
 }
 
-.page-hero--services .page-hero__icon {
-  color: rgba(252,192,20,0.06);
-  border-color: rgba(252,192,20,0.05);
+/* -- Shared bottom accent: yellow -- */
+[class*="page-hero--"]::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent 5%, #FCC014 35%, #FCC014 65%, transparent 95%);
+  z-index: 3;
 }
 
-/* --- Company Pages: Blue Tint --- */
-.page-hero--company {
-  background: linear-gradient(150deg, #0F0F1A 0%, #0F1B2E 40%, #1A2744 70%, #0F0F1A 100%);
+/* -- Shared icon style: yellow on dark glass -- */
+[class*="page-hero--"] .page-hero__icon {
+  color: #FCC014;
+  border-color: rgba(252,192,20,0.4);
+  background: rgba(0,0,0,0.5);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
 }
 
-.page-hero--company::before {
-  background:
-    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(59,130,246,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(252,192,20,0.04) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 50% at 50% 20%, rgba(59,130,246,0.04) 0%, transparent 50%);
-}
-
-.page-hero--company .orb--1 {
-  background: radial-gradient(circle, rgba(59,130,246,0.10) 0%, transparent 70%) !important;
-}
-
-.page-hero--company .page-hero__icon {
-  color: rgba(59,130,246,0.06);
-  border-color: rgba(59,130,246,0.05);
-}
-
-.page-hero--company .page-hero__glow {
-  background: radial-gradient(ellipse, rgba(59,130,246,0.06) 0%, transparent 70%);
-}
-
-/* --- Safety Page: Red/Warm Tint --- */
-.page-hero--safety {
-  background: linear-gradient(150deg, #0F0F1A 0%, #1A1520 40%, #2A1525 70%, #0F0F1A 100%);
-}
-
-.page-hero--safety::before {
-  background:
-    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(239,68,68,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(252,192,20,0.03) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 50% at 50% 20%, rgba(239,68,68,0.04) 0%, transparent 50%);
-}
-
-.page-hero--safety .orb--1 {
-  background: radial-gradient(circle, rgba(239,68,68,0.10) 0%, transparent 70%) !important;
-}
-
-.page-hero--safety .page-hero__glow {
-  background: radial-gradient(ellipse, rgba(239,68,68,0.06) 0%, transparent 70%);
-}
-
-.page-hero--safety .page-hero__icon {
-  color: rgba(239,68,68,0.06);
-  border-color: rgba(239,68,68,0.05);
-}
-
-/* --- Loyalty Page: Purple Tint --- */
-.page-hero--loyalty {
-  background: linear-gradient(150deg, #0F0F1A 0%, #1A152E 40%, #1E1640 70%, #0F0F1A 100%);
-}
-
-.page-hero--loyalty::before {
-  background:
-    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(139,92,246,0.07) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(252,192,20,0.03) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 50% at 50% 20%, rgba(139,92,246,0.05) 0%, transparent 50%);
-}
-
-.page-hero--loyalty .orb--1 {
-  background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%) !important;
-}
-
-.page-hero--loyalty .orb--2 {
-  background: radial-gradient(circle, rgba(252,192,20,0.06) 0%, transparent 70%) !important;
-}
-
-.page-hero--loyalty .page-hero__glow {
-  background: radial-gradient(ellipse, rgba(139,92,246,0.06) 0%, transparent 70%);
-}
-
-.page-hero--loyalty .page-hero__icon {
-  color: rgba(139,92,246,0.06);
-  border-color: rgba(139,92,246,0.05);
-}
-
-/* --- Drive Page: Green Tint --- */
-.page-hero--drive {
-  background: linear-gradient(150deg, #0F0F1A 0%, #0F1A18 40%, #142A24 70%, #0F0F1A 100%);
-}
-
-.page-hero--drive::before {
-  background:
-    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(16,185,129,0.07) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(252,192,20,0.03) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 50% at 50% 20%, rgba(16,185,129,0.04) 0%, transparent 50%);
-}
-
-.page-hero--drive .orb--1 {
-  background: radial-gradient(circle, rgba(16,185,129,0.10) 0%, transparent 70%) !important;
-}
-
-.page-hero--drive .page-hero__glow {
-  background: radial-gradient(ellipse, rgba(16,185,129,0.06) 0%, transparent 70%);
-}
-
-.page-hero--drive .page-hero__icon {
-  color: rgba(16,185,129,0.06);
-  border-color: rgba(16,185,129,0.05);
-}
-
-/* --- Support Pages: Teal Tint --- */
-.page-hero--support {
-  background: linear-gradient(150deg, #0F0F1A 0%, #0F1A1E 40%, #142E34 70%, #0F0F1A 100%);
-}
-
-.page-hero--support::before {
-  background:
-    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(20,184,166,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(252,192,20,0.03) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 50% at 50% 20%, rgba(20,184,166,0.04) 0%, transparent 50%);
-}
-
-.page-hero--support .orb--1 {
-  background: radial-gradient(circle, rgba(20,184,166,0.10) 0%, transparent 70%) !important;
-}
-
-.page-hero--support .page-hero__glow {
-  background: radial-gradient(ellipse, rgba(20,184,166,0.06) 0%, transparent 70%);
-}
-
-.page-hero--support .page-hero__icon {
-  color: rgba(20,184,166,0.06);
-  border-color: rgba(20,184,166,0.05);
-}
-
-/* --- Legal Pages: Muted Neutral --- */
+/* -- Each page: unique background image -- */
+.page-hero--services   { background: url('/website/images/heroes/highway-lights.jpg') center/cover no-repeat; }
+.page-hero--passenger  { background: url('/website/images/heroes/bike-road-trees.jpg') center/cover no-repeat; }
+.page-hero--fleet      { background: url('/website/images/heroes/car-lights-night.jpg') center/cover no-repeat; }
+.page-hero--howitworks { background: url('/website/images/heroes/phone-gps-map.jpg') center/cover no-repeat; }
+.page-hero--carpool    { background: url('/website/images/heroes/highway-night-long.jpg') center/cover no-repeat; }
+.page-hero--company    { background: url('/website/images/heroes/city-drone-day.jpg') center/cover no-repeat; }
+.page-hero--cities     { background: url('/website/images/heroes/city-aerial-night.jpg') center/cover no-repeat; }
+.page-hero--blog       { background: url('/website/images/heroes/sports-bike-action.jpg') center/cover no-repeat; }
+.page-hero--safety     { background: url('/website/images/heroes/rider-helmet-goggles.jpg') center/cover no-repeat; }
+.page-hero--loyalty    { background: url('/website/images/heroes/highway-curve-night.jpg') center/cover no-repeat; }
+.page-hero--drive      { background: url('/website/images/heroes/motorcycle-motion.jpg') center/cover no-repeat; }
+.page-hero--support    { background: url('/website/images/heroes/team-meeting.jpg') center/cover no-repeat; }
+.page-hero--contact    { background: url('/website/images/heroes/motorcycle-busy-street.jpg') center/cover no-repeat; }
+.page-hero--download   { background: url('/website/images/heroes/night-timelapse.jpg') center/cover no-repeat; }
 .page-hero--legal {
-  background: linear-gradient(150deg, #0F0F1A 0%, #151520 40%, #1A1A2E 70%, #0F0F1A 100%);
+  background: url('/website/images/heroes/karakoram-highway.jpg') center/cover no-repeat;
   min-height: 40vh;
-  padding: 140px 0 70px;
+  padding: 140px 0 80px;
 }
 
-.page-hero--legal::before {
-  background:
-    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(255,255,255,0.02) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(255,255,255,0.01) 0%, transparent 50%);
-}
-
-.page-hero--legal .orb--1 {
-  background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%) !important;
-}
-
-.page-hero--legal .orb--2 {
-  background: radial-gradient(circle, rgba(255,255,255,0.02) 0%, transparent 70%) !important;
-}
-
-.page-hero--legal .page-hero__glow {
-  background: radial-gradient(ellipse, rgba(255,255,255,0.03) 0%, transparent 70%);
-}
-
-.page-hero--legal .page-hero__icon {
-  color: rgba(255,255,255,0.03);
-  border-color: rgba(255,255,255,0.02);
-}
-
-/* --- Gradient Text Color Overrides Per Category --- */
-.page-hero--company .gradient-text {
-  background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 50%, #2563EB 100%);
+/* ==========================================
+   GRADIENT TEXT: Yellow only (all pages)
+   ========================================== */
+[class*="page-hero--"] .gradient-text {
+  background: linear-gradient(135deg, #FDE68A 0%, #FCC014 50%, #E3AD12 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.page-hero--safety .gradient-text {
-  background: linear-gradient(135deg, #FCA5A5 0%, #EF4444 50%, #DC2626 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.page-hero--loyalty .gradient-text {
-  background: linear-gradient(135deg, #C4B5FD 0%, #8B5CF6 50%, #7C3AED 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.page-hero--drive .gradient-text {
-  background: linear-gradient(135deg, #6EE7B7 0%, #10B981 50%, #059669 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.page-hero--support .gradient-text {
-  background: linear-gradient(135deg, #5EEAD4 0%, #14B8A6 50%, #0D9488 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+@media (max-width: 768px) {
+  [class*="page-hero--"]::after {
+    height: 3px;
+  }
 }
 
 /* ========== CONTENT SECTIONS ========== */
 .content-section {
-  padding: 100px 0;
+  padding: 120px 0;
 }
 
 .content-section--alt {
-  background: var(--bg-alt);
+  background: #f9fafb;
 }
 
 .content-section--dark {
-  background: linear-gradient(135deg, #0F0F1A 0%, #1A1A2E 50%, #0F0F1A 100%);
-  color: var(--white);
+  background: #000;
+  color: #fff;
   position: relative;
-}
-
-.content-section--dark::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(circle, rgba(255,255,255,0.02) 1px, transparent 1px);
-  background-size: 30px 30px;
-  pointer-events: none;
 }
 
 /* ========== SECTION DIVIDER ========== */
@@ -581,13 +445,9 @@
 }
 
 .info-card:hover {
-  border-color: transparent;
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-lg);
-  background-image: linear-gradient(var(--bg-card), var(--bg-card)), linear-gradient(135deg, rgba(252,192,20,0.4), rgba(59,130,246,0.3), rgba(252,192,20,0.4));
-  background-origin: border-box;
-  background-clip: padding-box, border-box;
-  border: 1px solid transparent;
+  border-color: rgba(252,192,20,0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
 }
 
 .info-card__icon {
@@ -605,7 +465,6 @@
 }
 
 .info-card:hover .info-card__icon {
-  box-shadow: 0 0 20px rgba(252,192,20,0.2), 0 0 40px rgba(252,192,20,0.1);
   background: rgba(252,192,20,0.15);
 }
 
@@ -647,10 +506,7 @@
 .stat-card__number {
   font-size: 36px;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #FCC014;
   margin-bottom: 5px;
 }
 
@@ -691,10 +547,10 @@
 }
 
 .tab-btn.active {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-  color: var(--black);
-  border-color: transparent;
-  box-shadow: 0 4px 20px rgba(252,192,20,0.25);
+  background: #FCC014;
+  color: #000;
+  border-color: #FCC014;
+  font-weight: 700;
 }
 
 .tab-btn:hover:not(.active) {
@@ -743,8 +599,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  color: var(--black);
+  background: #FCC014;
+  color: #000;
   font-size: 22px;
   font-weight: 800;
   border-radius: 14px;
@@ -780,13 +636,9 @@
 }
 
 .value-card:hover {
-  border-color: transparent;
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-lg);
-  background-image: linear-gradient(var(--bg-card), var(--bg-card)), linear-gradient(135deg, rgba(252,192,20,0.4), rgba(59,130,246,0.3), rgba(252,192,20,0.4));
-  background-origin: border-box;
-  background-clip: padding-box, border-box;
-  border: 1px solid transparent;
+  border-color: rgba(252,192,20,0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
 }
 
 .value-card__icon {
@@ -875,8 +727,8 @@
 }
 
 .city-card--featured {
-  background: linear-gradient(135deg, rgba(252,192,20,0.06) 0%, rgba(245,166,35,0.04) 100%);
-  border-color: rgba(252,192,20,0.2);
+  background: rgba(252,192,20,0.04);
+  border-color: rgba(252,192,20,0.3);
 }
 
 @media (max-width: 992px) {
@@ -1313,8 +1165,8 @@
 }
 
 .tier-card--featured {
-  border-color: var(--primary);
-  background: linear-gradient(135deg, rgba(252,192,20,0.04) 0%, rgba(245,166,35,0.04) 100%);
+  border-color: #FCC014;
+  background: rgba(252,192,20,0.04);
 }
 
 .tier-card__badge {
@@ -1323,8 +1175,8 @@
   left: 50%;
   transform: translateX(-50%);
   padding: 4px 16px;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  color: var(--black);
+  background: #FCC014;
+  color: #000;
   font-size: 11px;
   font-weight: 700;
   border-radius: 50px;
@@ -1369,7 +1221,7 @@
 }
 
 .tier-card__perk i {
-  color: var(--green);
+  color: #FCC014;
   font-size: 12px;
 }
 
@@ -1395,10 +1247,10 @@
 
 .app-screen {
   width: 200px;
-  background: linear-gradient(145deg, #2a2a4a 0%, #0d0d1a 100%);
+  background: #000;
   border-radius: 30px;
   padding: 8px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
   transition: all 0.3s ease;
 }
 
@@ -1408,7 +1260,7 @@
 }
 
 .app-screen__inner {
-  background: linear-gradient(180deg, #0F0F1A 0%, #1A1A2E 100%);
+  background: #111;
   border-radius: 24px;
   min-height: 350px;
   display: flex;
@@ -1501,7 +1353,7 @@
 }
 
 .requirement-item i {
-  color: var(--green);
+  color: #FCC014;
   font-size: 16px;
   min-width: 20px;
 }
@@ -1544,10 +1396,7 @@
 .earnings-calc__amount {
   font-size: 42px;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #FCC014;
 }
 
 .earnings-calc__period {

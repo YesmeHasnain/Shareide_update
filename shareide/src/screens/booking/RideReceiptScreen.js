@@ -46,10 +46,6 @@ const RideReceiptScreen = ({ route, navigation }) => {
   }, []);
 
   const totalFare = fare || ride?.estimated_price || ride?.actual_price || 0;
-  const baseFare = ride?.base_fare || Math.round(totalFare * 0.7);
-  const distanceFare = Math.round(totalFare * 0.25);
-  const bookingFee = Math.round(totalFare * 0.05);
-  const surgeAmount = ride?.surge_amount || 0;
   const promoDiscount = ride?.promo_discount || 0;
   const distance = ride?.distance_km || '0';
   const duration = ride?.duration_minutes || '0';
@@ -160,26 +156,9 @@ const RideReceiptScreen = ({ route, navigation }) => {
           <View style={[styles.card, { backgroundColor: colors.card }]}>
             <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>FARE BREAKDOWN</Text>
             <View style={styles.fareRow}>
-              <Text style={[styles.fareItemLabel, { color: colors.text }]}>Base Fare</Text>
-              <Text style={[styles.fareItemValue, { color: colors.text }]}>Rs. {baseFare}</Text>
+              <Text style={[styles.fareItemLabel, { color: colors.text }]}>Ride Fare</Text>
+              <Text style={[styles.fareItemValue, { color: colors.text }]}>Rs. {totalFare}</Text>
             </View>
-            <View style={styles.fareRow}>
-              <Text style={[styles.fareItemLabel, { color: colors.text }]}>Distance ({distance} km)</Text>
-              <Text style={[styles.fareItemValue, { color: colors.text }]}>Rs. {distanceFare}</Text>
-            </View>
-            <View style={styles.fareRow}>
-              <Text style={[styles.fareItemLabel, { color: colors.text }]}>Booking Fee</Text>
-              <Text style={[styles.fareItemValue, { color: colors.text }]}>Rs. {bookingFee}</Text>
-            </View>
-            {surgeAmount > 0 && (
-              <View style={styles.fareRow}>
-                <View style={styles.surgeRow}>
-                  <Ionicons name="flash" size={14} color={colors.error} />
-                  <Text style={[styles.fareItemLabel, { color: colors.error }]}> Surge Pricing</Text>
-                </View>
-                <Text style={[styles.fareItemValue, { color: colors.error }]}>+ Rs. {surgeAmount}</Text>
-              </View>
-            )}
             {promoDiscount > 0 && (
               <View style={styles.fareRow}>
                 <View style={styles.surgeRow}>
@@ -191,8 +170,8 @@ const RideReceiptScreen = ({ route, navigation }) => {
             )}
             <View style={[styles.fareDivider, { backgroundColor: colors.border }]} />
             <View style={styles.fareRow}>
-              <Text style={[styles.fareTotalLabel, { color: colors.text }]}>Total</Text>
-              <Text style={[styles.fareTotalValue, { color: colors.primary }]}>Rs. {totalFare}</Text>
+              <Text style={[styles.fareTotalLabel, { color: colors.text }]}>Total Paid</Text>
+              <Text style={[styles.fareTotalValue, { color: colors.primary }]}>Rs. {totalFare - promoDiscount}</Text>
             </View>
           </View>
 

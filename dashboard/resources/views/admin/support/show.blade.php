@@ -243,9 +243,9 @@
                                             @if($message->attachment)
                                                 @php $fileUrl = route('admin.support.file', [$ticket->id, $message->id]); @endphp
                                                 @if(in_array(strtolower(pathinfo($message->attachment, PATHINFO_EXTENSION)), ['jpg','jpeg','png','gif','webp']))
-                                                    <a href="{{ $fileUrl }}" target="_blank" class="block mb-1">
-                                                        <img src="{{ $fileUrl }}" alt="Attachment" class="max-w-[220px] rounded-lg">
-                                                    </a>
+                                                    <span class="block mb-1 cursor-pointer img-lightbox-trigger" data-lightbox-src="{{ $fileUrl }}">
+                                                        <img src="{{ $fileUrl }}" alt="Attachment" class="max-w-[220px] rounded-lg hover:opacity-90 transition-opacity">
+                                                    </span>
                                                 @else
                                                     <a href="{{ $fileUrl }}" target="_blank" class="flex items-center gap-2 p-2 bg-black/10 rounded-lg mb-1 hover:bg-black/20 transition-colors">
                                                         <i class="ti ti-file text-lg"></i>
@@ -278,9 +278,9 @@
                                         @if($message->attachment)
                                             @php $fileUrl = route('admin.support.file', [$ticket->id, $message->id]); @endphp
                                             @if(in_array(strtolower(pathinfo($message->attachment, PATHINFO_EXTENSION)), ['jpg','jpeg','png','gif','webp']))
-                                                <a href="{{ $fileUrl }}" target="_blank" class="block mb-1">
-                                                    <img src="{{ $fileUrl }}" alt="Attachment" class="max-w-[220px] rounded-lg">
-                                                </a>
+                                                <span class="block mb-1 cursor-pointer img-lightbox-trigger" data-lightbox-src="{{ $fileUrl }}">
+                                                    <img src="{{ $fileUrl }}" alt="Attachment" class="max-w-[220px] rounded-lg hover:opacity-90 transition-opacity">
+                                                </span>
                                             @else
                                                 <a href="{{ $fileUrl }}" target="_blank" class="flex items-center gap-2 p-2 bg-gray-100 dark:bg-dark-100 rounded-lg mb-1 hover:bg-gray-200 dark:hover:bg-dark-200 transition-colors">
                                                     <i class="ti ti-file text-lg text-gray-500"></i>
@@ -879,8 +879,8 @@
         var isImage = ['jpg','jpeg','png','gif','webp'].indexOf(ext) !== -1;
         var isTemp = attachUrl.startsWith('blob:');
         if (isImage) {
-            return '<a href="' + escapeAttr(attachUrl) + '" target="_blank" class="block mb-1"' + (isTemp ? ' data-temp="1"' : '') + '>' +
-                '<img src="' + escapeAttr(attachUrl) + '" alt="Attachment" class="max-w-[220px] rounded-lg"' + (isTemp ? ' data-temp="1"' : '') + '></a>';
+            return '<span class="block mb-1 cursor-pointer img-lightbox-trigger" data-lightbox-src="' + escapeAttr(attachUrl) + '"' + (isTemp ? ' data-temp="1"' : '') + '>' +
+                '<img src="' + escapeAttr(attachUrl) + '" alt="Attachment" class="max-w-[220px] rounded-lg hover:opacity-90 transition-opacity"' + (isTemp ? ' data-temp="1"' : '') + '></span>';
         }
         var bgClass = isAdmin ? 'bg-black/10 hover:bg-black/20' : 'bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-200';
         var textClass = isAdmin ? '' : 'text-gray-700 dark:text-gray-300';
@@ -1281,6 +1281,50 @@
             setTimeout(function() { toast.remove(); }, 300);
         }, 3000);
     }
+    // =============================================
+    // IMAGE LIGHTBOX MODAL
+    // =============================================
+    var lightboxOverlay = document.createElement('div');
+    lightboxOverlay.id = 'imgLightbox';
+    lightboxOverlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 opacity-0 invisible transition-all duration-200 cursor-zoom-out';
+    lightboxOverlay.innerHTML = '<button class="absolute top-4 right-5 w-10 h-10 flex items-center justify-center bg-white/15 hover:bg-white/30 text-white rounded-full text-lg transition-colors"><i class="ti ti-x"></i></button>' +
+        '<img src="" alt="Image" class="max-w-[90%] max-h-[85vh] rounded-xl shadow-2xl transform scale-90 transition-transform duration-200 cursor-default">';
+
+    document.body.appendChild(lightboxOverlay);
+
+    var lbImg = lightboxOverlay.querySelector('img');
+    var lbClose = lightboxOverlay.querySelector('button');
+
+    function openImgLightbox(src) {
+        lbImg.src = src;
+        lightboxOverlay.classList.remove('opacity-0', 'invisible');
+        lightboxOverlay.classList.add('opacity-100', 'visible');
+        lbImg.classList.remove('scale-90');
+        lbImg.classList.add('scale-100');
+    }
+
+    function closeImgLightbox() {
+        lightboxOverlay.classList.add('opacity-0', 'invisible');
+        lightboxOverlay.classList.remove('opacity-100', 'visible');
+        lbImg.classList.add('scale-90');
+        lbImg.classList.remove('scale-100');
+        setTimeout(function() { lbImg.src = ''; }, 200);
+    }
+
+    lbClose.addEventListener('click', function(e) { e.stopPropagation(); closeImgLightbox(); });
+    lightboxOverlay.addEventListener('click', function(e) { if (e.target === lightboxOverlay) closeImgLightbox(); });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeImgLightbox(); });
+
+    // Delegate click on all image lightbox triggers
+    document.addEventListener('click', function(e) {
+        var trigger = e.target.closest('.img-lightbox-trigger');
+        if (trigger) {
+            e.preventDefault();
+            var src = trigger.getAttribute('data-lightbox-src');
+            if (src) openImgLightbox(src);
+        }
+    });
+
 })();
 </script>
 @endpush

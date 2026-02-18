@@ -16,12 +16,13 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const GOOGLE_API_KEY = 'AIzaSyC3D7EgF9_N8jzEYubmJr0uIGbyzGdjOqU';
+const GOOGLE_API_KEY = Constants.expoConfig?.extra?.googleMapsApiKey || '';
 const RECENT_SEARCHES_KEY = 'recent_searches';
 const SAVED_PLACES_KEY = 'saved_places';
 
