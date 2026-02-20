@@ -374,105 +374,83 @@
     </section>
 
     <!-- Safety -->
-    <section class="safety" id="safety">
+    <section class="safety-v2" id="safety">
         <div class="container">
-            <div class="safety__grid">
-                <div class="safety__content" data-animate="fade-right">
-                    <span class="section__tag">Safety First</span>
-                    <h2 class="section__title">Your Safety is Our <span class="gradient-text">Priority</span></h2>
-                    <p class="safety__desc">We've built multiple layers of protection to ensure every ride is safe and secure.</p>
+            <div class="section__header" data-animate="fade-up">
+                <span class="section__tag">Safety First</span>
+                <h2 class="section__title">Your Safety is Our <span class="gradient-text">Priority</span></h2>
+                <p class="section__desc">Multiple layers of protection built into every ride</p>
+            </div>
 
-                    <div class="safety__features">
-                        <div class="safety__feature">
-                            <div class="safety__feature-icon">
-                                <i class="fas fa-id-card"></i>
-                            </div>
-                            <div class="safety__feature-content">
-                                <strong>CNIC Verified Drivers</strong>
-                                <span>Verified through NADRA database</span>
-                            </div>
+            <div class="safety-v2__bento" data-animate="fade-up" data-delay="200">
+                <!-- Large hero card -->
+                <div class="safety-v2__hero-card">
+                    <img src="{{ asset('website/images/shareide-images/Verified-Drivers-1.png') }}" alt="SHAREIDE Verified Drivers" class="safety-v2__hero-img">
+                    <div class="safety-v2__hero-overlay">
+                        <div class="safety-v2__hero-badge">
+                            <i class="fas fa-shield-alt"></i>
                         </div>
-                        <div class="safety__feature">
-                            <div class="safety__feature-icon safety__feature-icon--blue">
-                                <i class="fas fa-satellite"></i>
-                            </div>
-                            <div class="safety__feature-content">
-                                <strong>Live GPS Tracking</strong>
-                                <span>Real-time location sharing</span>
-                            </div>
-                        </div>
-                        <div class="safety__feature">
-                            <div class="safety__feature-icon safety__feature-icon--red">
-                                <i class="fas fa-phone-volume"></i>
-                            </div>
-                            <div class="safety__feature-content">
-                                <strong>Emergency SOS Button</strong>
-                                <span>One-tap emergency alert</span>
-                            </div>
-                        </div>
-                        <div class="safety__feature">
-                            <div class="safety__feature-icon safety__feature-icon--purple">
-                                <i class="fas fa-share-alt"></i>
-                            </div>
-                            <div class="safety__feature-content">
-                                <strong>Share Trip with Family</strong>
-                                <span>Live trip sharing with loved ones</span>
-                            </div>
-                        </div>
-                        <div class="safety__feature">
-                            <div class="safety__feature-icon safety__feature-icon--teal">
-                                <i class="fas fa-headset"></i>
-                            </div>
-                            <div class="safety__feature-content">
-                                <strong>24/7 Support Team</strong>
-                                <span>Always here when you need us</span>
-                            </div>
-                        </div>
-                        <div class="safety__feature">
-                            <div class="safety__feature-icon safety__feature-icon--orange">
-                                <i class="fas fa-file-shield"></i>
-                            </div>
-                            <div class="safety__feature-content">
-                                <strong>Ride Insurance</strong>
-                                <span>Every ride is fully insured</span>
-                            </div>
-                        </div>
+                        <h3>100% NADRA Verified</h3>
+                        <p>Every driver passes CNIC verification through NADRA before their first ride</p>
                     </div>
                 </div>
 
-                <div class="safety__visual" data-animate="fade-left">
-                    <div class="safety__image-section">
-                        <img src="{{ asset('website/images/shareide-images/Verified-Drivers-1.png') }}" alt="SHAREIDE Safety Features - Verified Drivers, 24/7 Support, Secure Payments, Safety First" class="safety__illustration">
+                <!-- Feature cards -->
+                <div class="safety-v2__card">
+                    <div class="safety-v2__card-icon safety-v2__card-icon--blue">
+                        <i class="fas fa-satellite"></i>
                     </div>
-                    <div class="safety__visual-grid">
-                        <div class="safety__visual-card">
-                            <div class="safety__visual-card-icon">
-                                <i class="fas fa-user-shield"></i>
-                            </div>
-                            <span class="safety__visual-card-number">100%</span>
-                            <span class="safety__visual-card-label">Verified Drivers</span>
-                        </div>
-                        <div class="safety__visual-card safety__visual-card--highlight">
-                            <div class="safety__visual-card-icon">
-                                <i class="fas fa-shield-alt"></i>
-                            </div>
-                            <span class="safety__visual-card-number">99.9%</span>
-                            <span class="safety__visual-card-label">Safe Rides</span>
-                        </div>
-                        <div class="safety__visual-card">
-                            <div class="safety__visual-card-icon">
-                                <i class="fas fa-headset"></i>
-                            </div>
-                            <span class="safety__visual-card-number">24/7</span>
-                            <span class="safety__visual-card-label">Live Support</span>
-                        </div>
-                        <div class="safety__visual-card">
-                            <div class="safety__visual-card-icon">
-                                <i class="fas fa-map-marker-alt"></i>
-                            </div>
-                            <span class="safety__visual-card-number">Live</span>
-                            <span class="safety__visual-card-label">GPS Tracking</span>
-                        </div>
+                    <h4>Live GPS Tracking</h4>
+                    <p>Real-time location sharing with family</p>
+                </div>
+
+                <div class="safety-v2__card">
+                    <div class="safety-v2__card-icon safety-v2__card-icon--red">
+                        <i class="fas fa-phone-volume"></i>
+                    </div>
+                    <h4>Emergency SOS</h4>
+                    <p>One-tap emergency alert to authorities</p>
+                </div>
+
+                <div class="safety-v2__card">
+                    <div class="safety-v2__card-icon safety-v2__card-icon--purple">
+                        <i class="fas fa-share-alt"></i>
+                    </div>
+                    <h4>Trip Sharing</h4>
+                    <p>Share live ride with loved ones</p>
+                </div>
+
+                <div class="safety-v2__card">
+                    <div class="safety-v2__card-icon safety-v2__card-icon--teal">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h4>24/7 Support</h4>
+                    <p>Always here when you need us</p>
+                </div>
+
+                <div class="safety-v2__card">
+                    <div class="safety-v2__card-icon safety-v2__card-icon--orange">
+                        <i class="fas fa-file-shield"></i>
+                    </div>
+                    <h4>Ride Insurance</h4>
+                    <p>Every trip is fully covered</p>
+                </div>
+
+                <!-- Stats strip card -->
+                <div class="safety-v2__stats-card">
+                    <div class="safety-v2__stat">
+                        <span class="safety-v2__stat-num">99.9%</span>
+                        <span class="safety-v2__stat-label">Safe Rides</span>
+                    </div>
+                    <div class="safety-v2__stat-divider"></div>
+                    <div class="safety-v2__stat">
+                        <span class="safety-v2__stat-num">24/7</span>
+                        <span class="safety-v2__stat-label">Live Support</span>
+                    </div>
+                    <div class="safety-v2__stat-divider"></div>
+                    <div class="safety-v2__stat">
+                        <span class="safety-v2__stat-num">Live</span>
+                        <span class="safety-v2__stat-label">GPS Tracking</span>
                     </div>
                 </div>
             </div>

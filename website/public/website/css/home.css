@@ -919,17 +919,277 @@
   }
 }
 
-/* ========== SAFETY ILLUSTRATION ========== */
-.safety__image-section {
-  text-align: center;
-  margin-bottom: 25px;
+/* ========== SAFETY V2 - Bento Grid ========== */
+.safety-v2 {
+  background: var(--bg-alt);
 }
 
-.safety__illustration {
+.safety-v2__bento {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: auto auto auto;
+  gap: 18px;
+}
+
+/* Hero card - spans 2 cols, 2 rows */
+.safety-v2__hero-card {
+  grid-column: 1 / 3;
+  grid-row: 1 / 3;
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
+  min-height: 380px;
+}
+
+.safety-v2__hero-img {
   width: 100%;
-  max-width: 400px;
+  height: 100%;
+  object-fit: contain;
   display: block;
-  margin: 0 auto;
+  padding: 30px 30px 100px;
+}
+
+.safety-v2__hero-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 28px;
+  background: linear-gradient(transparent, rgba(15,23,42,0.95) 40%);
+}
+
+.safety-v2__hero-badge {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border-radius: 12px;
+  color: #000;
+  font-size: 18px;
+  margin-bottom: 14px;
+}
+
+.safety-v2__hero-overlay h3 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.safety-v2__hero-overlay p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.5;
+}
+
+/* Feature cards */
+.safety-v2__card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 18px;
+  padding: 26px 22px;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.safety-v2__card:hover {
+  border-color: rgba(252,192,20,0.35);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 35px rgba(0,0,0,0.08);
+}
+
+.safety-v2__card-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(16,185,129,0.1);
+  border-radius: 14px;
+  color: var(--green);
+  font-size: 19px;
+  margin-bottom: 16px;
+}
+
+.safety-v2__card-icon--blue { background: rgba(59,130,246,0.1); color: var(--blue); }
+.safety-v2__card-icon--red { background: rgba(239,68,68,0.1); color: var(--red); }
+.safety-v2__card-icon--purple { background: rgba(139,92,246,0.1); color: var(--purple); }
+.safety-v2__card-icon--teal { background: rgba(20,184,166,0.1); color: var(--teal); }
+.safety-v2__card-icon--orange { background: rgba(245,158,11,0.1); color: var(--orange); }
+
+.safety-v2__card h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.safety-v2__card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Stats strip card - spans full width bottom */
+.safety-v2__stats-card {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 28px 40px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  border-radius: 18px;
+}
+
+.safety-v2__stat {
+  flex: 1;
+  text-align: center;
+}
+
+.safety-v2__stat-num {
+  display: block;
+  font-size: 30px;
+  font-weight: 800;
+  color: #000;
+  line-height: 1.2;
+}
+
+.safety-v2__stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(0,0,0,0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.safety-v2__stat-divider {
+  width: 1px;
+  height: 40px;
+  background: rgba(0,0,0,0.15);
+}
+
+/* Safety V2 Responsive */
+@media (max-width: 992px) {
+  .safety-v2__bento {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .safety-v2__hero-card {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    min-height: 320px;
+  }
+
+  .safety-v2__stats-card {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .safety-v2__bento {
+    gap: 14px;
+  }
+
+  .safety-v2__hero-card {
+    min-height: 280px;
+  }
+
+  .safety-v2__hero-img {
+    padding: 24px 24px 90px;
+  }
+
+  .safety-v2__hero-overlay {
+    padding: 22px;
+  }
+
+  .safety-v2__hero-overlay h3 {
+    font-size: 18px;
+  }
+
+  .safety-v2__card {
+    padding: 22px 18px;
+  }
+
+  .safety-v2__stats-card {
+    padding: 22px 20px;
+    gap: 0;
+  }
+
+  .safety-v2__stat-num {
+    font-size: 24px;
+  }
+
+  .safety-v2__stat-label {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .safety-v2__bento {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .safety-v2__hero-card {
+    min-height: 240px;
+  }
+
+  .safety-v2__hero-img {
+    padding: 20px 20px 80px;
+  }
+
+  .safety-v2__hero-overlay {
+    padding: 18px;
+  }
+
+  .safety-v2__hero-overlay h3 {
+    font-size: 16px;
+  }
+
+  .safety-v2__hero-overlay p {
+    font-size: 12px;
+  }
+
+  .safety-v2__card {
+    padding: 18px 14px;
+  }
+
+  .safety-v2__card-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  .safety-v2__card h4 {
+    font-size: 14px;
+  }
+
+  .safety-v2__card p {
+    font-size: 12px;
+  }
+
+  .safety-v2__stats-card {
+    padding: 20px 14px;
+  }
+
+  .safety-v2__stat-num {
+    font-size: 20px;
+  }
+
+  .safety-v2__stat-label {
+    font-size: 9px;
+    letter-spacing: 0.5px;
+  }
+
+  .safety-v2__stat-divider {
+    height: 30px;
+  }
 }
 
 /* ========== DRIVE CTA IMAGE ========== */
