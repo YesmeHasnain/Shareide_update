@@ -205,6 +205,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('/{id}/messages', [SupportTicketController::class, 'getMessages'])->name('messages');
         Route::get('/{id}/file/{messageId}', [SupportTicketController::class, 'getAttachment'])->name('file');
         Route::post('/{id}/upload', [SupportTicketController::class, 'uploadAttachment'])->name('upload');
+        Route::delete('/{id}', [SupportTicketController::class, 'destroy'])->name('destroy');
     });
 
     // Audit Logs

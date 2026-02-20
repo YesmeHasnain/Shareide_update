@@ -242,9 +242,16 @@
                                 {{ $ticket->created_at->diffForHumans() }}
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <a href="{{ route('admin.support.show', $ticket->id) }}" class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300 font-medium">
+                                <a href="{{ route('admin.support.show', $ticket->id) }}" class="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300 font-medium mr-3">
                                     <i class="ti ti-eye mr-1"></i>View
                                 </a>
+                                <form method="POST" action="{{ route('admin.support.destroy', $ticket->id) }}" class="inline" onsubmit="return confirm('Delete ticket #{{ $ticket->ticket_number }}? This cannot be undone.')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium">
+                                        <i class="ti ti-trash mr-1"></i>Delete
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     @empty

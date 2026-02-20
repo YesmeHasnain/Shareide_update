@@ -31,8 +31,8 @@ const faqData = [
     icon: 'wallet',
     color: '#3B82F6',
     items: [
-      { q: 'What payment methods are available?', a: 'Cash, Shareide Wallet, and Bank Alfalah card payments.' },
-      { q: 'How do I top up my wallet?', a: 'Go to Wallet tab, tap "Top Up", enter the amount, and complete payment via Bank Alfalah.' },
+      { q: 'What payment methods are available?', a: 'Cash, Shareide Wallet, debit/credit card, JazzCash, and Easypaisa.' },
+      { q: 'How do I top up my wallet?', a: 'Go to Wallet tab, tap "Add Money", enter the amount, and complete payment via your preferred method.' },
       { q: 'How do tips work?', a: 'After completing a ride, you can tip your driver. Tips go directly to the driver\'s wallet.' },
       { q: 'Can I get a refund?', a: 'Yes, contact support with your ride details. Refunds are processed within 3-5 business days.' },
     ],

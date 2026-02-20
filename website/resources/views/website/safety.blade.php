@@ -95,12 +95,15 @@
                 </div>
 
                 <div class="safety__visual" data-animate="fade-left">
-                    <div class="safety__shield">
-                        <div class="safety__shield-ring safety__shield-ring--1"></div>
-                        <div class="safety__shield-ring safety__shield-ring--2"></div>
-                        <div class="safety__shield-ring safety__shield-ring--3"></div>
-                        <div class="safety__shield-icon">
-                            <i class="fas fa-shield-alt"></i>
+                    <div class="safety__image-section" style="margin-bottom: 30px;">
+                        <img src="{{ asset('website/images/shareide-images/Verified-Drivers-1.png') }}" alt="SHAREIDE Safety - Verified Drivers, 24/7 Support, Secure Payments" class="safety__illustration">
+                    </div>
+                    <div class="photo-grid-2" style="margin-bottom: 25px;">
+                        <div class="photo-grid-2__item">
+                            <img src="{{ asset('website/images/shareide-images/young-asian-woman-hijab-using-smartphone-car_102916-1111.jpg') }}" alt="Woman safely using SHAREIDE">
+                        </div>
+                        <div class="photo-grid-2__item">
+                            <img src="{{ asset('website/images/shareide-images/service-1-2.jpg') }}" alt="Safety seatbelt">
                         </div>
                     </div>
                     <div class="safety__stat-cards">

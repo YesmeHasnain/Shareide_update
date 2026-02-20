@@ -57,6 +57,47 @@ section {
   margin: 0 auto;
 }
 
+/* ========== SECTION RESPONSIVE ========== */
+@media (max-width: 768px) {
+  section {
+    padding: 60px 0;
+  }
+
+  .section__header {
+    margin-bottom: 40px;
+  }
+
+  .section__tag {
+    font-size: 11px;
+    padding: 6px 16px;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+
+  .section__desc {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  section {
+    padding: 45px 0;
+  }
+
+  .section__header {
+    margin-bottom: 30px;
+  }
+
+  .section__tag {
+    font-size: 10px;
+    padding: 5px 14px;
+  }
+
+  .section__desc {
+    font-size: 14px;
+  }
+}
+
 /* ========== FEATURE CARDS ========== */
 .features {
   background: var(--bg-alt);
@@ -188,6 +229,10 @@ section {
   .features__grid {
     grid-template-columns: 1fr;
   }
+
+  .feature-card {
+    padding: 28px 22px;
+  }
 }
 
 /* ========== HOW IT WORKS ========== */
@@ -317,6 +362,30 @@ section {
 @media (max-width: 576px) {
   .how__timeline {
     grid-template-columns: 1fr;
+    gap: 25px;
+  }
+
+  .how__step-number {
+    width: 55px;
+    height: 55px;
+    font-size: 22px;
+  }
+
+  .how__step-pulse {
+    width: 55px;
+    height: 55px;
+  }
+
+  .how__step-card {
+    padding: 22px 16px;
+  }
+
+  .how__step-card h3 {
+    font-size: 15px;
+  }
+
+  .how__step-card p {
+    font-size: 12px;
   }
 }
 
@@ -482,6 +551,60 @@ section {
     gap: 50px;
   }
   .safety__visual { order: -1; }
+}
+
+@media (max-width: 768px) {
+  .safety__grid {
+    gap: 35px;
+  }
+
+  .safety__desc {
+    font-size: 15px;
+    margin-bottom: 25px;
+  }
+}
+
+@media (max-width: 480px) {
+  .safety__grid {
+    gap: 25px;
+  }
+
+  .safety__desc {
+    font-size: 14px;
+  }
+
+  .safety__feature {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .safety__feature-icon {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+
+  .safety__feature-content strong {
+    font-size: 14px;
+  }
+
+  .safety__feature-content span {
+    font-size: 11px;
+  }
+
+  .safety__visual-card {
+    padding: 22px 14px;
+  }
+
+  .safety__visual-card-number {
+    font-size: 22px;
+  }
+
+  .safety__visual-card-label {
+    font-size: 10px;
+  }
 }
 
 /* ========== TESTIMONIALS ========== */
@@ -862,12 +985,106 @@ section {
 }
 
 @media (max-width: 768px) {
+  .drive-cta {
+    padding: 60px 0;
+  }
+
   .drive-cta__card {
     flex-direction: column;
     text-align: center;
     padding: 40px 30px;
   }
   .drive-cta__content p { max-width: 100%; }
-  .drive-cta__stats { justify-content: center; }
+  .drive-cta__content h2 { font-size: 28px; }
+  .drive-cta__stats { justify-content: center; flex-wrap: wrap; }
   .drive-cta__visual { margin-top: 30px; }
+
+  .download-cta__buttons {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .store-button {
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
+    padding: 14px 24px;
+  }
+
+  .store-button i {
+    font-size: 26px;
+  }
+
+  .store-button strong {
+    font-size: 15px;
+  }
+
+  .download-cta__trust {
+    gap: 20px;
+  }
+
+  .download-cta__trust-item {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .drive-cta {
+    padding: 45px 0;
+  }
+
+  .drive-cta__card {
+    padding: 30px 20px;
+  }
+
+  .drive-cta__content h2 { font-size: 24px; }
+  .drive-cta__content p { font-size: 15px; }
+
+  .drive-cta__icon-grid {
+    gap: 10px;
+  }
+
+  .drive-cta__icon-item {
+    width: 60px;
+    height: 60px;
+    font-size: 22px;
+    border-radius: 14px;
+  }
+
+  .store-button {
+    padding: 12px 20px;
+    gap: 12px;
+    border-radius: 12px;
+  }
+
+  .store-button i {
+    font-size: 24px;
+  }
+
+  .store-button strong {
+    font-size: 14px;
+  }
+
+  .download-cta__desc {
+    font-size: 15px;
+    margin-bottom: 30px;
+  }
+
+  .download-cta__trust {
+    gap: 15px;
+  }
+
+  .download-cta__trust-item {
+    font-size: 11px;
+    gap: 5px;
+  }
+
+  .testimonial-card {
+    padding: 25px 20px;
+  }
+
+  .testimonial-card__text {
+    font-size: 14px;
+  }
 }

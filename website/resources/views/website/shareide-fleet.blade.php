@@ -6,7 +6,7 @@
 
 @section('content')
     <!-- Page Hero -->
-    <section class="page-hero page-hero--services">
+    <section class="page-hero page-hero--fleet">
         <canvas class="page-hero__particles" id="pageParticles"></canvas>
         <div class="page-hero__grid"></div>
         <div class="page-hero__orbs">
@@ -23,7 +23,24 @@
                 <span class="breadcrumb__current">Fleet App</span>
             </nav>
             <h1 class="page-hero__title" data-animate="fade-up">SHAREIDE <span class="gradient-text">Fleet App</span></h1>
-            <p class="page-hero__desc" data-animate="fade-up">Drive with SHAREIDE and earn on your own terms. Low commission, daily payouts, and full support for driver partners across Pakistan.</p>
+            <p class="page-hero__desc" data-animate="fade-up">Got a Honda 70, 125 or car? Drive with SHAREIDE and earn on your own terms. Only 10% commission, daily payouts, and full support for bike & car drivers across Pakistan.</p>
+        </div>
+    </section>
+
+    <!-- Driver Image Banner -->
+    <section class="content-section" style="padding-bottom: 0;">
+        <div class="container">
+            <div class="img-grid-2 img-grid-2--wide" data-animate="fade-up">
+                <div class="img-grid-2__item">
+                    <img src="{{ asset('website/images/shareide-images/B-1-1-scaled.jpg') }}" alt="SHAREIDE Verified Driver">
+                    <div class="img-grid-2__overlay">
+                        <h3><i class="fas fa-check-circle"></i> CNIC Verified Drivers</h3>
+                    </div>
+                </div>
+                <div class="img-grid-2__item img-grid-2__item--contain">
+                    <img src="{{ asset('website/images/shareide-images/Verified-Drivers.png') }}" alt="SHAREIDE Driver Illustration">
+                </div>
+            </div>
         </div>
     </section>
 
@@ -273,12 +290,7 @@
                     </a>
                 </div>
                 <div class="drive-cta__visual">
-                    <div class="drive-cta__icon-grid">
-                        <div class="drive-cta__icon-item"><i class="fas fa-car"></i></div>
-                        <div class="drive-cta__icon-item"><i class="fas fa-money-bill-wave"></i></div>
-                        <div class="drive-cta__icon-item"><i class="fas fa-clock"></i></div>
-                        <div class="drive-cta__icon-item"><i class="fas fa-map-marked-alt"></i></div>
-                    </div>
+                    <img src="{{ asset('website/images/shareide-images/Why-Choose-Us-.png') }}" alt="SHAREIDE Driver & Passenger" class="drive-cta__image">
                 </div>
             </div>
         </div>

@@ -6,7 +6,7 @@
 
 @section('content')
     <!-- Page Hero -->
-    <section class="page-hero page-hero--services">
+    <section class="page-hero page-hero--carpool">
         <canvas class="page-hero__particles" id="pageParticles"></canvas>
         <div class="page-hero__grid"></div>
         <div class="page-hero__orbs">
@@ -24,6 +24,19 @@
             </nav>
             <h1 class="page-hero__title" data-animate="fade-up">Carpooling & <span class="gradient-text">Shared Rides</span></h1>
             <p class="page-hero__desc" data-animate="fade-up">Share your ride, split the fare, and save up to 60% on every trip. Travel smarter, greener, and more affordably across Pakistan.</p>
+        </div>
+    </section>
+
+    <!-- Carpool Image Banner -->
+    <section class="content-section" style="padding-bottom: 0;">
+        <div class="container">
+            <div class="img-banner" data-animate="fade-up">
+                <img src="{{ asset('website/images/shareide-images/B-2-scaled.jpg') }}" alt="SHAREIDE Carpool - Corporate commuters sharing rides">
+                <div class="img-banner__overlay">
+                    <h3>Share the Ride, Save the Cost</h3>
+                    <p>Join thousands of professionals saving 60% on daily commutes</p>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -68,6 +81,20 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Eco Impact Visual -->
+    <section class="content-section" style="padding-bottom: 0;">
+        <div class="container">
+            <div class="img-flex" data-animate="fade-up">
+                <div class="img-flex__illustration">
+                    <img src="{{ asset('website/images/shareide-images/Reducing-Carbon-Footprint-.png') }}" alt="Reducing Carbon Footprint with Carpooling">
+                </div>
+                <div class="img-flex__illustration" style="max-width: 400px;">
+                    <img src="{{ asset('website/images/shareide-images/Corporate-Commuting-Solution.png') }}" alt="Corporate Commuting with SHAREIDE" style="border-radius: 16px;">
                 </div>
             </div>
         </div>

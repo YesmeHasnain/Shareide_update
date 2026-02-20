@@ -550,11 +550,22 @@
                             <i class="ti ti-hand-finger"></i> Assign to Me
                         </button>
                     @endif
+                    <div class="border-t border-gray-200 dark:border-dark-100 my-2 pt-2">
+                        <button onclick="deleteTicket()" class="w-full px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 text-xs font-medium transition-colors flex items-center justify-center gap-2">
+                            <i class="ti ti-trash"></i> Delete Chat
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+{{-- Hidden delete form --}}
+<form id="deleteTicketForm" method="POST" action="{{ route('admin.support.destroy', $ticket->id) }}" style="display:none;">
+    @csrf
+    @method('DELETE')
+</form>
 @endsection
 
 @push('scripts')
@@ -1152,6 +1163,15 @@
             btnEl.disabled = false;
             btnEl.innerHTML = originalHTML;
         });
+    };
+
+    // =============================================
+    // DELETE TICKET
+    // =============================================
+    window.deleteTicket = function() {
+        if (confirm('Are you sure you want to permanently delete this chat/ticket? This action cannot be undone.')) {
+            document.getElementById('deleteTicketForm').submit();
+        }
     };
 
     // =============================================

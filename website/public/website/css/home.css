@@ -367,6 +367,114 @@
   .hero__scroll-indicator { display: none; }
 }
 
+@media (max-width: 768px) {
+  .hero {
+    padding-top: 80px;
+    min-height: auto;
+    height: auto;
+    max-height: none;
+  }
+
+  .hero__container {
+    gap: 40px;
+    padding: 20px 0;
+  }
+
+  .hero__title {
+    font-size: clamp(30px, 7vw, 42px);
+    letter-spacing: -1px;
+  }
+
+  .hero__description {
+    font-size: 15px;
+    max-width: 100%;
+  }
+
+  .hero__buttons {
+    margin-bottom: 30px;
+  }
+
+  .hero__stats {
+    gap: 25px;
+  }
+
+  .hero__stat-number {
+    font-size: 28px;
+  }
+
+  .hero__stat-label {
+    font-size: 11px;
+  }
+
+  .hero__stat::after {
+    right: -13px;
+    height: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding-top: 75px;
+  }
+
+  .hero__container {
+    gap: 30px;
+    padding: 15px 0;
+  }
+
+  .hero__title {
+    font-size: clamp(26px, 7vw, 34px);
+    margin-bottom: 16px;
+  }
+
+  .hero__description {
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  .hero__buttons {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 25px;
+  }
+
+  .hero__buttons .btn {
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
+  }
+
+  .hero__stats {
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .hero__stat-number {
+    font-size: 24px;
+  }
+
+  .hero__stat-label {
+    font-size: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  .hero__stat::after {
+    right: -9px;
+    height: 25px;
+  }
+
+  .hero__banner-img {
+    max-height: 30vh;
+  }
+
+  .hero__tag {
+    font-size: 10px;
+    padding: 6px 14px;
+  }
+}
+
 /* ========== CITIES MARQUEE ========== */
 .cities-marquee {
   padding: 25px 0;
@@ -406,6 +514,39 @@
 @keyframes marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
+}
+
+@media (max-width: 768px) {
+  .cities-marquee {
+    padding: 18px 0;
+  }
+
+  .marquee-content {
+    gap: 30px;
+  }
+
+  .city-item {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cities-marquee {
+    padding: 14px 0;
+  }
+
+  .marquee-content {
+    gap: 22px;
+  }
+
+  .city-item {
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  .city-item i {
+    font-size: 10px;
+  }
 }
 
 /* ========== SUCCESS STORIES (AWS-Style Carousel) ========== */
@@ -775,5 +916,47 @@
     width: 40px;
     height: 40px;
     font-size: 12px;
+  }
+}
+
+/* ========== SAFETY ILLUSTRATION ========== */
+.safety__image-section {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.safety__illustration {
+  width: 100%;
+  max-width: 400px;
+  display: block;
+  margin: 0 auto;
+}
+
+/* ========== DRIVE CTA IMAGE ========== */
+.drive-cta__image {
+  width: 100%;
+  max-width: 280px;
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 10px 30px rgba(0,0,0,0.1));
+}
+
+/* ========== TESTIMONIAL AVATAR INITIALS ========== */
+.testimonial-card__avatar--initial {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ========== RESPONSIVE FIXES FOR IMAGES ========== */
+@media (max-width: 768px) {
+  .drive-cta__image {
+    max-width: 200px;
+    margin: 20px auto;
+  }
+
+  .safety__illustration {
+    max-width: 280px;
   }
 }

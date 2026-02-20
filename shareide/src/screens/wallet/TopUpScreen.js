@@ -21,20 +21,16 @@ const TopUpScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [amount, setAmount] = useState('');
   const [selectedMethod, setSelectedMethod] = useState('card');
-  const [accountNumber, setAccountNumber] = useState('');
   const [loading, setLoading] = useState(false);
 
   const quickAmounts = [500, 1000, 2000, 5000];
 
-  const requiresAccountNumber = selectedMethod === 'alfa_wallet' || selectedMethod === 'bank_account' || selectedMethod === 'jazzcash' || selectedMethod === 'easypaisa';
-  const accountPlaceholder = (selectedMethod === 'alfa_wallet' || selectedMethod === 'jazzcash' || selectedMethod === 'easypaisa') ? '03XX XXXXXXX' : 'Account Number';
-
   const paymentMethods = [
     { id: 'card', name: 'Debit/Credit Card', icon: 'card-outline', desc: 'Visa, Mastercard' },
-    { id: 'alfa_wallet', name: 'Alfa Wallet', icon: 'phone-portrait-outline', desc: 'Bank Alfalah Wallet' },
-    { id: 'bank_account', name: 'Bank Account', icon: 'business-outline', desc: 'Alfalah Bank Account' },
-    { id: 'jazzcash', name: 'JazzCash', icon: 'phone-portrait-outline', desc: 'Mobile Wallet' },
-    { id: 'easypaisa', name: 'Easypaisa', icon: 'wallet-outline', desc: 'Mobile Wallet' },
+    { id: 'jazzcash', name: 'JazzCash', icon: 'phone-portrait-outline', desc: 'Pay via JazzCash' },
+    { id: 'easypaisa', name: 'Easypaisa', icon: 'wallet-outline', desc: 'Pay via Easypaisa' },
+    { id: 'alfa_wallet', name: 'Alfa Wallet', icon: 'phone-portrait-outline', desc: 'Bank Alfalah mobile wallet' },
+    { id: 'bank_account', name: 'Bank Account', icon: 'business-outline', desc: 'Pay via bank account' },
   ];
 
   const handleTopUp = async () => {
@@ -51,61 +47,24 @@ const TopUpScreen = ({ navigation }) => {
       return;
     }
 
-    if (requiresAccountNumber && !accountNumber.trim()) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Required', selectedMethod === 'alfa_wallet'
-        ? 'Please enter your Alfa Wallet mobile number'
-        : 'Please enter your bank account number');
-      return;
-    }
-
     try {
       setLoading(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-      const acctNum = requiresAccountNumber ? accountNumber.replace(/\s/g, '') : null;
-      const response = await walletAPI.topUp(numAmount, selectedMethod, acctNum);
+      const response = await walletAPI.topUp(numAmount, selectedMethod);
 
       if (response.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        if ((selectedMethod === 'alfa_wallet' || selectedMethod === 'bank_account') && response.data?.requires_otp) {
-          navigation.navigate('OTPVerification', {
+        if (response.data?.payment_url) {
+          navigation.navigate('PaymentWebView', {
+            paymentUrl: response.data.payment_url,
+            formData: response.data.form_data || null,
             orderId: response.data.order_id,
             amount: numAmount,
-            method: selectedMethod,
-            otpLength: response.data.otp_length || 8,
-            message: response.message,
           });
-          return;
-        }
-
-        if (selectedMethod === 'card' || selectedMethod === 'bank_alfalah') {
-          if (response.data?.test_mode && response.data?.test_html) {
-            navigation.navigate('PaymentWebView', {
-              paymentUrl: response.data.payment_url,
-              formData: response.data.form_data,
-              orderId: response.data.order_id,
-              amount: numAmount,
-              testMode: true,
-              testHtml: response.data.test_html,
-            });
-          } else if (response.data?.payment_url && response.data?.form_data) {
-            navigation.navigate('PaymentWebView', {
-              paymentUrl: response.data.payment_url,
-              formData: response.data.form_data,
-              orderId: response.data.order_id,
-              amount: numAmount,
-            });
-          } else {
-            Alert.alert('Error', 'Payment gateway not available. Please try again later.');
-          }
         } else {
-          Alert.alert(
-            'Payment Initiated',
-            `Reference: ${response.data?.reference_id}\n\nComplete payment via your app.`,
-            [{ text: 'OK', onPress: () => navigation.goBack() }]
-          );
+          Alert.alert('Error', 'Payment gateway not available. Please try again later.');
         }
       }
     } catch (error) {
@@ -119,8 +78,6 @@ const TopUpScreen = ({ navigation }) => {
 
   const numAmount = parseInt(amount, 10) || 0;
   const isValidAmount = numAmount >= 100 && numAmount <= 50000;
-  const isAccountValid = !requiresAccountNumber || accountNumber.trim().length >= 10;
-  const canProceed = isValidAmount && isAccountValid;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.backgroundSecondary || colors.background }]}>
@@ -207,84 +164,42 @@ const TopUpScreen = ({ navigation }) => {
                 style={[
                   styles.methodItem,
                   { borderBottomColor: colors.border },
-                  isSelected && !method.disabled && { backgroundColor: colors.primary + '12' },
-                  method.disabled && styles.methodItemDisabled,
+                  isSelected && { backgroundColor: colors.primary + '12' },
                 ]}
                 onPress={() => {
-                  if (!method.disabled) {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setSelectedMethod(method.id);
-                  }
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setSelectedMethod(method.id);
                 }}
-                activeOpacity={method.disabled ? 1 : 0.7}
+                activeOpacity={0.7}
               >
                 <View style={[
                   styles.methodIcon,
                   { backgroundColor: colors.inputBackground },
-                  isSelected && !method.disabled && { backgroundColor: colors.primary + '20' },
+                  isSelected && { backgroundColor: colors.primary + '20' },
                 ]}>
                   <Ionicons
                     name={method.icon}
                     size={22}
-                    color={method.disabled ? colors.border : isSelected ? colors.primary : colors.textSecondary}
+                    color={isSelected ? colors.primary : colors.textSecondary}
                   />
                 </View>
                 <View style={styles.methodInfo}>
-                  <Text style={[
-                    styles.methodName,
-                    { color: colors.text },
-                    method.disabled && { color: colors.border },
-                  ]}>{method.name}</Text>
-                  <Text style={[
-                    styles.methodDesc,
-                    { color: colors.textTertiary },
-                    method.disabled && { color: colors.border },
-                  ]}>{method.desc}</Text>
+                  <Text style={[styles.methodName, { color: colors.text }]}>{method.name}</Text>
+                  <Text style={[styles.methodDesc, { color: colors.textTertiary }]}>{method.desc}</Text>
                 </View>
-                {!method.disabled && (
-                  <View style={[styles.radio, { borderColor: colors.border }, isSelected && { borderColor: colors.primary }]}>
-                    {isSelected && <View style={[styles.radioDot, { backgroundColor: colors.primary }]} />}
-                  </View>
-                )}
+                <View style={[styles.radio, { borderColor: colors.border }, isSelected && { borderColor: colors.primary }]}>
+                  {isSelected && <View style={[styles.radioDot, { backgroundColor: colors.primary }]} />}
+                </View>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* Account Number Input */}
-        {requiresAccountNumber && (
-          <View style={styles.accountSection}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {selectedMethod === 'alfa_wallet' ? 'Wallet Number' : 'Account Number'}
-            </Text>
-            <View style={[styles.accountInputBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Ionicons name="keypad-outline" size={20} color={colors.textTertiary} />
-              <TextInput
-                style={[styles.accountInput, { color: colors.text }]}
-                value={accountNumber}
-                onChangeText={(text) => {
-                  setAccountNumber(text);
-                  Haptics.selectionAsync();
-                }}
-                placeholder={accountPlaceholder}
-                placeholderTextColor={colors.textTertiary}
-                keyboardType={selectedMethod === 'alfa_wallet' ? 'phone-pad' : 'number-pad'}
-                maxLength={selectedMethod === 'alfa_wallet' ? 11 : 20}
-              />
-            </View>
-            <Text style={[styles.accountHint, { color: colors.textTertiary }]}>
-              {selectedMethod === 'alfa_wallet'
-                ? 'Enter your registered Alfa Wallet mobile number'
-                : 'Enter your Alfalah Bank account number'}
-            </Text>
-          </View>
-        )}
-
         {/* Security Note */}
         <View style={[styles.securityNote, { backgroundColor: colors.success + '12' }]}>
           <Ionicons name="shield-checkmark" size={18} color={colors.success} />
           <Text style={[styles.securityText, { color: colors.textSecondary }]}>
-            Secured via Bank Alfalah. Your details are never stored.
+            Secured by Bank Alfalah. Your payment details are never stored.
           </Text>
         </View>
 
@@ -297,10 +212,10 @@ const TopUpScreen = ({ navigation }) => {
           style={[
             styles.payButton,
             { backgroundColor: colors.primary },
-            !canProceed && { backgroundColor: colors.inputBackground },
+            !isValidAmount && { backgroundColor: colors.inputBackground },
           ]}
           onPress={handleTopUp}
-          disabled={!canProceed || loading}
+          disabled={!isValidAmount || loading}
           activeOpacity={0.8}
         >
           {loading ? (
@@ -309,14 +224,14 @@ const TopUpScreen = ({ navigation }) => {
             <>
               <Text style={[
                 styles.payButtonText,
-                !canProceed && { color: colors.textTertiary },
+                !isValidAmount && { color: colors.textTertiary },
               ]}>
-                {canProceed
+                {isValidAmount
                   ? `Top Up Rs. ${numAmount.toLocaleString()}`
-                  : !isValidAmount ? 'Enter Amount (min Rs. 100)' : 'Enter Account Number'
+                  : 'Enter Amount (min Rs. 100)'
                 }
               </Text>
-              {canProceed && <Ionicons name="arrow-forward" size={20} color="#000" />}
+              {isValidAmount && <Ionicons name="arrow-forward" size={20} color="#000" />}
             </>
           )}
         </TouchableOpacity>
@@ -452,9 +367,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
   },
-  methodItemDisabled: {
-    opacity: 0.5,
-  },
   methodIcon: {
     width: 44,
     height: 44,
@@ -486,30 +398,6 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-  },
-
-  // Account Input
-  accountSection: {
-    marginBottom: 24,
-  },
-  accountInputBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    height: 54,
-    borderWidth: 1.5,
-    gap: 12,
-  },
-  accountInput: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  accountHint: {
-    fontSize: 12,
-    marginTop: 8,
-    marginLeft: 4,
   },
 
   // Security

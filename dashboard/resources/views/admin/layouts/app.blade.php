@@ -41,7 +41,7 @@
                         surface: '#F3F4F6',
                     },
                     fontFamily: {
-                        inter: ['Inter', 'sans-serif'],
+                        inter: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
                     },
                     borderRadius: {
                         'xl': '12px',
@@ -66,15 +66,21 @@
     <!-- Tabler Icons (clean line icons) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css">
 
-    <!-- Google Fonts - Inter (professional SaaS font) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts - Plus Jakarta Sans (premium SaaS font) -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         [x-cloak] { display: none !important; }
-        body { font-family: 'Inter', sans-serif; }
+        body {
+            font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            letter-spacing: -0.01em;
+        }
 
         /* ============================================
            WEBSITE-MATCHING DESIGN SYSTEM
@@ -100,43 +106,54 @@
             background-clip: text;
         }
 
-        /* Sidebar */
+        /* Sidebar - Shopify-inspired */
         .sidebar-link.active {
-            background: rgba(252, 192, 20, 0.1);
-            color: #FCC014;
+            background: #f3f3f3;
+            color: #1a1a1a;
             font-weight: 600;
         }
         .dark .sidebar-link.active {
-            background: rgba(252, 192, 20, 0.1);
+            background: rgba(252, 192, 20, 0.08);
             color: #FCC014;
         }
         .sidebar-link.active i {
+            color: #1a1a1a;
+        }
+        .dark .sidebar-link.active i {
             color: #FCC014;
         }
 
-        /* Primary Button */
+        /* Primary Button - Shopify style */
         .btn-primary {
-            background: #FCC014;
-            color: #000;
+            background: #1a1a1a;
+            color: #fff;
             font-weight: 600;
             border-radius: 8px;
-            transition: all 0.15s ease;
+            transition: all 0.12s ease;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
         }
         .btn-primary:hover {
+            background: #333;
+        }
+        .dark .btn-primary {
+            background: #FCC014;
+            color: #000;
+        }
+        .dark .btn-primary:hover {
             background: #E3AD12;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
         }
 
-        /* Glass Button */
+        /* Glass Button - Shopify outline style */
         .btn-glass {
             background: #fff;
-            border: 1px solid #E5E7EB;
+            border: 1px solid #d4d4d4;
             border-radius: 8px;
-            transition: all 0.15s ease;
+            transition: all 0.12s ease;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.04);
         }
         .btn-glass:hover {
-            background: #F6F6F7;
-            border-color: #D1D5DB;
+            background: #f6f6f7;
+            border-color: #c0c0c0;
         }
 
         /* ============================================
@@ -303,36 +320,41 @@
         .animate-card:nth-child(5) { animation-delay: 0.25s; }
         .animate-card:nth-child(6) { animation-delay: 0.3s; }
 
-        /* Sidebar Link Effects */
+        /* Sidebar Link Effects - Shopify style */
         .sidebar-link {
-            transition: all 0.15s ease;
+            transition: all 0.12s ease;
             border-radius: 8px;
+            font-size: 13px;
+            letter-spacing: 0;
         }
         .sidebar-link:hover {
-            background: #F6F6F7;
+            background: #f3f3f3;
+            color: #1a1a1a;
         }
         .dark .sidebar-link:hover {
             background: rgba(255, 255, 255, 0.06);
         }
         .sidebar-link i {
-            transition: color 0.15s ease;
+            transition: color 0.12s ease;
         }
 
-        /* Card Hover Effects */
+        /* Card Hover Effects - flat Shopify style */
         .hover-card {
-            transition: all 0.2s ease;
-            border: 1px solid #F0F0F3;
+            transition: all 0.15s ease;
+            border: 1px solid #e3e3e3;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.04);
         }
         .hover-card:hover {
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
-            border-color: #E0E0E0;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.06);
+            border-color: #d4d4d4;
         }
         .dark .hover-card {
             border-color: rgba(255, 255, 255, 0.06);
+            box-shadow: none;
         }
         .dark .hover-card:hover {
-            border-color: rgba(255, 255, 255, 0.12);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
         /* Stat Card Effects */
@@ -343,30 +365,40 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
         }
 
-        /* Table Row Hover */
+        /* Table Row Hover - subtle like Shopify */
         tbody tr {
-            transition: all 0.2s ease;
+            transition: background 0.1s ease;
         }
         tbody tr:hover {
-            background: rgba(252, 192, 20, 0.04) !important;
+            background: #f9f9f9 !important;
+        }
+        .dark tbody tr:hover {
+            background: rgba(255,255,255,0.03) !important;
         }
 
-        /* Input Focus Effects */
+        /* Input Focus Effects - Shopify style */
         input, select, textarea {
-            transition: all 0.15s ease;
+            transition: all 0.12s ease;
             font-size: 13px !important;
-            font-family: 'Inter', sans-serif !important;
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important;
         }
         input:focus, select:focus, textarea:focus {
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+            border-color: #1a1a1a !important;
+            outline: none;
+        }
+        .dark input:focus, .dark select:focus, .dark textarea:focus {
             box-shadow: 0 0 0 2px rgba(252, 192, 20, 0.2);
             border-color: #FCC014 !important;
         }
         input::placeholder, textarea::placeholder {
             font-size: 13px;
+            color: #999;
         }
         label {
             font-size: 13px !important;
             font-weight: 500 !important;
+            letter-spacing: 0 !important;
         }
 
         /* Badge Pulse */
@@ -478,61 +510,88 @@
         /* Smooth Scroll */
         html { scroll-behavior: smooth; }
 
-        /* Button base */
+        /* Button base - Shopify feel */
         button, .btn, a.btn {
-            transition: all 0.3s ease;
+            transition: all 0.12s ease;
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
         }
         button:active, .btn:active {
-            transform: translateY(0) scale(0.98);
+            transform: scale(0.98);
         }
 
-        /* Header glass effect on scroll */
+        /* Header - clean Shopify-like top bar */
         .header-glass {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: #f6f6f7;
+            border-bottom: 1px solid #e3e3e3;
         }
         .dark .header-glass {
-            background: rgba(26, 26, 46, 0.95);
+            background: rgba(15, 15, 26, 0.97);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
         }
 
         /* ============================================
-           SHOPIFY-LIKE CONTENT OVERRIDES
-           Global rules to make all content pages clean
+           SHOPIFY-INSPIRED PROFESSIONAL OVERRIDES
            ============================================ */
 
-        /* Reduce all heading/stat font sizes in content area */
-        main .text-3xl { font-size: 1.375rem !important; line-height: 1.75rem !important; }
-        main .text-2xl { font-size: 1.125rem !important; line-height: 1.5rem !important; }
-        main .text-xl { font-size: 1rem !important; line-height: 1.375rem !important; }
+        /* Typography scale - tighter, more refined */
+        main .text-3xl { font-size: 1.375rem !important; line-height: 1.75rem !important; letter-spacing: -0.02em !important; }
+        main .text-2xl { font-size: 1.125rem !important; line-height: 1.5rem !important; letter-spacing: -0.02em !important; }
+        main .text-xl { font-size: 1rem !important; line-height: 1.375rem !important; letter-spacing: -0.01em !important; }
         main .text-lg { font-size: 0.875rem !important; line-height: 1.25rem !important; }
 
-        /* Make bold text lighter (600 instead of 700) */
+        /* Subtler font weights */
         main .font-bold { font-weight: 600 !important; }
-        main .font-extrabold { font-weight: 600 !important; }
+        main .font-extrabold { font-weight: 700 !important; }
 
-        /* Tone down shadows */
-        main .shadow-lg { box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04) !important; }
-        main .shadow-md { box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important; }
-        main .shadow-xl { box-shadow: 0 2px 6px rgba(0,0,0,0.06) !important; }
+        /* Flatter shadows - Shopify style */
+        main .shadow-lg { box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06) !important; }
+        main .shadow-md { box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 0 1px 1px rgba(0,0,0,0.04) !important; }
+        main .shadow-xl { box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.06) !important; }
 
-        /* Reduce border radius */
-        main .rounded-2xl { border-radius: 10px !important; }
-        main .rounded-xl { border-radius: 8px !important; }
+        /* Slightly tighter corners */
+        main .rounded-2xl { border-radius: 12px !important; }
+        main .rounded-xl { border-radius: 10px !important; }
 
-        /* Remove hover translate effects in content */
+        /* Remove floaty hover effects */
         main .hover\:-translate-y-1:hover { transform: none !important; }
         main .group-hover\:scale-110:hover { transform: none !important; }
 
-        /* Cleaner icon sizes in content */
+        /* Cleaner icons */
         main .fas, main .far, main .fab { font-size: inherit; }
 
-        /* Shopify-like table styling */
+        /* Professional table styling */
         main table { font-size: 0.8125rem; }
-        main th { font-weight: 500 !important; text-transform: uppercase; font-size: 0.6875rem; letter-spacing: 0.05em; color: #6B7280; }
+        main th {
+            font-weight: 500 !important;
+            text-transform: uppercase;
+            font-size: 0.6875rem;
+            letter-spacing: 0.05em;
+            color: #6B7280;
+            padding-top: 0.75rem !important;
+            padding-bottom: 0.75rem !important;
+        }
         .dark main th { color: #9CA3AF; }
+        main td {
+            padding-top: 0.75rem !important;
+            padding-bottom: 0.75rem !important;
+        }
+
+        /* Status badges - more polished */
+        main .inline-flex.items-center.rounded-md,
+        main .inline-flex.items-center.rounded-full {
+            font-weight: 500 !important;
+            letter-spacing: 0.01em;
+        }
+
+        /* Card borders - Shopify uses very subtle borders */
+        main .border-gray-100 { border-color: #ebebeb !important; }
+        .dark main .border-gray-100 { border-color: rgba(255,255,255,0.06) !important; }
+
+        /* Section headers inside cards */
+        main .border-b.border-gray-100 { border-color: #f0f0f0 !important; }
+        .dark main .border-b.border-gray-100 { border-color: rgba(255,255,255,0.06) !important; }
     </style>
 
     <!-- Alpine.js -->
@@ -540,7 +599,7 @@
 
     @stack('styles')
 </head>
-<body class="bg-[#F8F9FC] dark:bg-dark-400 font-inter" x-data="{
+<body class="bg-[#f6f6f7] dark:bg-dark-400 font-inter" x-data="{
     sidebarOpen: true,
     darkMode: localStorage.getItem('darkMode') === 'true',
     toggleDarkMode() {
@@ -550,11 +609,11 @@
 }" x-init="$watch('darkMode', val => document.documentElement.classList.toggle('dark', val)); if(darkMode) document.documentElement.classList.add('dark')" :class="{ 'dark': darkMode }">
     <div class="min-h-screen flex">
         <!-- Sidebar -->
-        <aside class="w-[270px] fixed h-full z-30 flex flex-col"
-            :style="darkMode ? 'background: #1A1A2E; border-right: 1px solid rgba(255,255,255,0.06);' : 'background: #fff; border-right: 1px solid #F0F0F3;'">
+        <aside class="w-[240px] fixed h-full z-30 flex flex-col"
+            :style="darkMode ? 'background: #1A1A2E; border-right: 1px solid rgba(255,255,255,0.06);' : 'background: #fff; border-right: 1px solid #e3e3e3;'">
 
             <!-- Logo Section -->
-            <div class="px-5 py-5 border-b" :class="darkMode ? 'border-white/5' : 'border-[#F0F0F3]'">
+            <div class="px-5 py-4 border-b" :class="darkMode ? 'border-white/5' : 'border-[#e3e3e3]'">
                 <div class="flex items-center">
                     <img x-show="!darkMode" src="{{ asset('images/logo/logo-black.png') }}" alt="SHAREIDE" class="h-9 object-contain">
                     <img x-show="darkMode" src="{{ asset('images/logo/logo-white.png') }}" alt="SHAREIDE" class="h-9 object-contain">
@@ -565,18 +624,18 @@
             <nav class="mt-3 px-3 flex-1 overflow-y-auto">
                 <!-- Dashboard -->
                 <a href="{{ route('admin.dashboard') }}"
-                    class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="ti ti-layout-dashboard w-5 text-[19px]"></i>
+                    <i class="ti ti-layout-dashboard w-5 text-[17px]"></i>
                     <span class="ml-3 text-[13px] font-medium">Dashboard</span>
                 </a>
 
                 <!-- Drivers -->
                 <a href="{{ route('admin.drivers.index') }}"
-                    class="sidebar-link flex items-center justify-between px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.drivers.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center justify-between px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.drivers.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
                     <div class="flex items-center">
-                        <i class="ti ti-car w-5 text-[19px]"></i>
+                        <i class="ti ti-car w-5 text-[17px]"></i>
                         <span class="ml-3 text-[13px] font-medium">Drivers</span>
                     </div>
                     @php $pendingCount = \App\Models\Driver::where('status', 'pending')->count(); @endphp
@@ -585,58 +644,58 @@
 
                 <!-- Users -->
                 <a href="{{ route('admin.users.index') }}"
-                    class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="ti ti-users w-5 text-[19px]"></i>
+                    <i class="ti ti-users w-5 text-[17px]"></i>
                     <span class="ml-3 text-[13px] font-medium">Users</span>
                 </a>
 
                 <!-- Rides -->
                 <a href="{{ route('admin.rides.index') }}"
-                    class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.rides.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.rides.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="ti ti-route w-5 text-[19px]"></i>
+                    <i class="ti ti-route w-5 text-[17px]"></i>
                     <span class="ml-3 text-[13px] font-medium">Rides</span>
                 </a>
 
                 <!-- Shared Rides / Carpooling -->
                 <a href="{{ route('admin.shared-rides.index') }}"
-                    class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.shared-rides.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.shared-rides.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="ti ti-users-group w-5 text-[19px]"></i>
+                    <i class="ti ti-users-group w-5 text-[17px]"></i>
                     <span class="ml-3 text-[13px] font-medium">Carpooling</span>
                 </a>
 
                 <!-- Chats -->
                 <a href="{{ route('admin.chats.index') }}"
-                    class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.chats.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.chats.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="ti ti-messages w-5 text-[19px]"></i>
+                    <i class="ti ti-messages w-5 text-[17px]"></i>
                     <span class="ml-3 text-[13px] font-medium">Chats</span>
                 </a>
 
                 <!-- Payments -->
                 <a href="{{ route('admin.payments.index') }}"
-                    class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.payments.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.payments.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="ti ti-wallet w-5 text-[19px]"></i>
+                    <i class="ti ti-wallet w-5 text-[17px]"></i>
                     <span class="ml-3 text-[13px] font-medium">Payments</span>
                 </a>
 
                 <!-- Promo Codes -->
                 <a href="{{ route('admin.promo-codes.index') }}"
-                    class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.promo-codes.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.promo-codes.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="ti ti-ticket w-5 text-[19px]"></i>
+                    <i class="ti ti-ticket w-5 text-[17px]"></i>
                     <span class="ml-3 text-[13px] font-medium">Promo Codes</span>
                 </a>
 
                 <!-- SOS Alerts -->
                 <a href="{{ route('admin.sos.index') }}"
-                    class="sidebar-link flex items-center justify-between px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.sos.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center justify-between px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.sos.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
                     <div class="flex items-center">
-                        <i class="ti ti-alert-triangle w-5 text-[19px]"></i>
+                        <i class="ti ti-alert-triangle w-5 text-[17px]"></i>
                         <span class="ml-3 text-[13px] font-medium">SOS Alerts</span>
                     </div>
                     @php $activeAlerts = \App\Models\SosAlert::where('status', 'active')->count(); @endphp
@@ -645,9 +704,9 @@
 
                 <!-- Reports -->
                 <a href="{{ route('admin.reports.revenue') }}"
-                    class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="ti ti-chart-pie w-5 text-[19px]"></i>
+                    <i class="ti ti-chart-pie w-5 text-[17px]"></i>
                     <span class="ml-3 text-[13px] font-medium">Reports</span>
                 </a>
 
@@ -659,34 +718,34 @@
 
                 <!-- Analytics -->
                 <a href="{{ route('admin.analytics.index') }}"
-                    class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="ti ti-chart-line w-5 text-[19px]"></i>
+                    <i class="ti ti-chart-line w-5 text-[17px]"></i>
                     <span class="ml-3 text-[13px] font-medium">Analytics</span>
                 </a>
 
                 <!-- Live Map -->
                 <a href="{{ route('admin.map.index') }}"
-                    class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.map.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.map.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="ti ti-map-pin w-5 text-[19px]"></i>
+                    <i class="ti ti-map-pin w-5 text-[17px]"></i>
                     <span class="ml-3 text-[13px] font-medium">Live Map</span>
                 </a>
 
                 <!-- Fare Management -->
                 <a href="{{ route('admin.fare.index') }}"
-                    class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.fare.*') || request()->routeIs('admin.surge.*') || request()->routeIs('admin.commission.*') || request()->routeIs('admin.zone.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.fare.*') || request()->routeIs('admin.surge.*') || request()->routeIs('admin.commission.*') || request()->routeIs('admin.zone.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="ti ti-calculator w-5 text-[19px]"></i>
+                    <i class="ti ti-calculator w-5 text-[17px]"></i>
                     <span class="ml-3 text-[13px] font-medium">Fare Management</span>
                 </a>
 
                 <!-- Support Tickets -->
                 <a href="{{ route('admin.support.index') }}"
-                    class="sidebar-link flex items-center justify-between px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.support.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center justify-between px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.support.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
                     <div class="flex items-center">
-                        <i class="ti ti-headset w-5 text-[19px]"></i>
+                        <i class="ti ti-headset w-5 text-[17px]"></i>
                         <span class="ml-3 text-[13px] font-medium">Support</span>
                     </div>
                     @php $openTickets = \App\Models\SupportTicket::where('status', 'open')->count(); @endphp
@@ -695,10 +754,10 @@
 
                 <!-- System Alerts -->
                 <a href="{{ route('admin.alerts.index') }}"
-                    class="sidebar-link flex items-center justify-between px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.alerts.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center justify-between px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.alerts.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
                     <div class="flex items-center">
-                        <i class="ti ti-bell w-5 text-[19px]"></i>
+                        <i class="ti ti-bell w-5 text-[17px]"></i>
                         <span class="ml-3 text-[13px] font-medium">Alerts</span>
                     </div>
                     @php $unresolvedAlerts = \App\Models\SystemAlert::where('is_resolved', false)->where('severity', 'critical')->count(); @endphp
@@ -707,25 +766,25 @@
 
                 <!-- Audit Logs -->
                 <a href="{{ route('admin.audit.index') }}"
-                    class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.audit.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.audit.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="ti ti-history w-5 text-[19px]"></i>
+                    <i class="ti ti-history w-5 text-[17px]"></i>
                     <span class="ml-3 text-[13px] font-medium">Audit Logs</span>
                 </a>
 
                 <!-- Loyalty & Rewards -->
                 <a href="{{ route('admin.loyalty.index') }}"
-                    class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.loyalty.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.loyalty.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="ti ti-crown w-5 text-[19px] text-primary"></i>
+                    <i class="ti ti-crown w-5 text-[17px] text-primary"></i>
                     <span class="ml-3 text-[13px] font-medium">Loyalty Program</span>
                 </a>
 
                 <!-- Admin Roles -->
                 <a href="{{ route('admin.roles.index') }}"
-                    class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="ti ti-shield-check w-5 text-[19px]"></i>
+                    <i class="ti ti-shield-check w-5 text-[17px]"></i>
                     <span class="ml-3 text-[13px] font-medium">Admin Roles</span>
                 </a>
 
@@ -736,9 +795,9 @@
 
                 <!-- Settings -->
                 <a href="{{ route('admin.settings.index') }}"
-                    class="sidebar-link flex items-center px-4 py-3 mb-1 transition-all {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}"
+                    class="sidebar-link flex items-center px-3 py-2 mb-0.5 transition-all {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}"
                     :class="darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'">
-                    <i class="ti ti-settings w-5 text-[19px]"></i>
+                    <i class="ti ti-settings w-5 text-[17px]"></i>
                     <span class="ml-3 text-[13px] font-medium">Settings</span>
                 </a>
             </nav>
@@ -767,7 +826,7 @@
         </aside>
 
         <!-- Main Content -->
-        <div class="ml-[270px] flex-1">
+        <div class="ml-[240px] flex-1">
             <!-- Top Navbar (Glass effect like website header) -->
             <header class="header-glass sticky top-0 z-20 transition-all duration-300 border-b"
                 :class="darkMode ? 'border-white/5' : 'border-[#F0F0F3]'">

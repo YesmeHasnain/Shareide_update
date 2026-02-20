@@ -75,6 +75,7 @@ const WalletScreen = ({ navigation }) => {
   const getTransactionIcon = (type) => {
     switch (type) {
       case 'topup': return { name: 'arrow-down-circle', color: '#10B981' };
+      case 'withdrawal': return { name: 'arrow-up-circle', color: '#EF4444' };
       case 'ride': return { name: 'car', color: '#F59E0B' };
       case 'refund': return { name: 'refresh-circle', color: '#3B82F6' };
       default: return { name: 'swap-horizontal', color: '#6B7280' };
@@ -143,16 +144,19 @@ const WalletScreen = ({ navigation }) => {
               activeOpacity={0.8}
             >
               <Ionicons name="add" size={20} color={PRIMARY_COLOR} />
-              <Text style={styles.topUpButtonText}>Top Up</Text>
+              <Text style={styles.topUpButtonText}>Add Money</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.historyBtn}
-              onPress={() => navigation.navigate('TransactionHistory')}
+              style={styles.withdrawBtn}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                navigation.navigate('Withdraw');
+              }}
               activeOpacity={0.8}
             >
-              <Ionicons name="time-outline" size={20} color="#FFF" />
-              <Text style={styles.historyBtnText}>History</Text>
+              <Ionicons name="send" size={18} color="#FFF" />
+              <Text style={styles.historyBtnText}>Withdraw</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -257,7 +261,7 @@ const WalletScreen = ({ navigation }) => {
         <View style={[styles.infoCard, { backgroundColor: isDark ? colors.successLight : '#F0FDF4' }]}>
           <Ionicons name="shield-checkmark" size={20} color={colors.success} />
           <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-            All transactions are secured via Bank Alfalah payment gateway
+            All transactions are secured by Shareide
           </Text>
         </View>
       </ScrollView>
@@ -356,7 +360,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: PRIMARY_COLOR,
   },
-  historyBtn: {
+  withdrawBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',

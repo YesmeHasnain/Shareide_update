@@ -6,7 +6,7 @@
 
 @section('content')
     <!-- Page Hero -->
-    <section class="page-hero page-hero--services">
+    <section class="page-hero page-hero--howitworks">
         <canvas class="page-hero__particles" id="pageParticles"></canvas>
         <div class="page-hero__grid"></div>
         <div class="page-hero__orbs">
@@ -23,7 +23,29 @@
                 <span class="breadcrumb__current">How It Works</span>
             </nav>
             <h1 class="page-hero__title" data-animate="fade-up">How It <span class="gradient-text">Works</span></h1>
-            <p class="page-hero__desc" data-animate="fade-up">Whether you are a passenger looking for an affordable ride or a driver ready to earn, getting started with SHAREIDE is quick and easy.</p>
+            <p class="page-hero__desc" data-animate="fade-up">Whether you need a bike (70cc, 125cc) or car ride, or you are a driver ready to earn - getting started with SHAREIDE is quick and easy.</p>
+        </div>
+    </section>
+
+    <!-- Image Banner -->
+    <section class="content-section" style="padding-bottom: 0;">
+        <div class="container">
+            <div class="img-grid-2" data-animate="fade-up">
+                <div class="img-grid-2__item">
+                    <img src="{{ asset('website/images/shareide-images/B-3-scaled.jpg') }}" alt="Passenger using SHAREIDE app">
+                    <div class="img-grid-2__overlay">
+                        <h3><i class="fas fa-mobile-alt"></i> For Passengers</h3>
+                        <p>Book rides in seconds</p>
+                    </div>
+                </div>
+                <div class="img-grid-2__item">
+                    <img src="{{ asset('website/images/shareide-images/B-1-1-scaled.jpg') }}" alt="SHAREIDE driver partner">
+                    <div class="img-grid-2__overlay">
+                        <h3><i class="fas fa-car"></i> For Drivers</h3>
+                        <p>Start earning today</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 

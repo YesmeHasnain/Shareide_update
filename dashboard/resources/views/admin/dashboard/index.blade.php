@@ -322,7 +322,7 @@
 @push('scripts')
 <script>
     // Chart.js Configuration
-    Chart.defaults.font.family = 'Inter, sans-serif';
+    Chart.defaults.font.family = "'Plus Jakarta Sans', Inter, sans-serif";
     Chart.defaults.color = document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280';
 
     // Rides Chart

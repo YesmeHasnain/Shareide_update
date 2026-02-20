@@ -131,6 +131,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/payment-methods', [RiderWalletController::class, 'addPaymentMethod']);
         Route::post('/payment-methods/{id}/default', [RiderWalletController::class, 'setDefaultMethod']);
         Route::delete('/payment-methods/{id}', [RiderWalletController::class, 'deletePaymentMethod']);
+        Route::post('/withdraw', [RiderWalletController::class, 'requestWithdrawal']);
+        Route::get('/withdrawals', [RiderWalletController::class, 'getWithdrawals']);
     });
 
     // ============================================

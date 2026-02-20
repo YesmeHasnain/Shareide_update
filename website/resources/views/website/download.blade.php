@@ -6,7 +6,7 @@
 
 @section('content')
     <!-- Page Hero -->
-    <section class="page-hero page-hero--support">
+    <section class="page-hero page-hero--download">
         <canvas class="page-hero__particles" id="pageParticles"></canvas>
         <div class="page-hero__grid"></div>
         <div class="page-hero__orbs">
@@ -23,7 +23,23 @@
                 <span class="breadcrumb__current">Download</span>
             </nav>
             <h1 class="page-hero__title" data-animate="fade-up">Download <span class="gradient-text">SHAREIDE</span></h1>
-            <p class="page-hero__desc" data-animate="fade-up">Get both apps - the Passenger app for booking rides and the Fleet app for driving and earning. Available now on Google Play.</p>
+            <p class="page-hero__desc" data-animate="fade-up">Get both apps - the Passenger app for booking bike & car rides, and the Fleet app for 70cc/125cc bike & car drivers to earn. Available now on Google Play.</p>
+        </div>
+    </section>
+
+    <!-- App Banner Image -->
+    <section class="content-section" style="padding-bottom: 0;">
+        <div class="container">
+            <div class="img-banner img-banner--side-overlay" data-animate="fade-up">
+                <img src="{{ asset('website/images/shareide-images/ChatGPT-Image-Jan-21-2026-04_19_50-AM.jpg') }}" alt="SHAREIDE - Pakistan's Ride Sharing Platform">
+                <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 50%, transparent 100%); display: flex; align-items: center; padding: 40px;">
+                    <div style="max-width: 500px;">
+                        <img src="{{ asset('website/images/shareide-images/logo--scaled (1).png') }}" alt="SHAREIDE Logo" style="height: 45px; margin-bottom: 15px;">
+                        <h3 style="color: #fff; font-size: 28px; font-weight: 700; margin: 0 0 10px 0;">Download SHAREIDE Today</h3>
+                        <p style="color: rgba(255,255,255,0.85); font-size: 16px; margin: 0;">Book rides, save money, travel safely across Pakistan</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -43,7 +59,7 @@
                         <i class="fas fa-mobile-alt"></i>
                     </div>
                     <h3 class="download-app-card__title">Passenger App</h3>
-                    <p class="download-app-card__desc">Book solo rides, share carpools, schedule trips, and bid your own fare. Track drivers in real-time and pay with cash, JazzCash, Easypaisa, or card.</p>
+                    <p class="download-app-card__desc">Book bike rides (Honda 70, 125), car rides, share carpools, and bid your own fare. Track drivers in real-time and pay with cash, JazzCash, Easypaisa, or card.</p>
                     <a href="https://play.google.com/store/apps/details?id=com.shareide_official.shareide" class="store-button" style="justify-content: center;">
                         <i class="fab fa-google-play"></i>
                         <div>
@@ -51,7 +67,7 @@
                             <strong>Google Play</strong>
                         </div>
                     </a>
-                    <a href="https://expo.dev/artifacts/eas/oSnnZN7BZuxh4fTdBGVda1.apk" class="store-button store-button--apk" style="justify-content: center; margin-top: 10px;">
+                    <a href="https://expo.dev/artifacts/eas/rxvdkPjKC1ShGcwrN3kydA.apk" class="store-button store-button--apk" style="justify-content: center; margin-top: 10px;">
                         <i class="fab fa-android"></i>
                         <div>
                             <span>Direct Download</span>
@@ -66,7 +82,7 @@
                         <i class="fas fa-car"></i>
                     </div>
                     <h3 class="download-app-card__title">Fleet / Driver App</h3>
-                    <p class="download-app-card__desc">Accept rides, manage your earnings, and drive on your own schedule. Low commission rates, daily payouts, and full driver support across Pakistan.</p>
+                    <p class="download-app-card__desc">Accept bike & car rides, manage your earnings, and drive on your own schedule. Only 10% commission, daily payouts, and full support for all Pakistani drivers.</p>
                     <a href="https://play.google.com/store/apps/details?id=com.shareide_official.shareide_fleet" class="store-button" style="justify-content: center;">
                         <i class="fab fa-google-play"></i>
                         <div>
@@ -281,7 +297,7 @@
                     </a>
                 </div>
                 <div class="download-cta__buttons" style="margin-top: 15px;">
-                    <a href="https://expo.dev/artifacts/eas/oSnnZN7BZuxh4fTdBGVda1.apk" class="store-button store-button--apk">
+                    <a href="https://expo.dev/artifacts/eas/rxvdkPjKC1ShGcwrN3kydA.apk" class="store-button store-button--apk">
                         <i class="fab fa-android"></i>
                         <div>
                             <span>Passenger APK</span>

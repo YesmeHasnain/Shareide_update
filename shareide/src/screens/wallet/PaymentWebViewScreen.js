@@ -24,16 +24,16 @@ const PaymentWebViewScreen = ({ route, navigation }) => {
   // Debug logging
   console.log('PaymentWebView params:', {
     paymentUrl,
-    formData: formData ? Object.keys(formData) : null,
+    hasFormData: !!formData,
     orderId,
     amount,
     testMode,
     hasTestHtml: !!testHtml,
   });
 
-  // Validate params (skip for test mode with inline HTML)
-  if (!testHtml && (!paymentUrl || !formData)) {
-    console.error('Missing payment parameters:', { paymentUrl, formData });
+  // Validate params
+  if (!testHtml && !paymentUrl) {
+    console.error('Missing payment URL');
     Alert.alert(
       'Error',
       'Payment configuration error. Please try again.',
@@ -42,70 +42,43 @@ const PaymentWebViewScreen = ({ route, navigation }) => {
     return null;
   }
 
-  // Generate HTML form that auto-submits to Bank Alfalah
-  const generateFormHtml = () => {
-    // If test HTML is provided, use it directly
+  // Determine WebView source - direct URL or HTML form
+  const getWebViewSource = () => {
     if (testHtml) {
-      return testHtml;
+      return { html: testHtml };
     }
 
-    const formFields = Object.entries(formData || {})
-      .map(([key, value]) => `<input type="hidden" name="${key}" value="${value}" />`)
-      .join('\n');
+    // If formData is present, use HTML form (legacy fallback)
+    if (formData) {
+      const formFields = Object.entries(formData)
+        .map(([key, value]) => `<input type="hidden" name="${key}" value="${String(value).replace(/"/g, '&quot;')}" />`)
+        .join('\n');
 
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #1a1a1a;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          }
-          .loader {
-            text-align: center;
-            color: #FFD700;
-          }
-          .loader p {
-            margin-top: 20px;
-            font-size: 16px;
-          }
-          .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #333;
-            border-top: 4px solid #FFD700;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-          }
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="loader">
-          <div class="spinner"></div>
-          <p>Redirecting to Bank Alfalah...</p>
-          <p style="font-size: 12px; color: #888;">Please wait</p>
-        </div>
-        <form id="paymentForm" method="POST" action="${paymentUrl}">
-          ${formFields}
-        </form>
-        <script>
-          document.getElementById('paymentForm').submit();
-        </script>
-      </body>
-      </html>
-    `;
+      return {
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              body { display:flex; justify-content:center; align-items:center; height:100vh; margin:0; background:#1a1a1a; font-family:sans-serif; }
+              .loader { text-align:center; color:#FFD700; }
+              .spinner { width:50px; height:50px; border:4px solid #333; border-top:4px solid #FFD700; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto; }
+              @keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+            </style>
+          </head>
+          <body>
+            <div class="loader"><div class="spinner"></div><p>Redirecting to payment gateway...</p></div>
+            <form id="paymentForm" method="POST" action="${paymentUrl}">${formFields}</form>
+            <script>document.getElementById('paymentForm').submit();</script>
+          </body>
+          </html>
+        `,
+      };
+    }
+
+    // Direct URL - server already did the SSO POST and got the checkout URL
+    return { uri: paymentUrl };
   };
 
   const handleNavigationStateChange = (navState) => {
@@ -275,7 +248,7 @@ const PaymentWebViewScreen = ({ route, navigation }) => {
         <View style={styles.headerCenter}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Secure Payment</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-            Bank Alfalah Gateway
+            Shareide Payments
           </Text>
         </View>
         <Text style={styles.secureIcon}>🔒</Text>
@@ -297,7 +270,7 @@ const PaymentWebViewScreen = ({ route, navigation }) => {
 
       <WebView
         ref={webViewRef}
-        source={{ html: generateFormHtml() }}
+        source={getWebViewSource()}
         style={styles.webview}
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}

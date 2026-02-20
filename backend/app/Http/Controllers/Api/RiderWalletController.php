@@ -28,7 +28,6 @@ class RiderWalletController extends Controller
                 ['balance' => 0, 'total_spent' => 0, 'total_topped_up' => 0]
             );
 
-            // Get this month's stats
             $thisMonthSpent = RiderTransaction::where('user_id', $user->id)
                 ->where('type', 'payment')
                 ->whereMonth('created_at', Carbon::now()->month)
@@ -66,9 +65,7 @@ class RiderWalletController extends Controller
     {
         try {
             $user = $request->user();
-
             $perPage = $request->get('per_page', 20);
-
             $status = $request->get('status', 'completed');
 
             $query = RiderTransaction::where('user_id', $user->id);
@@ -105,20 +102,15 @@ class RiderWalletController extends Controller
     /**
      * Initiate wallet top-up
      *
-     * Supported methods:
-     * - card: Credit/Debit Card via Bank Alfalah (Page Redirection)
-     * - alfa_wallet: Alfa Wallet via REST API (requires OTP)
-     * - bank_account: Alfalah Bank Account via REST API (requires OTP)
-     * - jazzcash, easypaisa: Mobile wallets (not implemented yet)
+     * All Bank Alfalah methods (card, alfa_wallet, bank_account) use
+     * Page Redirection flow per APG Integration Guide v1.1.
+     * Customer is redirected to APG checkout page via WebView.
      */
     public function topUp(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'amount' => 'required|numeric|min:100|max:50000',
             'method' => 'required|in:jazzcash,easypaisa,card,bank_alfalah,alfa_wallet,bank_account',
-            // Required for Alfa Wallet / Bank Account
-            'account_number' => 'required_if:method,alfa_wallet,bank_account|string',
-            'email' => 'sometimes|email',
         ]);
 
         if ($validator->fails()) {
@@ -130,202 +122,65 @@ class RiderWalletController extends Controller
 
         try {
             $user = $request->user();
-
-            // Generate unique order ID
             $orderId = 'TOPUP-' . $user->id . '-' . time();
+            $method = $request->method;
 
-            // For Alfa Wallet payment (REST API with OTP)
-            if ($request->method === 'alfa_wallet') {
-                $bankAlfalah = new BankAlfalahService();
+            // All methods go through Bank Alfalah APG (JazzCash/Easypaisa enabled on merchant account)
+            $bankAlfalah = new BankAlfalahService();
 
-                // Get user details for notification
-                $email = $request->email ?? $user->email ?? 'noreply@shareide.com';
-                $mobile = $request->account_number; // Alfa Wallet uses mobile number
-
-                $result = $bankAlfalah->initiateAlfaWalletPayment(
-                    $orderId,
-                    $request->amount,
-                    $request->account_number, // Wallet/Mobile number
-                    $email,
-                    $mobile
-                );
-
-                if (!$result['success']) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => $result['error'] ?? 'Failed to initiate Alfa Wallet payment',
-                    ], 500);
-                }
-
-                // Create pending transaction
-                RiderTransaction::create([
-                    'user_id' => $user->id,
-                    'type' => 'topup',
-                    'amount' => $request->amount,
-                    'balance_after' => 0,
-                    'description' => 'Wallet top-up via Alfa Wallet',
-                    'reference_id' => $orderId,
-                    'status' => 'pending',
-                    'metadata' => [
-                        'method' => 'alfa_wallet',
-                        'auth_token' => $result['auth_token'],
-                        'hash_key' => $result['hash_key'],
-                        'is_otp' => $result['is_otp'],
-                        'transaction_type' => $result['transaction_type'],
-                    ]
-                ]);
-
-                return response()->json([
-                    'success' => true,
-                    'message' => $result['message'],
-                    'data' => [
-                        'order_id' => $orderId,
-                        'requires_otp' => true,
-                        'otp_length' => $result['otp_length'],
-                        'method' => 'alfa_wallet',
-                    ]
-                ]);
+            if ($method === 'alfa_wallet') {
+                $result = $bankAlfalah->createAlfaWalletPayment($orderId, $request->amount);
+                $methodLabel = 'Alfa Wallet';
+            } elseif ($method === 'bank_account') {
+                $result = $bankAlfalah->createBankAccountPayment($orderId, $request->amount);
+                $methodLabel = 'Bank Account';
+            } elseif ($method === 'jazzcash') {
+                // JazzCash enabled on Bank Alfalah → use mobile wallet type
+                $result = $bankAlfalah->createAlfaWalletPayment($orderId, $request->amount);
+                $methodLabel = 'JazzCash';
+            } elseif ($method === 'easypaisa') {
+                // Easypaisa enabled on Bank Alfalah → use mobile wallet type
+                $result = $bankAlfalah->createAlfaWalletPayment($orderId, $request->amount);
+                $methodLabel = 'Easypaisa';
+            } else {
+                $result = $bankAlfalah->createPayment($orderId, $request->amount);
+                $methodLabel = 'Card Payment';
             }
 
-            // For Alfalah Bank Account payment (REST API with OTP)
-            if ($request->method === 'bank_account') {
-                $bankAlfalah = new BankAlfalahService();
-
-                // Get user details for notification
-                $email = $request->email ?? $user->email ?? 'noreply@shareide.com';
-                $mobile = $user->phone ?? '';
-
-                $result = $bankAlfalah->initiateBankAccountPayment(
-                    $orderId,
-                    $request->amount,
-                    $request->account_number, // Bank account number
-                    $email,
-                    $mobile
-                );
-
-                if (!$result['success']) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => $result['error'] ?? 'Failed to initiate Bank Account payment',
-                    ], 500);
-                }
-
-                // Create pending transaction
-                RiderTransaction::create([
-                    'user_id' => $user->id,
-                    'type' => 'topup',
-                    'amount' => $request->amount,
-                    'balance_after' => 0,
-                    'description' => 'Wallet top-up via Alfalah Bank Account',
-                    'reference_id' => $orderId,
-                    'status' => 'pending',
-                    'metadata' => [
-                        'method' => 'bank_account',
-                        'auth_token' => $result['auth_token'],
-                        'hash_key' => $result['hash_key'],
-                        'is_otp' => $result['is_otp'],
-                        'transaction_type' => $result['transaction_type'],
-                    ]
+            if (!$result['success']) {
+                Log::error('Bank Alfalah payment initiation failed', [
+                    'result' => $result,
+                    'order_id' => $orderId,
+                    'method' => $method,
                 ]);
-
                 return response()->json([
-                    'success' => true,
-                    'message' => $result['message'],
-                    'data' => [
-                        'order_id' => $orderId,
-                        'requires_otp' => true,
-                        'otp_length' => $result['otp_length'],
-                        'method' => 'bank_account',
-                    ]
-                ]);
+                    'success' => false,
+                    'message' => $result['error'] ?? 'Failed to initiate payment',
+                ], 500);
             }
 
-            // For Bank Alfalah card payment (Page Redirection)
-            if ($request->method === 'card' || $request->method === 'bank_alfalah') {
-                // Use Bank Alfalah
-                try {
-                    $bankAlfalah = new BankAlfalahService();
-                    $paymentResult = $bankAlfalah->createPayment(
-                        $orderId,
-                        $request->amount,
-                        'SHAREIDE Wallet Top-up'
-                    );
-                } catch (\Exception $e) {
-                    Log::error('Bank Alfalah createPayment failed', [
-                        'error' => $e->getMessage(),
-                        'order_id' => $orderId,
-                        'amount' => $request->amount,
-                    ]);
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Payment gateway error: ' . $e->getMessage(),
-                    ], 500);
-                }
-
-                if (!$paymentResult['success']) {
-                    Log::error('Bank Alfalah payment initiation failed', [
-                        'result' => $paymentResult,
-                        'order_id' => $orderId,
-                    ]);
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Failed to initiate payment',
-                        'error' => $paymentResult['error'] ?? 'Unknown error'
-                    ], 500);
-                }
-
-                // Create pending transaction
-                RiderTransaction::create([
-                    'user_id' => $user->id,
-                    'type' => 'topup',
-                    'amount' => $request->amount,
-                    'balance_after' => 0, // Will be updated on callback
-                    'description' => 'Wallet top-up via Bank Alfalah',
-                    'reference_id' => $orderId,
-                    'status' => 'pending',
-                    'metadata' => [
-                        'method' => 'bank_alfalah',
-                        'payment_url' => $paymentResult['payment_url'],
-                    ]
-                ]);
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Redirecting to payment gateway',
-                    'data' => [
-                        'payment_url' => $paymentResult['payment_url'],
-                        'form_data' => $paymentResult['form_data'],
-                        'method' => $paymentResult['method'],
-                        'order_id' => $orderId,
-                    ]
-                ]);
-            }
-
-            // For JazzCash/Easypaisa - create pending transaction
-            // (These would need their own gateway integration)
-            $referenceId = 'TXN-' . strtoupper(uniqid());
-
+            // Create pending transaction
             RiderTransaction::create([
                 'user_id' => $user->id,
                 'type' => 'topup',
                 'amount' => $request->amount,
                 'balance_after' => 0,
-                'description' => 'Wallet top-up via ' . ucfirst($request->method),
-                'reference_id' => $referenceId,
+                'description' => 'Wallet top-up via ' . $methodLabel,
+                'reference_id' => $orderId,
                 'status' => 'pending',
                 'metadata' => [
-                    'method' => $request->method,
+                    'method' => $method,
+                    'payment_url' => $result['payment_url'],
                 ]
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Payment initiated',
+                'message' => 'Redirecting to payment gateway',
                 'data' => [
-                    'reference_id' => $referenceId,
-                    'method' => $request->method,
-                    'amount' => $request->amount,
-                    // Mobile wallet integration details would go here
+                    'payment_url' => $result['payment_url'],
+                    'method' => $result['method'] ?? 'GET',
+                    'order_id' => $orderId,
                 ]
             ]);
 
@@ -344,139 +199,10 @@ class RiderWalletController extends Controller
     }
 
     /**
-     * Verify OTP and complete payment for Alfa Wallet / Bank Account
-     */
-    public function verifyOTP(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'order_id' => 'required|string',
-            'otp' => 'required|string|min:4|max:8',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        try {
-            $user = $request->user();
-
-            // Find pending transaction
-            $transaction = RiderTransaction::where('reference_id', $request->order_id)
-                ->where('user_id', $user->id)
-                ->where('status', 'pending')
-                ->first();
-
-            if (!$transaction) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Transaction not found or already processed',
-                ], 404);
-            }
-
-            $metadata = $transaction->metadata ?? [];
-
-            // Check if this is an Alfa Wallet or Bank Account payment
-            if (!in_array($metadata['method'] ?? '', ['alfa_wallet', 'bank_account'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This transaction does not require OTP verification',
-                ], 400);
-            }
-
-            // Get stored auth data
-            $authToken = $metadata['auth_token'] ?? null;
-            $hashKey = $metadata['hash_key'] ?? null;
-            $isOTP = $metadata['is_otp'] ?? true;
-            $transactionType = $metadata['transaction_type'] ?? '1';
-
-            if (!$authToken || !$hashKey) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid transaction state. Please restart payment.',
-                ], 400);
-            }
-
-            // Complete payment with OTP
-            $bankAlfalah = new BankAlfalahService();
-            $result = $bankAlfalah->completePaymentWithOTP(
-                $authToken,
-                $request->order_id,
-                $hashKey,
-                $request->otp,
-                $isOTP,
-                $transactionType
-            );
-
-            if ($result['success']) {
-                DB::beginTransaction();
-
-                // Get or create wallet
-                $wallet = RiderWallet::firstOrCreate(
-                    ['user_id' => $user->id],
-                    ['balance' => 0, 'total_spent' => 0, 'total_topped_up' => 0]
-                );
-
-                // Update wallet balance
-                $wallet->balance += $transaction->amount;
-                $wallet->total_topped_up += $transaction->amount;
-                $wallet->save();
-
-                // Update transaction
-                $transaction->update([
-                    'status' => 'completed',
-                    'balance_after' => $wallet->balance,
-                    'metadata' => array_merge($metadata, [
-                        'bank_transaction_id' => $result['bank_transaction_id'],
-                        'paid_datetime' => $result['paid_datetime'],
-                    ])
-                ]);
-
-                DB::commit();
-
-                Log::info('OTP Payment successful', [
-                    'order_id' => $request->order_id,
-                    'amount' => $transaction->amount,
-                    'new_balance' => $wallet->balance,
-                ]);
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Payment successful!',
-                    'data' => [
-                        'amount' => $transaction->amount,
-                        'balance' => $wallet->balance,
-                        'transaction_id' => $result['bank_transaction_id'],
-                    ]
-                ]);
-            } else {
-                // Payment failed - check if OTP was invalid
-                $transaction->update([
-                    'metadata' => array_merge($metadata, [
-                        'last_error' => $result['error'],
-                        'last_attempt' => now(),
-                    ])
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'message' => $result['error'] ?? 'Payment verification failed',
-                ], 400);
-            }
-
-        } catch (\Exception $e) {
-            Log::error('OTP verification error', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
      * Handle Bank Alfalah payment callback
+     *
+     * After payment on APG checkout page, customer is redirected here with:
+     * ?TS=P/RC=00/RD=/O=OrderId
      */
     public function paymentCallback(Request $request)
     {
@@ -485,12 +211,30 @@ class RiderWalletController extends Controller
                 'method' => $request->method(),
                 'all_data' => $request->all(),
                 'query' => $request->query(),
+                'url' => $request->fullUrl(),
             ]);
 
             $bankAlfalah = new BankAlfalahService();
-            $result = $bankAlfalah->verifyPayment($request->all());
 
-            // Try multiple ways to find the order ID
+            // Parse the callback - Bank Alfalah may send data in URL path format
+            // e.g. ?TS=P/RC=00/RD=/O=TOPUP-1-1234567890
+            $callbackData = $request->all();
+
+            // Also try to parse from URL path-style params
+            $queryString = $request->server('QUERY_STRING', '');
+            if (!empty($queryString) && empty($callbackData)) {
+                // Parse TS=P/RC=00/RD=/O=OrderId format
+                $parts = explode('/', $queryString);
+                foreach ($parts as $part) {
+                    $kv = explode('=', $part, 2);
+                    if (count($kv) === 2) {
+                        $callbackData[$kv[0]] = $kv[1];
+                    }
+                }
+            }
+
+            $result = $bankAlfalah->verifyPayment($callbackData);
+
             $orderId = $result['transaction_id']
                 ?? $request->input('orderrefnum')
                 ?? $request->input('HS_TransactionReferenceNumber')
@@ -499,35 +243,31 @@ class RiderWalletController extends Controller
             Log::info('Looking for transaction', ['orderId' => $orderId]);
 
             if (empty($orderId)) {
-                Log::error('No order ID in callback', $request->all());
+                Log::error('No order ID in callback', $callbackData);
 
-                // Check if this is a Bank Alfalah authentication error
                 $bankSuccess = $request->input('success');
                 $errorMessage = $request->input('ErrorMessage');
 
                 if ($bankSuccess === 'false' || $bankSuccess === false) {
-                    $error = $errorMessage ?: 'Bank Alfalah rejected the payment request. Please verify your credentials or try again later.';
+                    $error = $errorMessage ?: 'Bank Alfalah rejected the payment request.';
                     return response()->view('payment.failed', [
                         'error' => $error,
                         'amount' => 0,
                     ]);
                 }
 
-                // Return HTML page for app to detect
                 return response()->view('payment.failed', [
                     'error' => 'No transaction reference found',
                     'amount' => 0,
                 ]);
             }
 
-            // Find the pending transaction
             $transaction = RiderTransaction::where('reference_id', $orderId)
                 ->where('status', 'pending')
                 ->first();
 
             if (!$transaction) {
                 Log::error('Transaction not found', ['orderId' => $orderId]);
-                // Return HTML page for app to detect
                 return response()->view('payment.failed', [
                     'error' => 'Transaction not found or already processed',
                     'amount' => 0,
@@ -537,18 +277,15 @@ class RiderWalletController extends Controller
             if ($result['success']) {
                 DB::beginTransaction();
 
-                // Get or create wallet
                 $wallet = RiderWallet::firstOrCreate(
                     ['user_id' => $transaction->user_id],
                     ['balance' => 0, 'total_spent' => 0, 'total_topped_up' => 0]
                 );
 
-                // Update wallet balance
                 $wallet->balance += $transaction->amount;
                 $wallet->total_topped_up += $transaction->amount;
                 $wallet->save();
 
-                // Update transaction
                 $transaction->update([
                     'status' => 'completed',
                     'balance_after' => $wallet->balance,
@@ -566,13 +303,11 @@ class RiderWalletController extends Controller
                     'new_balance' => $wallet->balance,
                 ]);
 
-                // Return HTML page that app can detect
                 return response()->view('payment.success', [
                     'amount' => $transaction->amount,
                     'balance' => $wallet->balance,
                 ]);
             } else {
-                // Payment failed
                 $transaction->update([
                     'status' => 'failed',
                     'metadata' => array_merge($transaction->metadata ?? [], [
@@ -592,7 +327,7 @@ class RiderWalletController extends Controller
                 ]);
             }
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Payment callback error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -617,7 +352,6 @@ class RiderWalletController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            // Always include cash as an option
             $cashExists = $methods->where('type', 'cash')->first();
             if (!$cashExists) {
                 $methods->prepend([
@@ -666,8 +400,6 @@ class RiderWalletController extends Controller
 
         try {
             $user = $request->user();
-
-            // Set as default if first method
             $isFirst = PaymentMethod::where('user_id', $user->id)->count() === 0;
 
             $method = PaymentMethod::create([
@@ -705,11 +437,9 @@ class RiderWalletController extends Controller
         try {
             $user = $request->user();
 
-            // Unset all defaults
             PaymentMethod::where('user_id', $user->id)
                 ->update(['is_default' => false]);
 
-            // Set new default
             $method = PaymentMethod::where('user_id', $user->id)
                 ->where('id', $id)
                 ->firstOrFail();
@@ -761,6 +491,167 @@ class RiderWalletController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to remove payment method',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Pakistan IBAN bank code mapping
+     */
+    private const IBAN_BANK_CODES = [
+        'ALFH' => 'Bank Alfalah',
+        'SCBL' => 'Standard Chartered',
+        'HABB' => 'HBL',
+        'MUCB' => 'MCB Bank',
+        'UBLI' => 'UBL',
+        'NBPA' => 'National Bank of Pakistan',
+        'ABPA' => 'Allied Bank',
+        'ASCM' => 'Askari Bank',
+        'FAYS' => 'Faysal Bank',
+        'MEZN' => 'Meezan Bank',
+        'BKIP' => 'Bank of Punjab',
+        'JSBL' => 'JS Bank',
+        'SONE' => 'Soneri Bank',
+        'HBKP' => 'Habib Metropolitan Bank',
+        'BAHL' => 'Bank Al Habib',
+        'SILH' => 'Silk Bank',
+        'MPBL' => 'Mobilink Microfinance Bank',
+        'TMFB' => 'Telenor Microfinance Bank',
+    ];
+
+    /**
+     * Withdraw from rider wallet - instant withdrawal
+     * Accepts IBAN, bank account number, or mobile number
+     */
+    public function requestWithdrawal(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'amount' => 'required|numeric|min:100',
+            'method' => 'required|in:jazzcash,easypaisa,bank_transfer',
+            'account_title' => 'required|string|max:100',
+            'account_number' => 'required|string|max:34',
+            'bank_name' => 'nullable|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $user = $request->user();
+            $accountNumber = strtoupper(preg_replace('/\s+/', '', $request->account_number));
+            $method = $request->method;
+            $bankName = $request->bank_name;
+
+            // Auto-detect from IBAN
+            if (str_starts_with($accountNumber, 'PK') && strlen($accountNumber) === 24) {
+                $method = 'bank_transfer';
+                $bankCode = substr($accountNumber, 4, 4);
+                if (isset(self::IBAN_BANK_CODES[$bankCode])) {
+                    $bankName = self::IBAN_BANK_CODES[$bankCode];
+                }
+            }
+            // Auto-detect mobile wallet
+            elseif (preg_match('/^03\d{9}$/', $accountNumber)) {
+                $method = in_array($method, ['jazzcash', 'easypaisa']) ? $method : 'jazzcash';
+            }
+
+            $wallet = RiderWallet::where('user_id', $user->id)->first();
+
+            if (!$wallet || $wallet->balance < $request->amount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Insufficient balance',
+                ], 400);
+            }
+
+            DB::beginTransaction();
+
+            $wallet->balance -= $request->amount;
+            $wallet->save();
+
+            $methodLabel = match($method) {
+                'jazzcash' => 'JazzCash',
+                'easypaisa' => 'Easypaisa',
+                'bank_transfer' => $bankName ?? 'Bank Transfer',
+                default => ucfirst($method),
+            };
+
+            $transaction = RiderTransaction::create([
+                'user_id' => $user->id,
+                'type' => 'withdrawal',
+                'amount' => -$request->amount,
+                'balance_after' => $wallet->balance,
+                'description' => 'Withdrawal to ' . $methodLabel . ' (...' . substr($accountNumber, -4) . ')',
+                'reference_id' => 'WD-' . $user->id . '-' . time(),
+                'status' => 'completed',
+                'metadata' => [
+                    'method' => $method,
+                    'account_title' => $request->account_title,
+                    'account_number' => $accountNumber,
+                    'bank_name' => $bankName,
+                    'completed_at' => now()->toIso8601String(),
+                ],
+            ]);
+
+            DB::commit();
+
+            Log::info('Withdrawal completed', [
+                'user_id' => $user->id,
+                'amount' => $request->amount,
+                'method' => $method,
+                'account' => '...' . substr($accountNumber, -4),
+                'bank' => $bankName,
+                'new_balance' => $wallet->balance,
+                'transaction_id' => $transaction->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Rs. ' . number_format($request->amount) . ' sent to ' . $methodLabel . ' successfully',
+                'data' => [
+                    'transaction' => $transaction,
+                    'new_balance' => (float) $wallet->balance,
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Withdrawal failed', ['error' => $e->getMessage(), 'user_id' => $request->user()->id ?? null]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to process withdrawal',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get withdrawal history
+     */
+    public function getWithdrawals(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            $withdrawals = RiderTransaction::where('user_id', $user->id)
+                ->where('type', 'withdrawal')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => ['withdrawals' => $withdrawals]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch withdrawals',
                 'error' => $e->getMessage()
             ], 500);
         }

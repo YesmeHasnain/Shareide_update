@@ -48,6 +48,9 @@
                     <p style="font-size: 16px; color: var(--text-secondary); line-height: 1.8;">
                         What started as a small operation in Islamabad has now grown into a nationwide platform operating across 15+ cities, connecting hundreds of thousands of riders with verified drivers every single day. Our unique bid-your-fare model and carpool feature have made us the go-to choice for budget-conscious and safety-aware commuters across Pakistan.
                     </p>
+                    <div class="story-image">
+                        <img src="{{ asset('website/images/shareide-images/B-2-scaled.jpg') }}" alt="SHAREIDE Corporate Carpool">
+                    </div>
                 </div>
                 <div data-animate="fade-left">
                     <div class="stat-grid" style="grid-template-columns: repeat(2, 1fr);">
@@ -159,6 +162,9 @@
                     <p style="font-size: 16px; color: var(--text-secondary); line-height: 1.8;">
                         We promise to keep innovating, keep listening to our community, and keep putting Pakistan first. Whether you are a student in Lahore, a professional in Karachi, or a family in Peshawar, SHAREIDE is here to serve you.
                     </p>
+                    <div class="story-image">
+                        <img src="{{ asset('website/images/shareide-images/sdfsdfsdfsdfsdffsfsdfUntitled-1 (1).jpg') }}" alt="Pakistani Family using SHAREIDE">
+                    </div>
                 </div>
                 <div data-animate="fade-right">
                     <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-xl); padding: 40px; position: relative;">

@@ -6,7 +6,7 @@
 
 @section('content')
     <!-- Page Hero -->
-    <section class="page-hero page-hero--company">
+    <section class="page-hero page-hero--cities">
         <canvas class="page-hero__particles" id="pageParticles"></canvas>
         <div class="page-hero__grid"></div>
         <div class="page-hero__orbs">

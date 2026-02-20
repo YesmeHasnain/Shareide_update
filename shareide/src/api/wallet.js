@@ -14,15 +14,12 @@ export const walletAPI = {
   },
 
   // Initiate wallet top-up
-  // Supports: 'card', 'alfa_wallet', 'bank_account', 'jazzcash', 'easypaisa'
+  // Card, wallet, bank methods use payment gateway Page Redirection
   topUp: async (amount, method, accountNumber = null) => {
-    const payload = {
-      amount,
-      method,
-    };
+    const payload = { amount, method };
 
-    // Add account number for Alfa Wallet / Bank Account methods
-    if (accountNumber && (method === 'alfa_wallet' || method === 'bank_account')) {
+    // Only JazzCash/Easypaisa need account number
+    if (accountNumber && (method === 'jazzcash' || method === 'easypaisa')) {
       payload.account_number = accountNumber;
     }
 
@@ -60,6 +57,25 @@ export const walletAPI = {
   // Delete payment method
   deletePaymentMethod: async (id) => {
     const response = await apiClient.delete(`/rider-wallet/payment-methods/${id}`);
+    return response.data;
+  },
+
+  // Withdraw to IBAN, bank account or mobile wallet
+  requestWithdrawal: async (amount, method, accountTitle, accountNumber, bankName = null) => {
+    const payload = {
+      amount,
+      method,
+      account_title: accountTitle,
+      account_number: accountNumber.replace(/\s+/g, ''),
+    };
+    if (bankName) payload.bank_name = bankName;
+    const response = await apiClient.post('/rider-wallet/withdraw', payload);
+    return response.data;
+  },
+
+  // Get withdrawal history
+  getWithdrawals: async () => {
+    const response = await apiClient.get('/rider-wallet/withdrawals');
     return response.data;
   },
 };

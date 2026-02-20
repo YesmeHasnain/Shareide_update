@@ -308,6 +308,49 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-color: var(--primary);
 }
 
+/* ========== MOBILE RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .back-to-top {
+    bottom: 20px;
+    left: 20px;
+    width: 42px;
+    height: 42px;
+    font-size: 14px;
+    border-radius: 12px;
+  }
+
+  .btn {
+    padding: 12px 22px;
+    font-size: 14px;
+  }
+
+  .btn--lg {
+    padding: 14px 28px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .back-to-top {
+    bottom: 16px;
+    left: 16px;
+    width: 38px;
+    height: 38px;
+    font-size: 13px;
+  }
+
+  .btn {
+    padding: 11px 20px;
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .btn--lg {
+    padding: 13px 24px;
+    font-size: 14px;
+  }
+}
+
 /* ========== ANIMATIONS ========== */
 [data-animate] {
   opacity: 0;

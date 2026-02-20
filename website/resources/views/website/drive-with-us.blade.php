@@ -23,7 +23,7 @@
                 <span class="breadcrumb__current">Drive With Us</span>
             </nav>
             <h1 class="page-hero__title" data-animate="fade-up">Become a <span class="gradient-text">SHAREIDE</span> Driver</h1>
-            <p class="page-hero__desc" data-animate="fade-up">Earn on your own schedule. Join thousands of drivers across Pakistan who are building a better future with SHAREIDE.</p>
+            <p class="page-hero__desc" data-animate="fade-up">Got a Honda 70, 125 or car? Earn on your own schedule. Join thousands of bike & car drivers across Pakistan building a better future with SHAREIDE.</p>
         </div>
     </section>
 
@@ -79,8 +79,8 @@
                         <i class="fas fa-percentage"></i>
                     </div>
                     <h3 class="feature-card__title">Low Commission</h3>
-                    <p class="feature-card__desc">We only take 15% commission -- the lowest in Pakistan. Keep more of what you earn on every ride. Your hard work, your money.</p>
-                    <div class="feature-card__tag">Only 15%</div>
+                    <p class="feature-card__desc">We only take 10% commission -- the lowest in Pakistan. Keep 90% of what you earn on every ride. Your hard work, your money.</p>
+                    <div class="feature-card__tag">Only 10%</div>
                 </div>
                 <div class="feature-card" data-animate="fade-up" data-delay="200">
                     <div class="feature-card__glow"></div>
@@ -126,6 +126,15 @@
                 <h2 class="section__title">Requirements & <span class="gradient-text">Earnings</span></h2>
                 <p class="section__desc">Here's what you need and what you can earn</p>
             </div>
+            <!-- Driver Image Banner -->
+            <div class="img-banner" style="margin-bottom: 50px;" data-animate="fade-up">
+                <img src="{{ asset('website/images/shareide-images/B-1-1-scaled.jpg') }}" alt="SHAREIDE Driver Partner">
+                <div class="img-banner__overlay">
+                    <h3>Join Our Growing Driver Community</h3>
+                    <p>50,000+ drivers earning daily across 15+ cities in Pakistan</p>
+                </div>
+            </div>
+
             <div class="two-col">
                 <div data-animate="fade-right">
                     <h3 style="font-size: 22px; font-weight: 700; margin-bottom: 20px; color: var(--text);">What You Need</h3>
@@ -144,7 +153,7 @@
                         </div>
                         <div class="requirement-item">
                             <i class="fas fa-check-circle"></i>
-                            <span>Vehicle not older than 10 years</span>
+                            <span>Bike (70cc, 125cc) or Car/Van - any model</span>
                         </div>
                         <div class="requirement-item">
                             <i class="fas fa-check-circle"></i>
@@ -310,12 +319,7 @@
                     </a>
                 </div>
                 <div class="drive-cta__visual">
-                    <div class="drive-cta__icon-grid">
-                        <div class="drive-cta__icon-item"><i class="fas fa-car"></i></div>
-                        <div class="drive-cta__icon-item"><i class="fas fa-money-bill-wave"></i></div>
-                        <div class="drive-cta__icon-item"><i class="fas fa-clock"></i></div>
-                        <div class="drive-cta__icon-item"><i class="fas fa-map-marked-alt"></i></div>
-                    </div>
+                    <img src="{{ asset('website/images/shareide-images/Why-Choose-Us-.png') }}" alt="SHAREIDE Driver" class="drive-cta__image">
                 </div>
             </div>
         </div>

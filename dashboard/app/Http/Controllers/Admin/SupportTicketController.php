@@ -324,6 +324,29 @@ class SupportTicketController extends Controller
         ]);
     }
 
+    public function destroy($id)
+    {
+        $ticket = SupportTicket::findOrFail($id);
+        $ticketNumber = $ticket->ticket_number;
+
+        // Delete attachments
+        foreach ($ticket->messages as $message) {
+            if ($message->attachment && Storage::disk('public')->exists($message->attachment)) {
+                Storage::disk('public')->delete($message->attachment);
+            }
+        }
+
+        // Delete all messages
+        $ticket->messages()->delete();
+
+        // Delete the ticket
+        $ticket->delete();
+
+        AuditLog::log('ticket_deleted', "Ticket #{$ticketNumber} deleted permanently");
+
+        return redirect()->route('admin.support.index')->with('success', "Ticket #{$ticketNumber} deleted successfully.");
+    }
+
     public function updatePriority(Request $request, $id)
     {
         $request->validate([

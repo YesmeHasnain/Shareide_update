@@ -27,6 +27,20 @@
         </div>
     </section>
 
+    <!-- Smart Travel Image -->
+    <section class="content-section" style="padding-bottom: 0;">
+        <div class="container">
+            <div class="img-flex" data-animate="fade-up">
+                <div class="img-flex__illustration">
+                    <img src="{{ asset('website/images/shareide-images/Smart-Travel-.png') }}" alt="Smart Travel with SHAREIDE">
+                </div>
+                <div class="img-flex__photo">
+                    <img src="{{ asset('website/images/shareide-images/young-asian-woman-hijab-using-smartphone-car_102916-1111.jpg') }}" alt="Earning rewards on SHAREIDE">
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- How Loyalty Works -->
     <section class="content-section">
         <div class="container">

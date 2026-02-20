@@ -24,7 +24,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FCC014"
       },
       "package": "com.shareide_official.shareide",
       "permissions": [

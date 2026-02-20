@@ -6,7 +6,7 @@
 
 @section('content')
     <!-- Page Hero -->
-    <section class="page-hero page-hero--services">
+    <section class="page-hero page-hero--passenger">
         <canvas class="page-hero__particles" id="pageParticles"></canvas>
         <div class="page-hero__grid"></div>
         <div class="page-hero__orbs">
@@ -23,7 +23,7 @@
                 <span class="breadcrumb__current">Passenger App</span>
             </nav>
             <h1 class="page-hero__title" data-animate="fade-up">SHAREIDE <span class="gradient-text">Passenger App</span></h1>
-            <p class="page-hero__desc" data-animate="fade-up">Your ultimate ride companion in Pakistan. Book affordable rides, share trips, bid your fare, and travel safely across 15+ cities.</p>
+            <p class="page-hero__desc" data-animate="fade-up">Your ultimate ride companion in Pakistan. Book bikes (70cc, 125cc), cars & vans. Bid your own fare, share trips, and travel safely across 15+ Pakistani cities.</p>
         </div>
     </section>
 
@@ -39,26 +39,26 @@
             <div class="three-col">
                 <div class="info-card" data-animate="fade-up" data-delay="0">
                     <div class="info-card__icon">
-                        <i class="fas fa-car"></i>
+                        <i class="fas fa-motorcycle"></i>
                     </div>
-                    <h3 class="info-card__title">Solo Ride</h3>
-                    <p class="info-card__text">Get a private ride just for you. Perfect for daily commutes, office trips, or when you want your own space. Fast pickup, comfortable journey, affordable fares across all cities.</p>
+                    <h3 class="info-card__title">Bike Ride</h3>
+                    <p class="info-card__text">Quick and affordable motorcycle rides on Honda 70cc & 125cc bikes. Perfect for short distances, beating traffic jams, and budget-friendly daily commutes across Pakistani cities.</p>
                 </div>
 
                 <div class="info-card" data-animate="fade-up" data-delay="100">
+                    <div class="info-card__icon">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <h3 class="info-card__title">Car Ride</h3>
+                    <p class="info-card__text">Get a private car ride just for you. Perfect for daily commutes, office trips, or when you want your own space. Fast pickup, comfortable journey, affordable fares across all cities.</p>
+                </div>
+
+                <div class="info-card" data-animate="fade-up" data-delay="200">
                     <div class="info-card__icon">
                         <i class="fas fa-users"></i>
                     </div>
                     <h3 class="info-card__title">Carpool</h3>
                     <p class="info-card__text">Share your ride with others heading the same way and save up to 60% on every trip. Our smart matching algorithm pairs you with co-riders on similar routes for maximum savings.</p>
-                </div>
-
-                <div class="info-card" data-animate="fade-up" data-delay="200">
-                    <div class="info-card__icon">
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <h3 class="info-card__title">Premium</h3>
-                    <p class="info-card__text">Travel in style with our premium vehicle category. Enjoy top-rated drivers, luxury sedans, and a first-class experience for business meetings, airport transfers, and special occasions.</p>
                 </div>
 
                 <div class="info-card" data-animate="fade-up" data-delay="300">
@@ -210,29 +210,23 @@
                 <p class="section__desc">A beautifully designed experience built for Pakistani riders</p>
             </div>
 
-            <div class="app-screens" data-animate="fade-up">
-                <div class="app-screen" data-animate="fade-up" data-delay="0">
-                    <div class="app-screen__inner">
-                        <div>
-                            <i class="fas fa-map-marker-alt" style="font-size: 36px; color: var(--primary); margin-bottom: 15px;"></i>
-                            <p style="font-size: 13px;">Set Location<br><span style="font-size: 11px; opacity: 0.6;">Enter pickup & destination</span></p>
-                        </div>
+            <div class="img-grid-3" data-animate="fade-up">
+                <div class="img-grid-3__item" data-animate="fade-up" data-delay="0">
+                    <img src="{{ asset('website/images/shareide-images/businesswoman-leaning-car-window-texting-message-phone-smiling-happy-scaled.jpg') }}" alt="Booking a ride on SHAREIDE">
+                    <div class="img-grid-3__overlay">
+                        <p><i class="fas fa-map-marker-alt"></i> Book Your Ride</p>
                     </div>
                 </div>
-                <div class="app-screen" data-animate="fade-up" data-delay="150">
-                    <div class="app-screen__inner">
-                        <div>
-                            <i class="fas fa-car-side" style="font-size: 36px; color: var(--primary); margin-bottom: 15px;"></i>
-                            <p style="font-size: 13px;">Choose Ride<br><span style="font-size: 11px; opacity: 0.6;">Solo, Carpool, Premium</span></p>
-                        </div>
+                <div class="img-grid-3__item" data-animate="fade-up" data-delay="150">
+                    <img src="{{ asset('website/images/shareide-images/B-3-scaled.jpg') }}" alt="Riding safely with SHAREIDE">
+                    <div class="img-grid-3__overlay">
+                        <p><i class="fas fa-shield-alt"></i> Safe & Tracked</p>
                     </div>
                 </div>
-                <div class="app-screen" data-animate="fade-up" data-delay="300">
-                    <div class="app-screen__inner">
-                        <div>
-                            <i class="fas fa-route" style="font-size: 36px; color: var(--primary); margin-bottom: 15px;"></i>
-                            <p style="font-size: 13px;">Track & Ride<br><span style="font-size: 11px; opacity: 0.6;">Live GPS tracking</span></p>
-                        </div>
+                <div class="img-grid-3__item" data-animate="fade-up" data-delay="300">
+                    <img src="{{ asset('website/images/shareide-images/B-1-1-scaled.jpg') }}" alt="Verified SHAREIDE driver">
+                    <div class="img-grid-3__overlay">
+                        <p><i class="fas fa-user-check"></i> Verified Drivers</p>
                     </div>
                 </div>
             </div>
