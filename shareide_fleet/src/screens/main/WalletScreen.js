@@ -10,20 +10,14 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { walletAPI } from '../../api/wallet';
-import { typography, spacing, borderRadius, shadows } from '../../theme/colors';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
-
-const ACCENT_COLORS = {
-  today: '#10B981',
-  week: '#3B82F6',
-  month: '#8B5CF6',
-};
+const PRIMARY = '#FCC014';
 
 const WalletScreen = () => {
   const navigation = useNavigation();
@@ -35,69 +29,17 @@ const WalletScreen = () => {
   const [earnings, setEarnings] = useState(null);
   const [transactions, setTransactions] = useState([]);
 
-  // Animations
-  const headerAnim = useRef(new Animated.Value(0)).current;
-  const balanceCardAnim = useRef(new Animated.Value(0)).current;
-  const balanceScale = useRef(new Animated.Value(0.9)).current;
-  const earningsAnim = useRef(new Animated.Value(0)).current;
-  const earningCardAnims = useRef([
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-  ]).current;
-  const actionsAnim = useRef(new Animated.Value(0)).current;
-  const listAnim = useRef(new Animated.Value(0)).current;
+  const balanceAnim = useRef(new Animated.Value(0)).current;
+  const contentAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.sequence([
-      Animated.timing(headerAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.parallel([
-        Animated.spring(balanceCardAnim, {
-          toValue: 1,
-          friction: 5,
-          useNativeDriver: true,
-        }),
-        Animated.spring(balanceScale, {
-          toValue: 1,
-          friction: 5,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.timing(earningsAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.stagger(
-        100,
-        earningCardAnims.map((anim) =>
-          Animated.spring(anim, {
-            toValue: 1,
-            friction: 6,
-            useNativeDriver: true,
-          })
-        )
-      ),
-      Animated.timing(actionsAnim, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-      Animated.spring(listAnim, {
-        toValue: 1,
-        friction: 6,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
     fetchWalletData();
+    Animated.sequence([
+      Animated.spring(balanceAnim, { toValue: 1, friction: 6, useNativeDriver: true }),
+      Animated.timing(contentAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+    ]).start();
   }, []);
 
-  // Refresh wallet data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchWalletData();
@@ -141,521 +83,386 @@ const WalletScreen = () => {
 
   const getTransactionIcon = (type) => {
     switch (type) {
-      case 'earning':
-        return 'wallet';
-      case 'withdrawal':
-        return 'arrow-down-circle';
-      case 'commission':
-        return 'pie-chart';
-      case 'refund':
-        return 'refresh';
-      case 'bonus':
-        return 'gift';
-      case 'topup':
-        return 'add-circle';
-      default:
-        return 'cash';
+      case 'earning': return 'arrow-up-circle';
+      case 'withdrawal': return 'arrow-down-circle';
+      case 'commission': return 'pie-chart';
+      case 'refund': return 'refresh';
+      case 'bonus': return 'gift';
+      case 'topup': return 'add-circle';
+      default: return 'cash';
     }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
+    <View style={[styles.container, { backgroundColor: isDark ? '#0A0A14' : '#F5F5F5' }]}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={colors.primary}
+            tintColor={PRIMARY}
           />
         }
       >
-        {/* Header */}
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              opacity: headerAnim,
-              transform: [{
-                translateY: headerAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [-20, 0],
-                }),
-              }],
-            },
-          ]}
-        >
-          <Text style={[styles.headerTitle, { color: colors.text }]}>WALLET</Text>
-        </Animated.View>
-
-        {/* Balance Card - Gold themed */}
-        <Animated.View
-          style={[
-            styles.balanceCard,
-            {
-              opacity: balanceCardAnim,
-              transform: [
-                { scale: balanceScale },
-                {
-                  translateY: balanceCardAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [50, 0],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          <View style={styles.balanceTop}>
-            <View style={styles.walletIconBg}>
-              <Ionicons name="wallet" size={20} color="#000" />
-            </View>
-            <Text style={styles.balanceLabel}>Available Balance</Text>
-          </View>
-          <Text style={styles.balanceAmount}>
-            Rs. {wallet?.balance?.toLocaleString() || '0'}
-          </Text>
-          <View style={styles.balanceStats}>
-            <View style={styles.balanceStat}>
-              <Text style={styles.balanceStatValue}>
-                Rs. {wallet?.total_earned?.toLocaleString() || '0'}
-              </Text>
-              <Text style={styles.balanceStatLabel}>Total Earned</Text>
-            </View>
-            <View style={styles.balanceStat}>
-              <Text style={styles.balanceStatValue}>
-                Rs. {wallet?.total_withdrawn?.toLocaleString() || '0'}
-              </Text>
-              <Text style={styles.balanceStatLabel}>Total Withdrawn</Text>
-            </View>
-          </View>
-
-          {/* Action Buttons inside card */}
-          <View style={styles.cardButtons}>
-            <TouchableOpacity
-              style={styles.cardBtnPrimary}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                navigation.navigate('TopUp');
-              }}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="add-circle" size={20} color="#000" />
-              <Text style={styles.cardBtnPrimaryText}>Add Money</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.cardBtnSecondary}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                navigation.navigate('Withdraw');
-              }}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="arrow-down-circle" size={20} color="#FCC014" />
-              <Text style={styles.cardBtnSecondaryText}>Withdraw</Text>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-
-        {/* Earnings Summary */}
-        {earnings && (
-          <Animated.View
-            style={[
-              styles.earningsSection,
-              {
-                opacity: earningsAnim,
-                transform: [{
-                  translateY: earningsAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [20, 0],
-                  }),
-                }],
-              },
-            ]}
+        {/* Header with Balance */}
+        <Animated.View style={[{
+          opacity: balanceAnim,
+          transform: [{
+            translateY: balanceAnim.interpolate({ inputRange: [0, 1], outputRange: [-30, 0] }),
+          }],
+        }]}>
+          <LinearGradient
+            colors={isDark ? ['#1A1A2E', '#0A0A14'] : ['#1A1A2E', '#2D2D4E']}
+            style={[styles.header, { paddingTop: insets.top + 16 }]}
           >
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Earnings Summary
-            </Text>
-            <View style={styles.earningsGrid}>
-              <EarningCard
-                value={earnings.today_earnings}
-                label="Today"
-                rides={earnings.today_rides}
-                accentColor={ACCENT_COLORS.today}
-                animValue={earningCardAnims[0]}
-              />
-              <EarningCard
-                value={earnings.week_earnings}
-                label="This Week"
-                rides={earnings.week_rides}
-                accentColor={ACCENT_COLORS.week}
-                animValue={earningCardAnims[1]}
-              />
-              <EarningCard
-                value={earnings.month_earnings}
-                label="This Month"
-                rides={earnings.month_rides}
-                accentColor={ACCENT_COLORS.month}
-                animValue={earningCardAnims[2]}
-              />
-            </View>
-          </Animated.View>
-        )}
+            <Text style={styles.headerTitle}>Wallet</Text>
 
-        {/* Quick Actions */}
-        <Animated.View
-          style={[
-            styles.quickActions,
-            {
-              opacity: actionsAnim,
-              transform: [{
-                translateY: actionsAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [20, 0],
-                }),
-              }],
-            },
-          ]}
-        >
-          <QuickAction
-            icon="add-circle-outline"
-            label="Add Money"
-            colors={colors}
-            onPress={() => navigation.navigate('TopUp')}
-          />
-          <QuickAction
-            icon="arrow-down-circle-outline"
-            label="Withdraw"
-            colors={colors}
-            onPress={() => navigation.navigate('Withdraw')}
-          />
-          <QuickAction
-            icon="receipt-outline"
-            label="Transactions"
-            colors={colors}
-            onPress={() => navigation.navigate('TransactionHistory')}
-          />
+            {/* Balance */}
+            <View style={styles.balanceSection}>
+              <Text style={styles.balanceLabel}>Available Balance</Text>
+              <Text style={styles.balanceAmount}>
+                Rs. {wallet?.balance?.toLocaleString() || '0'}
+              </Text>
+            </View>
+
+            {/* Earned / Withdrawn */}
+            <View style={styles.balanceStats}>
+              <View style={styles.balanceStat}>
+                <Ionicons name="trending-up" size={16} color="#10B981" />
+                <View>
+                  <Text style={styles.balanceStatValue}>Rs. {wallet?.total_earned?.toLocaleString() || '0'}</Text>
+                  <Text style={styles.balanceStatLabel}>Total Earned</Text>
+                </View>
+              </View>
+              <View style={styles.balanceStatDivider} />
+              <View style={styles.balanceStat}>
+                <Ionicons name="trending-down" size={16} color="#EF4444" />
+                <View>
+                  <Text style={styles.balanceStatValue}>Rs. {wallet?.total_withdrawn?.toLocaleString() || '0'}</Text>
+                  <Text style={styles.balanceStatLabel}>Withdrawn</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                style={styles.actionBtnPrimary}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  navigation.navigate('TopUp');
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="add" size={20} color="#000" />
+                <Text style={styles.actionBtnPrimaryText}>Add Money</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionBtnSecondary}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  navigation.navigate('Withdraw');
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="arrow-down" size={20} color={PRIMARY} />
+                <Text style={styles.actionBtnSecondaryText}>Withdraw</Text>
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
         </Animated.View>
 
-        {/* Recent Transactions */}
-        <Animated.View
-          style={[
-            styles.recentSection,
-            {
-              opacity: listAnim,
-              transform: [{
-                translateY: listAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [20, 0],
-                }),
-              }],
-            },
-          ]}
-        >
-          <View style={styles.recentHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>
-              Recent Transactions
-            </Text>
-            {transactions.length > 0 && (
-              <TouchableOpacity onPress={() => navigation.navigate('TransactionHistory')}>
-                <Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text>
-              </TouchableOpacity>
+        <Animated.View style={[styles.content, {
+          opacity: contentAnim,
+          transform: [{
+            translateY: contentAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }),
+          }],
+        }]}>
+          {/* Earnings Cards */}
+          {earnings && (
+            <View style={styles.earningsSection}>
+              <Text style={[styles.sectionTitle, { color: isDark ? '#FFF' : '#1A1A2E' }]}>Earnings</Text>
+              <View style={styles.earningsGrid}>
+                <EarningCard
+                  value={earnings.today_earnings}
+                  label="Today"
+                  rides={earnings.today_rides}
+                  color="#10B981"
+                  isDark={isDark}
+                />
+                <EarningCard
+                  value={earnings.week_earnings}
+                  label="This Week"
+                  rides={earnings.week_rides}
+                  color="#3B82F6"
+                  isDark={isDark}
+                />
+                <EarningCard
+                  value={earnings.month_earnings}
+                  label="This Month"
+                  rides={earnings.month_rides}
+                  color="#8B5CF6"
+                  isDark={isDark}
+                />
+              </View>
+            </View>
+          )}
+
+          {/* Quick Actions */}
+          <View style={styles.quickActionsRow}>
+            <QuickAction
+              icon="add-circle-outline"
+              label="Add Money"
+              isDark={isDark}
+              onPress={() => navigation.navigate('TopUp')}
+            />
+            <QuickAction
+              icon="arrow-down-circle-outline"
+              label="Withdraw"
+              isDark={isDark}
+              onPress={() => navigation.navigate('Withdraw')}
+            />
+            <QuickAction
+              icon="receipt-outline"
+              label="History"
+              isDark={isDark}
+              onPress={() => navigation.navigate('TransactionHistory')}
+            />
+          </View>
+
+          {/* Recent Transactions */}
+          <View style={styles.transactionsSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: isDark ? '#FFF' : '#1A1A2E' }]}>
+                Recent Transactions
+              </Text>
+              {transactions.length > 0 && (
+                <TouchableOpacity onPress={() => navigation.navigate('TransactionHistory')}>
+                  <Text style={styles.seeAll}>See All</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {transactions.length === 0 ? (
+              <View style={[styles.emptyState, { backgroundColor: isDark ? '#14142B' : '#FFF' }]}>
+                <View style={[styles.emptyIcon, { backgroundColor: isDark ? '#1E1E3A' : '#F9FAFB' }]}>
+                  <Ionicons name="wallet-outline" size={40} color={isDark ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
+                </View>
+                <Text style={[styles.emptyText, { color: isDark ? 'rgba(255,255,255,0.4)' : '#9CA3AF' }]}>
+                  No transactions yet
+                </Text>
+              </View>
+            ) : (
+              transactions.map((transaction) => {
+                const isPositive = ['earning', 'bonus', 'topup'].includes(transaction.type);
+                const accentColor = isPositive ? '#10B981' : '#EF4444';
+                return (
+                  <View
+                    key={transaction.id}
+                    style={[styles.transactionItem, { backgroundColor: isDark ? '#14142B' : '#FFF' }]}
+                  >
+                    <View style={[styles.transactionIcon, { backgroundColor: accentColor + '15' }]}>
+                      <Ionicons name={getTransactionIcon(transaction.type)} size={20} color={accentColor} />
+                    </View>
+                    <View style={styles.transactionInfo}>
+                      <Text style={[styles.transactionTitle, { color: isDark ? '#FFF' : '#1A1A2E' }]}>
+                        {transaction.description || transaction.type}
+                      </Text>
+                      <Text style={[styles.transactionDate, { color: isDark ? 'rgba(255,255,255,0.35)' : '#9CA3AF' }]}>
+                        {new Date(transaction.created_at).toLocaleDateString()}
+                      </Text>
+                    </View>
+                    <Text style={[styles.transactionAmount, { color: accentColor }]}>
+                      {isPositive ? '+' : '-'}Rs. {transaction.amount}
+                    </Text>
+                  </View>
+                );
+              })
             )}
           </View>
 
-          {transactions.length === 0 ? (
-            <EmptyState
-              icon="wallet-outline"
-              text="No transactions yet"
-              colors={colors}
-            />
-          ) : (
-            transactions.map((transaction, index) => (
-              <TransactionCard
-                key={transaction.id}
-                transaction={transaction}
-                colors={colors}
-                getIcon={getTransactionIcon}
-                index={index}
-              />
-            ))
-          )}
+          {/* Security Badge */}
+          <View style={[styles.securityBadge, { backgroundColor: isDark ? '#064E3B' : '#ECFDF5' }]}>
+            <Ionicons name="shield-checkmark" size={16} color="#10B981" />
+            <Text style={[styles.securityText, { color: isDark ? '#6EE7B7' : '#065F46' }]}>
+              All transactions secured by Shareide
+            </Text>
+          </View>
         </Animated.View>
-
-        {/* Security Badge */}
-        <View style={[styles.securityBadge, { backgroundColor: isDark ? '#064E3B' : '#ECFDF5' }]}>
-          <Ionicons name="shield-checkmark" size={18} color="#10B981" />
-          <Text style={[styles.securityText, { color: isDark ? '#6EE7B7' : '#065F46' }]}>
-            All transactions secured by Shareide
-          </Text>
-        </View>
       </ScrollView>
     </View>
   );
 };
 
-// Quick Action Component
-const QuickAction = ({ icon, label, colors, onPress }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+// Earning Card
+const EarningCard = ({ value, label, rides, color, isDark }) => (
+  <View style={[styles.earningCard, { backgroundColor: isDark ? '#14142B' : '#FFF' }]}>
+    <View style={[styles.earningAccent, { backgroundColor: color }]} />
+    <Text style={[styles.earningValue, { color: isDark ? '#FFF' : '#1A1A2E' }]}>
+      Rs. {value || 0}
+    </Text>
+    <Text style={[styles.earningLabel, { color: isDark ? 'rgba(255,255,255,0.4)' : '#9CA3AF' }]}>
+      {label}
+    </Text>
+    <Text style={[styles.earningRides, { color: isDark ? 'rgba(255,255,255,0.25)' : '#D1D5DB' }]}>
+      {rides || 0} rides
+    </Text>
+  </View>
+);
 
-  return (
-    <AnimatedTouchable
-      style={[
-        styles.quickActionBtn,
-        { backgroundColor: colors.card, transform: [{ scale: scaleAnim }] },
-        shadows.sm,
-      ]}
-      onPress={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        onPress();
-      }}
-      onPressIn={() => Animated.spring(scaleAnim, { toValue: 0.92, useNativeDriver: true }).start()}
-      onPressOut={() => Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }).start()}
-      activeOpacity={1}
-    >
-      <View style={[styles.quickActionIcon, { backgroundColor: colors.primary + '20' }]}>
-        <Ionicons name={icon} size={24} color={colors.primary} />
-      </View>
-      <Text style={[styles.quickActionLabel, { color: colors.text }]}>{label}</Text>
-    </AnimatedTouchable>
-  );
-};
-
-// Earning Card Component
-const EarningCard = ({ value, label, rides, accentColor, animValue }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  return (
-    <AnimatedTouchable
-      style={[
-        styles.earningCard,
-        {
-          opacity: animValue,
-          transform: [
-            { scale: scaleAnim },
-            {
-              translateY: animValue.interpolate({
-                inputRange: [0, 1],
-                outputRange: [20, 0],
-              }),
-            },
-          ],
-        },
-      ]}
-      onPressIn={() => Animated.spring(scaleAnim, { toValue: 0.95, useNativeDriver: true }).start()}
-      onPressOut={() => Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }).start()}
-      activeOpacity={1}
-    >
-      <View style={[styles.earningAccent, { backgroundColor: accentColor }]} />
-      <Text style={styles.earningValue}>Rs. {value || 0}</Text>
-      <Text style={styles.earningLabel}>{label}</Text>
-      <Text style={styles.earningRides}>{rides || 0} rides</Text>
-    </AnimatedTouchable>
-  );
-};
-
-// Transaction Card Component
-const TransactionCard = ({ transaction, colors, getIcon, index }) => {
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const isPositive = transaction.type === 'earning' || transaction.type === 'bonus' || transaction.type === 'topup';
-  const accentColor = isPositive ? colors.success : colors.error;
-
-  useEffect(() => {
-    Animated.spring(slideAnim, {
-      toValue: 1,
-      friction: 6,
-      delay: index * 50,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  return (
-    <AnimatedTouchable
-      style={[
-        styles.transactionCard,
-        { backgroundColor: colors.card },
-        shadows.sm,
-        {
-          opacity: slideAnim,
-          transform: [
-            { scale: scaleAnim },
-            {
-              translateX: slideAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [30, 0],
-              }),
-            },
-          ],
-        },
-      ]}
-      onPressIn={() => Animated.spring(scaleAnim, { toValue: 0.98, useNativeDriver: true }).start()}
-      onPressOut={() => Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }).start()}
-      activeOpacity={1}
-    >
-      <View style={[styles.transactionAccentLine, { backgroundColor: accentColor }]} />
-      <View style={styles.transactionLeft}>
-        <View style={[styles.transactionIconContainer, { backgroundColor: accentColor + '15' }]}>
-          <Ionicons name={getIcon(transaction.type)} size={20} color={accentColor} />
-        </View>
-        <View style={styles.transactionInfo}>
-          <Text style={[styles.transactionTitle, { color: colors.text }]}>
-            {transaction.description || transaction.type}
-          </Text>
-          <Text style={[styles.transactionDate, { color: colors.textSecondary }]}>
-            {new Date(transaction.created_at).toLocaleDateString()}
-          </Text>
-        </View>
-      </View>
-      <Text style={[styles.transactionAmount, { color: accentColor }]}>
-        {isPositive ? '+' : '-'}Rs. {transaction.amount}
-      </Text>
-    </AnimatedTouchable>
-  );
-};
-
-// Empty State Component
-const EmptyState = ({ icon, text, colors }) => {
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 5,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  return (
-    <Animated.View style={[styles.emptyState, { transform: [{ scale: scaleAnim }] }]}>
-      <View style={[styles.emptyIconContainer, { backgroundColor: colors.inputBackground }]}>
-        <Ionicons name={icon} size={48} color={colors.textTertiary} />
-      </View>
-      <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{text}</Text>
-    </Animated.View>
-  );
-};
+// Quick Action
+const QuickAction = ({ icon, label, isDark, onPress }) => (
+  <TouchableOpacity
+    style={[styles.quickActionBtn, { backgroundColor: isDark ? '#14142B' : '#FFF' }]}
+    onPress={() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onPress();
+    }}
+    activeOpacity={0.7}
+  >
+    <View style={[styles.quickActionIcon, { backgroundColor: PRIMARY + '18' }]}>
+      <Ionicons name={icon} size={22} color={PRIMARY} />
+    </View>
+    <Text style={[styles.quickActionLabel, { color: isDark ? '#FFF' : '#1A1A2E' }]}>{label}</Text>
+  </TouchableOpacity>
+);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
+  // Header
   header: {
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
   },
   headerTitle: {
-    fontSize: typography.h5,
+    fontSize: 14,
     fontWeight: '600',
+    color: 'rgba(255,255,255,0.5)',
+    textAlign: 'center',
+    marginBottom: 20,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
-  // Gold-themed balance card
-  balanceCard: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-    padding: spacing.xl,
-    borderRadius: borderRadius.xl,
-    backgroundColor: '#1A1A2E',
-  },
-  balanceTop: {
-    flexDirection: 'row',
+  balanceSection: {
     alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  walletIconBg: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FCC014',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.sm,
+    marginBottom: 20,
   },
   balanceLabel: {
-    fontSize: typography.bodySmall,
-    color: 'rgba(255,255,255,0.6)',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.5)',
+    marginBottom: 4,
   },
   balanceAmount: {
-    fontSize: 42,
+    fontSize: 40,
     fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: spacing.lg,
+    color: '#FFF',
+    letterSpacing: -1,
   },
   balanceStats: {
     flexDirection: 'row',
-    marginBottom: spacing.lg,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
   balanceStat: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  balanceStatDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginHorizontal: 12,
   },
   balanceStatValue: {
-    fontSize: typography.body,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 2,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFF',
   },
   balanceStatLabel: {
-    fontSize: typography.caption,
-    color: 'rgba(255,255,255,0.5)',
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.4)',
+    marginTop: 1,
   },
-  cardButtons: {
+  actionButtons: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: 10,
   },
-  cardBtnPrimary: {
+  actionBtnPrimary: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FCC014',
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
-    gap: spacing.xs,
+    backgroundColor: PRIMARY,
+    paddingVertical: 14,
+    borderRadius: 14,
+    gap: 6,
   },
-  cardBtnPrimaryText: {
-    fontSize: typography.body,
+  actionBtnPrimaryText: {
+    fontSize: 15,
     fontWeight: '700',
     color: '#000',
   },
-  cardBtnSecondary: {
+  actionBtnSecondary: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(252, 192, 20, 0.15)',
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
-    gap: spacing.xs,
+    backgroundColor: 'rgba(252, 192, 20, 0.12)',
+    paddingVertical: 14,
+    borderRadius: 14,
+    gap: 6,
   },
-  cardBtnSecondaryText: {
-    fontSize: typography.body,
+  actionBtnSecondaryText: {
+    fontSize: 15,
     fontWeight: '700',
-    color: '#FCC014',
+    color: PRIMARY,
   },
+
+  // Content
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
+  },
+
   // Earnings
   earningsSection: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: typography.h5,
+    fontSize: 17,
     fontWeight: '700',
-    marginBottom: spacing.md,
+    marginBottom: 12,
   },
   earningsGrid: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: 10,
   },
   earningCard: {
     flex: 1,
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
+    padding: 14,
+    borderRadius: 14,
     alignItems: 'center',
-    backgroundColor: '#1A1A2E',
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   earningAccent: {
     position: 'absolute',
@@ -663,140 +470,133 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 3,
-    borderTopLeftRadius: borderRadius.lg,
-    borderTopRightRadius: borderRadius.lg,
   },
   earningValue: {
-    fontSize: typography.body,
+    fontSize: 15,
     fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: spacing.xs,
-    marginTop: spacing.xs,
-  },
-  earningLabel: {
-    fontSize: typography.caption,
-    color: 'rgba(255,255,255,0.5)',
+    marginTop: 4,
     marginBottom: 2,
   },
-  earningRides: {
-    fontSize: typography.caption,
-    color: 'rgba(255,255,255,0.35)',
+  earningLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginBottom: 1,
   },
+  earningRides: {
+    fontSize: 10,
+  },
+
   // Quick Actions
-  quickActions: {
+  quickActionsRow: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-    gap: spacing.sm,
+    gap: 10,
+    marginBottom: 24,
   },
   quickActionBtn: {
     flex: 1,
     alignItems: 'center',
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
+    paddingVertical: 14,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   quickActionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  quickActionLabel: {
-    fontSize: typography.caption,
-    fontWeight: '600',
-  },
-  // Recent Transactions
-  recentSection: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  recentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  seeAll: {
-    fontSize: typography.bodySmall,
-    fontWeight: '700',
-  },
-  // Transaction Card
-  transactionCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.lg,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.md,
-    overflow: 'hidden',
-  },
-  transactionAccentLine: {
-    position: 'absolute',
-    left: 0,
-    top: 8,
-    bottom: 8,
-    width: 3,
-    borderRadius: 2,
-  },
-  transactionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  transactionIconContainer: {
     width: 44,
     height: 44,
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.md,
+    marginBottom: 8,
+  },
+  quickActionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // Transactions
+  transactionsSection: {
+    marginBottom: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  seeAll: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: PRIMARY,
+  },
+  transactionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  transactionIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   transactionInfo: {
     flex: 1,
+    marginLeft: 12,
   },
   transactionTitle: {
-    fontSize: typography.body,
+    fontSize: 14,
     fontWeight: '600',
-    marginBottom: 2,
     textTransform: 'capitalize',
   },
   transactionDate: {
-    fontSize: typography.caption,
+    fontSize: 12,
+    marginTop: 2,
   },
   transactionAmount: {
-    fontSize: typography.body,
+    fontSize: 15,
     fontWeight: '700',
   },
+
   // Empty State
   emptyState: {
     alignItems: 'center',
-    paddingVertical: spacing.huge,
+    paddingVertical: 40,
+    borderRadius: 16,
   },
-  emptyIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  emptyIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: 12,
   },
   emptyText: {
-    fontSize: typography.body,
+    fontSize: 14,
+    fontWeight: '500',
   },
+
   // Security Badge
   securityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: spacing.lg,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
+    padding: 14,
+    borderRadius: 12,
+    gap: 8,
   },
   securityText: {
-    fontSize: typography.caption,
+    fontSize: 12,
     fontWeight: '600',
   },
 });

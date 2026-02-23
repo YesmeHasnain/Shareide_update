@@ -91,6 +91,13 @@ class NotificationService {
   // Register device token with backend
   async registerToken() {
     try {
+      // Check if user is authenticated before making API call
+      const authToken = await AsyncStorage.getItem('userToken');
+      if (!authToken) {
+        console.log('No auth token, skipping push token registration');
+        return false;
+      }
+
       if (!this.expoPushToken) {
         await this.initialize();
       }
@@ -110,7 +117,7 @@ class NotificationService {
       await AsyncStorage.setItem('pushToken', this.expoPushToken);
       return true;
     } catch (error) {
-      console.error('Token registration error:', error);
+      console.log('Token registration failed:', error.message);
       return false;
     }
   }
@@ -118,15 +125,20 @@ class NotificationService {
   // Unregister device token (on logout)
   async unregisterToken() {
     try {
+      const authToken = await AsyncStorage.getItem('userToken');
       const savedToken = await AsyncStorage.getItem('pushToken');
-      if (savedToken) {
+
+      if (savedToken && authToken) {
         await client.post('/push-notifications/unregister-device', {
           token: savedToken,
         });
-        await AsyncStorage.removeItem('pushToken');
       }
+      // Always clean up local storage
+      await AsyncStorage.removeItem('pushToken');
     } catch (error) {
-      console.error('Token unregistration error:', error);
+      console.log('Token unregistration failed:', error.message);
+      // Still clean up local storage
+      await AsyncStorage.removeItem('pushToken').catch(() => {});
     }
   }
 

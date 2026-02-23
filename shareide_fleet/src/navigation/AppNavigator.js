@@ -112,23 +112,25 @@ import IntercityOffersScreen from '../screens/intercity/IntercityOffersScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Custom Tab Bar Icon - Uber/Bolt style with active indicator
+// Custom Tab Bar Icon - InDrive/Yango style
 const TabIcon = ({ focused, icon, iconFocused, color, label, colors }) => {
   return (
     <View style={styles.tabIconContainer}>
-      <Ionicons
-        name={focused ? iconFocused : icon}
-        size={24}
-        color={color}
-      />
+      <View style={[
+        styles.tabIconWrapper,
+        focused && { backgroundColor: (colors.primary || '#FCC014') + '15' },
+      ]}>
+        <Ionicons
+          name={focused ? iconFocused : icon}
+          size={22}
+          color={focused ? (colors.primary || '#FCC014') : color}
+        />
+      </View>
       <Text style={[
         styles.tabLabel,
-        { color },
+        { color: focused ? (colors.primary || '#FCC014') : color },
         focused && styles.tabLabelActive,
       ]}>{label}</Text>
-      {focused && (
-        <View style={[styles.tabIndicator, { backgroundColor: colors.tabBarIndicator || colors.primary }]} />
-      )}
     </View>
   );
 };
@@ -158,16 +160,15 @@ const MainTabs = () => {
         tabBarStyle: {
           backgroundColor: colors.tabBarBackground || colors.card,
           borderTopWidth: 0,
-          borderTopColor: colors.tabBarBorder || 'transparent',
-          height: Platform.OS === 'ios' ? 88 : 70,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 12,
-          paddingTop: 10,
-          // Uber-style subtle upward shadow
+          borderTopColor: 'transparent',
+          height: Platform.OS === 'ios' ? 85 : 68,
+          paddingBottom: Platform.OS === 'ios' ? 26 : 10,
+          paddingTop: 8,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.06,
-          shadowRadius: 8,
-          elevation: 10,
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 16,
+          elevation: 15,
         },
         tabBarShowLabel: false,
       }}
@@ -257,6 +258,7 @@ const AppNavigator = () => {
     if (!user?.driver) return 'PersonalInfo';
 
     const driver = user.driver;
+    if (driver.status === 'incomplete') return 'PersonalInfo';
     if (driver.status === 'pending' || driver.status === 'rejected') return 'Pending';
     if (driver.status === 'approved') return 'MainTabs';
 
@@ -347,21 +349,22 @@ const styles = StyleSheet.create({
   tabIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 56,
+    minWidth: 60,
+  },
+  tabIconWrapper: {
+    width: 40,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   tabLabel: {
     fontSize: 10,
     fontWeight: '500',
-    marginTop: 4,
+    marginTop: 3,
   },
   tabLabelActive: {
     fontWeight: '700',
-  },
-  tabIndicator: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    marginTop: 4,
   },
 });
 

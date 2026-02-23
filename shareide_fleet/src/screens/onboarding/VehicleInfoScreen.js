@@ -52,10 +52,10 @@ const VehicleInfoScreen = ({ navigation, route }) => {
   ];
 
   const imageTypes = [
-    { key: 'vehicle_front', label: 'Front View', icon: 'car-outline' },
-    { key: 'vehicle_back', label: 'Back View', icon: 'car-outline' },
-    { key: 'vehicle_interior', label: 'Interior', icon: 'albums-outline' },
-    { key: 'vehicle_with_plate', label: 'Number Plate', icon: 'document-outline' },
+    { key: 'vehicle_front', label: 'Front View', icon: 'car-outline', required: true },
+    { key: 'vehicle_back', label: 'Back View', icon: 'car-outline', required: false },
+    { key: 'vehicle_interior', label: 'Interior', icon: 'albums-outline', required: false },
+    { key: 'vehicle_with_plate', label: 'Number Plate', icon: 'document-outline', required: true },
   ];
 
   const handleTypeSelect = (type) => {
@@ -299,6 +299,7 @@ const VehicleInfoScreen = ({ navigation, route }) => {
                     <Image
                       source={{ uri: vehicleImages[imgType.key].uri }}
                       style={styles.imagePreview}
+                      resizeMode="cover"
                     />
                     <View style={[styles.imageCheckBadge, { backgroundColor: colors.primary }]}>
                       <Ionicons name="checkmark" size={14} color="#000" />
@@ -306,6 +307,13 @@ const VehicleInfoScreen = ({ navigation, route }) => {
                     <View style={styles.imageLabelOverlay}>
                       <Text style={styles.imageLabelOverlayText}>{imgType.label}</Text>
                     </View>
+                    <TouchableOpacity
+                      style={styles.imageRetapOverlay}
+                      onPress={() => openDocumentCapture(imgType.key)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="camera" size={16} color="#FFF" />
+                    </TouchableOpacity>
                   </View>
                 ) : (
                   <View style={styles.imagePlaceholder}>
@@ -316,7 +324,7 @@ const VehicleInfoScreen = ({ navigation, route }) => {
                       {imgType.label}
                     </Text>
                     <Text style={[styles.imageTap, { color: colors.textSecondary }]}>
-                      Tap to upload
+                      {imgType.required ? 'Required *' : 'Optional'}
                     </Text>
                   </View>
                 )}
@@ -489,6 +497,17 @@ const styles = StyleSheet.create({
     fontSize: typography.caption,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  imageRetapOverlay: {
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.sm,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   imagePlaceholder: {
     flex: 1,

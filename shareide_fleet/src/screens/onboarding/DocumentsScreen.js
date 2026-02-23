@@ -328,10 +328,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   imageContainer: {
-    height: 150,
+    height: 180,
     borderRadius: borderRadius.lg,
     overflow: 'hidden',
     position: 'relative',
+    borderWidth: 2,
+    borderColor: '#10B981',
   },
   image: {
     width: '100%',

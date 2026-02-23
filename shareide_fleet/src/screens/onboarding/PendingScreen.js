@@ -19,6 +19,11 @@ import { onboardingAPI } from '../../api/onboarding';
 import { spacing, typography, borderRadius } from '../../theme/colors';
 
 const STATUS_CONFIG = {
+  incomplete: {
+    icon: 'create',
+    color: '#3B82F6',
+    bg: 'rgba(59, 130, 246, 0.12)',
+  },
   pending: {
     icon: 'hourglass',
     color: '#F59E0B',
@@ -125,6 +130,12 @@ const PendingScreen = ({ navigation }) => {
     const config = STATUS_CONFIG[driverStatus] || STATUS_CONFIG.default;
 
     switch (driverStatus) {
+      case 'incomplete':
+        return {
+          ...config,
+          title: 'Registration Incomplete',
+          message: 'Please complete all registration steps to submit your application for review.',
+        };
       case 'pending':
         return {
           ...config,

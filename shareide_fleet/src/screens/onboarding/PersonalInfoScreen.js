@@ -12,10 +12,12 @@ import {
   Modal,
   FlatList,
   Dimensions,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../context/ThemeContext';
@@ -28,10 +30,17 @@ import { maleAvatars, femaleAvatars } from '../../utils/avatars';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const AVATAR_SIZE = (SCREEN_WIDTH - 80) / 5;
-const PRIMARY_COLOR = '#FCC014';
+const PRIMARY = '#FCC014';
+
+const STEPS = [
+  { label: 'Personal', active: true },
+  { label: 'Vehicle', active: false },
+  { label: 'Documents', active: false },
+  { label: 'Selfie', active: false },
+];
 
 const PersonalInfoScreen = ({ navigation, route }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { updateUser, login, token: contextToken } = useAuth();
   const { verificationToken, isNewUser, phone } = route.params || {};
 
@@ -51,27 +60,16 @@ const PersonalInfoScreen = ({ navigation, route }) => {
   const [errors, setErrors] = useState({});
 
   const formatCNIC = (text) => {
-    // Remove all non-digits
     const cleaned = text.replace(/\D/g, '');
-    
-    // Format: XXXXX-XXXXXXX-X
-    if (cleaned.length <= 5) {
-      return cleaned;
-    } else if (cleaned.length <= 12) {
-      return `${cleaned.slice(0, 5)}-${cleaned.slice(5)}`;
-    } else {
-      return `${cleaned.slice(0, 5)}-${cleaned.slice(5, 12)}-${cleaned.slice(12, 13)}`;
-    }
+    if (cleaned.length <= 5) return cleaned;
+    if (cleaned.length <= 12) return `${cleaned.slice(0, 5)}-${cleaned.slice(5)}`;
+    return `${cleaned.slice(0, 5)}-${cleaned.slice(5, 12)}-${cleaned.slice(12, 13)}`;
   };
 
   const handleChange = (field, value) => {
-    if (field === 'cnic') {
-      value = formatCNIC(value);
-    }
+    if (field === 'cnic') value = formatCNIC(value);
     setFormData({ ...formData, [field]: value });
-    if (errors[field]) {
-      setErrors({ ...errors, [field]: null });
-    }
+    if (errors[field]) setErrors({ ...errors, [field]: null });
   };
 
   const avatars = gender === 'male' ? maleAvatars : gender === 'female' ? femaleAvatars : [];
@@ -84,14 +82,11 @@ const PersonalInfoScreen = ({ navigation, route }) => {
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
+      allowsEditing: true, aspect: [1, 1], quality: 0.8,
     });
     if (!result.canceled && result.assets[0]) {
       setProfileImage(result.assets[0]);
       setSelectedAvatarIndex(null);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
   };
 
@@ -104,14 +99,11 @@ const PersonalInfoScreen = ({ navigation, route }) => {
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
+      allowsEditing: true, aspect: [1, 1], quality: 0.8,
     });
     if (!result.canceled && result.assets[0]) {
       setProfileImage(result.assets[0]);
       setSelectedAvatarIndex(null);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
   };
 
@@ -130,29 +122,13 @@ const PersonalInfoScreen = ({ navigation, route }) => {
 
   const validate = () => {
     const newErrors = {};
-
-    if (!gender) {
-      newErrors.gender = 'Please select your gender';
-    }
-    if (!formData.first_name.trim()) {
-      newErrors.first_name = 'First name is required';
-    }
-    if (!formData.last_name.trim()) {
-      newErrors.last_name = 'Last name is required';
-    }
-    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
-    }
-    if (!formData.cnic || formData.cnic.length !== 15) {
-      newErrors.cnic = 'Valid CNIC is required (XXXXX-XXXXXXX-X)';
-    }
-    if (!formData.address.trim()) {
-      newErrors.address = 'Address is required';
-    }
-    if (!formData.city.trim()) {
-      newErrors.city = 'City is required';
-    }
-
+    if (!gender) newErrors.gender = 'Please select your gender';
+    if (!formData.first_name.trim()) newErrors.first_name = 'First name is required';
+    if (!formData.last_name.trim()) newErrors.last_name = 'Last name is required';
+    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Invalid email format';
+    if (!formData.cnic || formData.cnic.length !== 15) newErrors.cnic = 'Valid CNIC required (XXXXX-XXXXXXX-X)';
+    if (!formData.address.trim()) newErrors.address = 'Address is required';
+    if (!formData.city.trim()) newErrors.city = 'City is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -161,15 +137,8 @@ const PersonalInfoScreen = ({ navigation, route }) => {
     if (!validate()) return;
 
     setLoading(true);
-    console.log('=== PersonalInfo Submit ===');
-    console.log('isNewUser:', isNewUser);
-    console.log('verificationToken:', verificationToken ? 'exists' : 'missing');
-    console.log('phone:', phone);
-
     try {
-      // For new users, first complete registration to create user account
       if (isNewUser && verificationToken) {
-        console.log('New user flow - calling completeRegistration');
         const fullName = `${formData.first_name} ${formData.last_name}`;
         const regResponse = await authAPI.completeRegistration({
           verification_token: verificationToken,
@@ -179,223 +148,149 @@ const PersonalInfoScreen = ({ navigation, route }) => {
           avatar_index: selectedAvatarIndex,
         });
 
-        console.log('completeRegistration response:', JSON.stringify(regResponse, null, 2));
-
-        if (!regResponse.success) {
-          throw new Error(regResponse.message || 'Registration failed');
-        }
-
-        // Login with the new token
-        console.log('Saving token to AsyncStorage...');
+        if (!regResponse.success) throw new Error(regResponse.message || 'Registration failed');
         await login(regResponse.user, regResponse.token);
-        console.log('Token saved successfully');
-      } else {
-        console.log('Existing user flow - token should already be saved');
       }
 
-      // Verify token exists before making authenticated request
       let savedToken = await AsyncStorage.getItem('userToken');
-      console.log('Token in AsyncStorage:', savedToken ? 'exists' : 'MISSING!');
-
-      // Fallback: if AsyncStorage was cleared by interceptor, restore from context
       if (!savedToken && contextToken) {
-        console.log('Restoring token from AuthContext');
         await AsyncStorage.setItem('userToken', contextToken);
         savedToken = contextToken;
       }
+      if (!savedToken) throw new Error('Authentication token not found. Please log in again.');
 
-      if (!savedToken) {
-        throw new Error('Authentication token not found. Please log in again.');
-      }
-
-      // Now submit personal info for driver onboarding
-      console.log('Calling submitPersonalInfo...');
       const response = await onboardingAPI.submitPersonalInfo(formData);
-      console.log('submitPersonalInfo response:', JSON.stringify(response, null, 2));
 
       if (response.success) {
-        // Update user context
-        await updateUser({
-          ...formData,
-          driver: response.data?.driver,
-        });
-
-        Alert.alert('Success', 'Personal information saved!', [
-          { text: 'Continue', onPress: () => navigation.navigate('VehicleInfo') },
-        ]);
+        await updateUser({ ...formData, driver: response.data?.driver });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        navigation.navigate('VehicleInfo');
       } else {
         throw new Error(response.message || 'Failed to save information');
       }
     } catch (error) {
-      console.error('Personal info error:', error);
-      console.error('Error response data:', error.response?.data);
-      Alert.alert(
-        'Error',
-        error.response?.data?.message || error.message || 'Failed to save information'
-      );
+      Alert.alert('Error', error.response?.data?.message || error.message || 'Failed to save information');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.content}
-      >
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-              <View style={[styles.progressFill, { backgroundColor: colors.primary, width: '20%' }]} />
-            </View>
-            <Text style={[styles.stepText, { color: colors.textSecondary }]}>
-              Step 1 of 5
-            </Text>
-            <Text style={[styles.title, { color: colors.text }]}>
-              Personal Information
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Let's get to know you better
-            </Text>
-          </View>
-
-          {/* Gender Selection */}
-          <Text style={[styles.sectionLabel, { color: colors.text }]}>Gender *</Text>
-          <View style={styles.genderRow}>
-            <TouchableOpacity
-              style={[
-                styles.genderCard,
-                { backgroundColor: colors.surface || '#F3F4F6' },
-                gender === 'male' && { backgroundColor: PRIMARY_COLOR + '20', borderColor: PRIMARY_COLOR, borderWidth: 2 },
-              ]}
-              onPress={() => { setGender('male'); setSelectedAvatarIndex(null); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="male" size={28} color={gender === 'male' ? PRIMARY_COLOR : colors.textSecondary} />
-              <Text style={[styles.genderText, { color: gender === 'male' ? PRIMARY_COLOR : colors.text }]}>Male</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.genderCard,
-                { backgroundColor: colors.surface || '#F3F4F6' },
-                gender === 'female' && { backgroundColor: '#EC489920', borderColor: '#EC4899', borderWidth: 2 },
-              ]}
-              onPress={() => { setGender('female'); setSelectedAvatarIndex(null); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="female" size={28} color={gender === 'female' ? '#EC4899' : colors.textSecondary} />
-              <Text style={[styles.genderText, { color: gender === 'female' ? '#EC4899' : colors.text }]}>Female</Text>
-            </TouchableOpacity>
-          </View>
-          {errors.gender && <Text style={styles.errorText}>{errors.gender}</Text>}
-
-          {/* Profile Picture */}
-          <Text style={[styles.sectionLabel, { color: colors.text, marginTop: 16 }]}>Profile Picture</Text>
-          <View style={styles.profilePicSection}>
-            <View style={styles.avatarPreview}>
-              {getProfileDisplay() ? (
-                <Image source={getProfileDisplay()} style={styles.avatarImage} />
-              ) : (
-                <View style={[styles.avatarPlaceholder, { backgroundColor: colors.surface || '#F3F4F6' }]}>
-                  <Ionicons name="person" size={40} color={colors.textSecondary} />
+    <View style={[styles.container, { backgroundColor: isDark ? '#0A0A14' : '#F5F5F5' }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            {/* Step Indicator */}
+            <View style={styles.stepRow}>
+              {STEPS.map((step, i) => (
+                <View key={i} style={styles.stepItem}>
+                  <View style={[
+                    styles.stepDot,
+                    i === 0 ? { backgroundColor: PRIMARY } : { backgroundColor: isDark ? '#333' : '#E5E7EB' },
+                  ]}>
+                    {i === 0 && <Ionicons name="checkmark" size={12} color="#000" />}
+                  </View>
+                  <Text style={[
+                    styles.stepLabel,
+                    { color: i === 0 ? PRIMARY : (isDark ? 'rgba(255,255,255,0.3)' : '#9CA3AF') },
+                  ]}>{step.label}</Text>
+                  {i < STEPS.length - 1 && (
+                    <View style={[styles.stepLine, { backgroundColor: isDark ? '#333' : '#E5E7EB' }]} />
+                  )}
                 </View>
-              )}
+              ))}
             </View>
-            <View style={styles.picBtnRow}>
-              <TouchableOpacity style={[styles.picBtn, { backgroundColor: PRIMARY_COLOR }]} onPress={takePhoto}>
-                <Ionicons name="camera" size={18} color="#000" />
-                <Text style={styles.picBtnText}>Selfie</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.picBtn, { backgroundColor: '#FEF3C7' }]} onPress={pickFromGallery}>
-                <Ionicons name="images" size={18} color="#000" />
-                <Text style={styles.picBtnText}>Gallery</Text>
-              </TouchableOpacity>
-              {gender && (
-                <TouchableOpacity style={[styles.picBtn, { backgroundColor: '#E0E7FF' }]} onPress={() => setShowAvatarModal(true)}>
-                  <Ionicons name="happy" size={18} color="#4F46E5" />
-                  <Text style={[styles.picBtnText, { color: '#4F46E5' }]}>Avatar</Text>
+
+            {/* Title */}
+            <Text style={[styles.title, { color: isDark ? '#FFF' : '#1A1A2E' }]}>Personal Information</Text>
+            <Text style={[styles.subtitle, { color: isDark ? 'rgba(255,255,255,0.5)' : '#9CA3AF' }]}>
+              Tell us about yourself to get started
+            </Text>
+
+            {/* Gender */}
+            <Text style={[styles.label, { color: isDark ? '#FFF' : '#1A1A2E' }]}>Gender *</Text>
+            <View style={styles.genderRow}>
+              {[{ id: 'male', icon: 'male', color: '#3B82F6' }, { id: 'female', icon: 'female', color: '#EC4899' }].map(g => (
+                <TouchableOpacity
+                  key={g.id}
+                  style={[
+                    styles.genderCard,
+                    { backgroundColor: isDark ? '#14142B' : '#FFF' },
+                    gender === g.id && { borderColor: g.color, borderWidth: 2 },
+                  ]}
+                  onPress={() => { setGender(g.id); setSelectedAvatarIndex(null); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.genderIconBg, { backgroundColor: g.color + '15' }]}>
+                    <Ionicons name={g.icon} size={24} color={gender === g.id ? g.color : (isDark ? '#666' : '#9CA3AF')} />
+                  </View>
+                  <Text style={[styles.genderText, { color: gender === g.id ? g.color : (isDark ? '#FFF' : '#1A1A2E') }]}>
+                    {g.id.charAt(0).toUpperCase() + g.id.slice(1)}
+                  </Text>
                 </TouchableOpacity>
-              )}
+              ))}
             </View>
-          </View>
+            {errors.gender && <Text style={styles.errorText}>{errors.gender}</Text>}
 
-          {/* Form */}
-          <View style={styles.form}>
-            <Input
-              label="First Name *"
-              value={formData.first_name}
-              onChangeText={(value) => handleChange('first_name', value)}
-              placeholder="Ali"
-              error={errors.first_name}
-            />
+            {/* Profile Picture */}
+            <Text style={[styles.label, { color: isDark ? '#FFF' : '#1A1A2E', marginTop: 20 }]}>Profile Picture</Text>
+            <View style={styles.profileSection}>
+              <View style={[styles.avatarContainer, { backgroundColor: isDark ? '#14142B' : '#FFF' }]}>
+                {getProfileDisplay() ? (
+                  <Image source={getProfileDisplay()} style={styles.avatarImage} />
+                ) : (
+                  <Ionicons name="person" size={36} color={isDark ? '#333' : '#D1D5DB'} />
+                )}
+              </View>
+              <View style={styles.photoButtons}>
+                <TouchableOpacity style={[styles.photoBtn, { backgroundColor: PRIMARY }]} onPress={takePhoto} activeOpacity={0.8}>
+                  <Ionicons name="camera" size={16} color="#000" />
+                  <Text style={styles.photoBtnText}>Camera</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.photoBtn, { backgroundColor: isDark ? '#1E1E3A' : '#F3F4F6' }]} onPress={pickFromGallery} activeOpacity={0.8}>
+                  <Ionicons name="images" size={16} color={isDark ? '#FFF' : '#374151'} />
+                  <Text style={[styles.photoBtnText, { color: isDark ? '#FFF' : '#374151' }]}>Gallery</Text>
+                </TouchableOpacity>
+                {gender && (
+                  <TouchableOpacity style={[styles.photoBtn, { backgroundColor: isDark ? '#1E1E3A' : '#EEF2FF' }]} onPress={() => setShowAvatarModal(true)} activeOpacity={0.8}>
+                    <Ionicons name="happy" size={16} color="#6366F1" />
+                    <Text style={[styles.photoBtnText, { color: '#6366F1' }]}>Avatar</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
 
-            <Input
-              label="Last Name *"
-              value={formData.last_name}
-              onChangeText={(value) => handleChange('last_name', value)}
-              placeholder="Ahmed"
-              error={errors.last_name}
-            />
+            {/* Form */}
+            <View style={styles.formCard}>
+              <View style={styles.nameRow}>
+                <View style={{ flex: 1 }}>
+                  <Input label="First Name *" value={formData.first_name} onChangeText={(v) => handleChange('first_name', v)} placeholder="Ali" error={errors.first_name} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Input label="Last Name *" value={formData.last_name} onChangeText={(v) => handleChange('last_name', v)} placeholder="Ahmed" error={errors.last_name} />
+                </View>
+              </View>
+              <Input label="Email (Optional)" value={formData.email} onChangeText={(v) => handleChange('email', v)} placeholder="ali@example.com" keyboardType="email-address" error={errors.email} />
+              <Input label="CNIC *" value={formData.cnic} onChangeText={(v) => handleChange('cnic', v)} placeholder="42101-1234567-1" keyboardType="number-pad" maxLength={15} error={errors.cnic} />
+              <Input label="Address *" value={formData.address} onChangeText={(v) => handleChange('address', v)} placeholder="House 123, Street 5, Block A" multiline error={errors.address} />
+              <Input label="City *" value={formData.city} onChangeText={(v) => handleChange('city', v)} placeholder="Lahore" error={errors.city} />
+            </View>
 
-            <Input
-              label="Email (Optional)"
-              value={formData.email}
-              onChangeText={(value) => handleChange('email', value)}
-              placeholder="ali@example.com"
-              keyboardType="email-address"
-              error={errors.email}
-            />
+            {/* Submit */}
+            <Button title="Continue" onPress={handleSubmit} loading={loading} style={styles.submitBtn} />
+            <View style={{ height: 30 }} />
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
 
-            <Input
-              label="CNIC *"
-              value={formData.cnic}
-              onChangeText={(value) => handleChange('cnic', value)}
-              placeholder="42101-1234567-1"
-              keyboardType="number-pad"
-              maxLength={15}
-              error={errors.cnic}
-            />
-
-            <Input
-              label="Complete Address *"
-              value={formData.address}
-              onChangeText={(value) => handleChange('address', value)}
-              placeholder="House 123, Street 5, Block A"
-              multiline
-              error={errors.address}
-            />
-
-            <Input
-              label="City *"
-              value={formData.city}
-              onChangeText={(value) => handleChange('city', value)}
-              placeholder="Karachi"
-              error={errors.city}
-            />
-          </View>
-
-          {/* Submit Button */}
-          <Button
-            title="Continue"
-            onPress={handleSubmit}
-            loading={loading}
-            style={styles.button}
-          />
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      {/* Avatar Selection Modal */}
+      {/* Avatar Modal */}
       <Modal visible={showAvatarModal} transparent animationType="slide" onRequestClose={() => setShowAvatarModal(false)}>
         <View style={styles.modalOverlay}>
           <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowAvatarModal(false)} />
-          <View style={[styles.modalSheet, { backgroundColor: colors.card || '#FFF' }]}>
-            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Choose Your Avatar</Text>
-            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-              {gender === 'male' ? 'Male' : 'Female'} Avatars
-            </Text>
+          <View style={[styles.modalSheet, { backgroundColor: isDark ? '#14142B' : '#FFF' }]}>
+            <View style={[styles.modalHandle, { backgroundColor: isDark ? '#333' : '#D1D5DB' }]} />
+            <Text style={[styles.modalTitle, { color: isDark ? '#FFF' : '#1A1A2E' }]}>Choose Avatar</Text>
             <FlatList
               data={avatars}
               numColumns={5}
@@ -403,10 +298,7 @@ const PersonalInfoScreen = ({ navigation, route }) => {
               contentContainerStyle={styles.avatarGrid}
               renderItem={({ item, index }) => (
                 <TouchableOpacity
-                  style={[
-                    styles.avatarGridItem,
-                    selectedAvatarIndex === index && { borderColor: PRIMARY_COLOR, borderWidth: 3 },
-                  ]}
+                  style={[styles.avatarGridItem, selectedAvatarIndex === index && { borderColor: PRIMARY, borderWidth: 3 }]}
                   onPress={() => selectAvatar(index)}
                   activeOpacity={0.7}
                 >
@@ -417,169 +309,70 @@ const PersonalInfoScreen = ({ navigation, route }) => {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-  },
-  header: {
-    marginTop: 20,
-    marginBottom: 24,
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 2,
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  stepText: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-  },
-  sectionLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 10,
-  },
-  genderRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 4,
-  },
+  container: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20 },
+
+  // Steps
+  stepRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 16, marginBottom: 28, gap: 4 },
+  stepItem: { flexDirection: 'row', alignItems: 'center' },
+  stepDot: { width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  stepLabel: { fontSize: 11, fontWeight: '600', marginLeft: 4 },
+  stepLine: { width: 24, height: 2, marginHorizontal: 4, borderRadius: 1 },
+
+  // Title
+  title: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5, marginBottom: 4 },
+  subtitle: { fontSize: 14, marginBottom: 24 },
+
+  // Gender
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 10 },
+  genderRow: { flexDirection: 'row', gap: 12, marginBottom: 4 },
   genderCard: {
-    flex: 1,
-    height: 80,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'transparent',
+    flex: 1, flexDirection: 'row', alignItems: 'center', padding: 16,
+    borderRadius: 16, borderWidth: 1, borderColor: 'transparent', gap: 12,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
   },
-  genderText: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 4,
+  genderIconBg: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  genderText: { fontSize: 15, fontWeight: '700' },
+  errorText: { color: '#EF4444', fontSize: 12, marginTop: 4, marginBottom: 8 },
+
+  // Profile
+  profileSection: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 24 },
+  avatarContainer: {
+    width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3,
   },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 12,
-    marginTop: 4,
-    marginBottom: 8,
+  avatarImage: { width: 80, height: 80, borderRadius: 40 },
+  photoButtons: { flex: 1, gap: 8 },
+  photoBtn: {
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 10,
+    borderRadius: 12, gap: 6,
   },
-  profilePicSection: {
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  avatarPreview: {
-    marginBottom: 12,
-  },
-  avatarImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  avatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  picBtnRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  picBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 20,
-    gap: 6,
-  },
-  picBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#000',
-  },
-  form: {
-    marginBottom: 24,
-  },
-  button: {
-    marginBottom: 24,
-  },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalSheet: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 16,
-    paddingBottom: 40,
-    maxHeight: '70%',
-  },
-  modalHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#D1D5DB',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  avatarGrid: {
-    paddingHorizontal: 8,
-  },
+  photoBtnText: { fontSize: 13, fontWeight: '600', color: '#000' },
+
+  // Form
+  formCard: { marginBottom: 20 },
+  nameRow: { flexDirection: 'row', gap: 12 },
+
+  // Button
+  submitBtn: { marginBottom: 0 },
+
+  // Modal
+  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalSheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 16, paddingBottom: 40, maxHeight: '65%' },
+  modalHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '800', textAlign: 'center', marginBottom: 16 },
+  avatarGrid: { paddingHorizontal: 8 },
   avatarGridItem: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    margin: 4,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2,
+    margin: 4, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent',
   },
-  avatarGridImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: AVATAR_SIZE / 2,
-  },
+  avatarGridImage: { width: '100%', height: '100%', borderRadius: AVATAR_SIZE / 2 },
 });
 
 export default PersonalInfoScreen;

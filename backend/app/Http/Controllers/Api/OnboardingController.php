@@ -63,7 +63,7 @@ class OnboardingController extends Controller
                 'cnic_name' => $request->first_name . ' ' . $request->last_name,
                 'address' => $request->address,
                 'city' => $request->city,
-                'status' => $existingDriver ? $existingDriver->status : 'pending',
+                'status' => $existingDriver ? $existingDriver->status : 'incomplete',
             ];
 
             // Only set defaults for new drivers (existing drivers already have these)
@@ -388,7 +388,7 @@ class OnboardingController extends Controller
                         'vehicle_info' => $hasVehicleInfo,
                         'documents' => $documents && $documents->nic_front !== null,
                         'selfies' => $documents && $documents->selfie_with_nic !== null,
-                        'submitted' => in_array($driver->status, ['pending', 'approved', 'rejected']),
+                        'submitted' => in_array($driver->status, ['pending', 'approved', 'rejected']) && $driver->status !== 'incomplete',
                     ]
                 ]
             ], 200);
@@ -500,16 +500,29 @@ class OnboardingController extends Controller
             $hasVehicleInfo = !empty($driver->vehicle_type) && !empty($driver->plate_number);
             $documents = $driver->documents;
 
-            if (!$hasVehicleInfo || !$documents ||
-                !$documents->nic_front ||
-                !$documents->selfie_with_nic) {
+            if (!$hasVehicleInfo) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Please complete all registration steps first'
+                    'message' => 'Please complete vehicle information first'
                 ], 400);
             }
 
-            // Update driver status to pending
+            if (!$documents || !$documents->nic_front || !$documents->nic_back ||
+                !$documents->license_front || !$documents->license_back) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please upload all required documents first'
+                ], 400);
+            }
+
+            if (!$documents->selfie_with_nic || !$documents->live_selfie) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please complete selfie verification first'
+                ], 400);
+            }
+
+            // Only now set status to pending (visible to admin for review)
             $driver->update(['status' => 'pending']);
 
             // Create wallet for driver

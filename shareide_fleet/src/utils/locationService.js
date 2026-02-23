@@ -1,7 +1,7 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import client from '../api/client';
+import client, { hasAuthToken } from '../api/client';
 
 const LOCATION_TASK_NAME = 'background-location-task';
 const LOCATION_UPDATE_INTERVAL = 10000; // 10 seconds
@@ -177,18 +177,24 @@ class LocationService {
       // Stop background tracking too
       await this.stopBackgroundTracking();
 
-      // Update backend that driver is offline
-      await this.updateDriverStatus(false);
+      // Only update backend if user is still authenticated
+      const hasToken = await hasAuthToken();
+      if (hasToken) {
+        await this.updateDriverStatus(false);
+      }
 
       console.log('Location tracking stopped');
     } catch (error) {
-      console.error('Stop tracking error:', error);
+      console.log('Stop tracking error:', error.message);
     }
   }
 
   // Send location to server
   async sendLocationToServer(location) {
     try {
+      const hasToken = await hasAuthToken();
+      if (!hasToken) return;
+
       await client.post('/driver/location', {
         latitude: location.latitude,
         longitude: location.longitude,
@@ -204,6 +210,12 @@ class LocationService {
   // Update driver online/offline status
   async updateDriverStatus(isOnline, latitude = null, longitude = null) {
     try {
+      const hasToken = await hasAuthToken();
+      if (!hasToken) {
+        console.log('No auth token, skipping driver status update');
+        return { success: false };
+      }
+
       const lat = latitude || this.lastLocation?.latitude;
       const lng = longitude || this.lastLocation?.longitude;
 
@@ -214,7 +226,7 @@ class LocationService {
       });
       return response.data;
     } catch (error) {
-      console.error('Update driver status error:', error);
+      console.log('Update driver status error:', error.message);
       throw error;
     }
   }

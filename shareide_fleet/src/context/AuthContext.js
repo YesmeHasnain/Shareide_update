@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import notificationService from '../utils/notificationService';
+import { setLoggingOut } from '../api/client';
 
 const AuthContext = createContext(null);
 
@@ -22,10 +23,12 @@ export const AuthProvider = ({ children }) => {
         setToken(savedToken);
         setUser(JSON.parse(savedUser));
 
-        // Re-register push token on app restart (non-blocking)
-        notificationService.registerToken().catch((err) => {
-          console.log('Failed to re-register push token on restart:', err);
-        });
+        // Small delay to ensure token is available for API calls
+        setTimeout(() => {
+          notificationService.registerToken().catch((err) => {
+            console.log('Failed to re-register push token on restart:', err.message);
+          });
+        }, 1000);
       }
     } catch (error) {
       console.error('Load user data error:', error);
@@ -36,15 +39,18 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (userData, userToken) => {
     try {
+      // Save token FIRST so it's available for subsequent API calls
       await AsyncStorage.setItem('userToken', userToken);
       await AsyncStorage.setItem('userData', JSON.stringify(userData));
       setToken(userToken);
       setUser(userData);
 
-      // Register device for push notifications (non-blocking)
-      notificationService.registerToken().catch((err) => {
-        console.log('Failed to register push token:', err);
-      });
+      // Register device for push notifications after token is saved
+      setTimeout(() => {
+        notificationService.registerToken().catch((err) => {
+          console.log('Failed to register push token:', err.message);
+        });
+      }, 500);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -52,20 +58,32 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    // Clear local state FIRST so user is logged out immediately
+    // Signal that we're logging out to prevent 401 cascade
+    setLoggingOut(true);
+
+    // Unregister push token BEFORE clearing auth (needs the token to make API call)
+    try {
+      await notificationService.unregisterToken();
+    } catch (error) {
+      // Ignore - best effort
+    }
+
+    // Now try backend logout
+    try {
+      const { authAPI } = require('../api/auth');
+      await authAPI.logout().catch(() => {});
+    } catch (error) {
+      // Ignore
+    }
+
+    // Clear local state LAST
     await AsyncStorage.removeItem('userToken');
     await AsyncStorage.removeItem('userData');
     setToken(null);
     setUser(null);
 
-    // Then try API cleanup in background (don't block logout)
-    try {
-      notificationService.unregisterToken().catch(() => {});
-      const { authAPI } = require('../api/auth');
-      authAPI.logout().catch(() => {});
-    } catch (error) {
-      // Ignore - user is already logged out locally
-    }
+    // Reset logging out flag after cleanup
+    setTimeout(() => { setLoggingOut(false); }, 1000);
   };
 
   const updateUser = async (userData) => {

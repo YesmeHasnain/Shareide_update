@@ -432,10 +432,12 @@ const styles = StyleSheet.create({
   },
   previewContainer: {
     position: 'relative',
-    height: 300,
+    height: 320,
     borderRadius: borderRadius.lg,
     overflow: 'hidden',
     marginBottom: spacing.lg,
+    borderWidth: 2,
+    borderColor: '#10B981',
   },
   preview: {
     width: '100%',

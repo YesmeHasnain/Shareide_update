@@ -10,160 +10,66 @@ import {
   StatusBar,
   Switch,
   Animated,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { defaultMaleAvatar, defaultFemaleAvatar } from '../../utils/avatars';
-import { typography, spacing, borderRadius, shadows } from '../../theme/colors';
 
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+const PRIMARY = '#FCC014';
 
-// Icon color map for colored backgrounds
-const ICON_TINTS = {
-  'person': { bg: '#3B82F615', color: '#3B82F6' },
-  'car': { bg: '#8B5CF615', color: '#8B5CF6' },
-  'wallet': { bg: '#10B98115', color: '#10B981' },
-  'time': { bg: '#F59E0B15', color: '#F59E0B' },
-  'star': { bg: '#FCC01415', color: '#FCC014' },
-  'gift': { bg: '#EC489915', color: '#EC4899' },
-  'notifications': { bg: '#EF444415', color: '#EF4444' },
-  'moon': { bg: '#6366F115', color: '#6366F1' },
-  'globe': { bg: '#14B8A615', color: '#14B8A6' },
-  'help-circle': { bg: '#3B82F615', color: '#3B82F6' },
-  'document-text': { bg: '#6B728015', color: '#6B7280' },
-  'shield-checkmark': { bg: '#10B98115', color: '#10B981' },
-};
+const MenuItem = ({ icon, title, subtitle, value, onPress, showArrow = true, colors, isDark, isSwitch, danger }) => {
+  const iconColor = danger ? '#EF4444' : PRIMARY;
+  const bgColor = danger ? '#EF444412' : `${PRIMARY}12`;
 
-const MenuItem = ({ icon, title, value, onPress, showArrow = true, colors, index }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const tint = ICON_TINTS[icon] || { bg: colors.inputBackground, color: colors.textSecondary };
-
-  useEffect(() => {
-    Animated.spring(slideAnim, {
-      toValue: 1,
-      friction: 6,
-      delay: index * 50,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, { toValue: 0.98, useNativeDriver: true }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }).start();
-  };
-
-  if (typeof value === 'boolean') {
+  if (isSwitch) {
     return (
-      <Animated.View
-        style={[
-          styles.menuItem,
-          {
-            opacity: slideAnim,
-            transform: [
-              {
-                translateX: slideAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [30, 0],
-                }),
-              },
-            ],
-          },
-        ]}
-      >
-        <View style={styles.menuItemLeft}>
-          <View style={[styles.menuIconContainer, { backgroundColor: tint.bg }]}>
-            <Ionicons name={icon} size={20} color={tint.color} />
+      <View style={[styles.menuItem, { borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }]}>
+        <View style={styles.menuLeft}>
+          <View style={[styles.menuIconBg, { backgroundColor: bgColor }]}>
+            <Ionicons name={icon} size={18} color={iconColor} />
           </View>
-          <Text style={[styles.menuItemTitle, { color: colors.text }]}>{title}</Text>
+          <View>
+            <Text style={[styles.menuTitle, { color: colors.text }]}>{title}</Text>
+            {subtitle && <Text style={[styles.menuSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text>}
+          </View>
         </View>
         <Switch
           value={value}
           onValueChange={onPress}
-          trackColor={{ false: colors.border, true: colors.primary + '50' }}
-          thumbColor={value ? colors.primary : colors.textTertiary}
+          trackColor={{ false: isDark ? '#333' : '#E5E7EB', true: PRIMARY + '60' }}
+          thumbColor={value ? PRIMARY : isDark ? '#666' : '#D1D5DB'}
+          style={Platform.OS === 'ios' ? { transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }] } : {}}
         />
-      </Animated.View>
+      </View>
     );
   }
 
   return (
-    <AnimatedTouchable
-      style={[
-        styles.menuItem,
-        {
-          opacity: slideAnim,
-          transform: [
-            { scale: scaleAnim },
-            {
-              translateX: slideAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [30, 0],
-              }),
-            },
-          ],
-        },
-      ]}
+    <TouchableOpacity
+      style={[styles.menuItem, { borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }]}
       onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      activeOpacity={1}
+      activeOpacity={0.6}
     >
-      <View style={styles.menuItemLeft}>
-        <View style={[styles.menuIconContainer, { backgroundColor: tint.bg }]}>
-          <Ionicons name={icon} size={20} color={tint.color} />
+      <View style={styles.menuLeft}>
+        <View style={[styles.menuIconBg, { backgroundColor: bgColor }]}>
+          <Ionicons name={icon} size={18} color={iconColor} />
         </View>
-        <Text style={[styles.menuItemTitle, { color: colors.text }]}>{title}</Text>
+        <View>
+          <Text style={[styles.menuTitle, { color: danger ? '#EF4444' : colors.text }]}>{title}</Text>
+          {subtitle && <Text style={[styles.menuSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text>}
+        </View>
       </View>
       {value !== undefined ? (
-        <Text style={[styles.menuItemValue, { color: colors.textSecondary }]}>{value}</Text>
+        <Text style={[styles.menuValue, { color: colors.textSecondary }]}>{value}</Text>
       ) : showArrow ? (
-        <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+        <Ionicons name="chevron-forward" size={18} color={isDark ? 'rgba(255,255,255,0.2)' : '#D1D5DB'} />
       ) : null}
-    </AnimatedTouchable>
-  );
-};
-
-const VerifiedItem = ({ label, colors, index }) => {
-  const slideAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.spring(slideAnim, {
-      toValue: 1,
-      friction: 6,
-      delay: index * 80,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  return (
-    <Animated.View
-      style={[
-        styles.verifiedItem,
-        {
-          opacity: slideAnim,
-          transform: [
-            {
-              translateX: slideAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [-20, 0],
-              }),
-            },
-          ],
-        },
-      ]}
-    >
-      <View style={[styles.verifiedIcon, { backgroundColor: '#10B98118' }]}>
-        <Ionicons name="checkmark" size={14} color="#10B981" />
-      </View>
-      <Text style={[styles.verifiedLabel, { color: colors.text }]}>{label}</Text>
-    </Animated.View>
+    </TouchableOpacity>
   );
 };
 
@@ -172,41 +78,7 @@ const ProfileScreen = ({ navigation }) => {
   const { user, logout } = useAuth();
   const insets = useSafeAreaInsets();
 
-  // Animations
-  const headerAnim = useRef(new Animated.Value(0)).current;
-  const cardAnims = useRef([
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-  ]).current;
-  const logoutAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.sequence([
-      Animated.timing(headerAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.stagger(
-        80,
-        cardAnims.map((anim) =>
-          Animated.spring(anim, {
-            toValue: 1,
-            friction: 6,
-            useNativeDriver: true,
-          })
-        )
-      ),
-      Animated.spring(logoutAnim, {
-        toValue: 1,
-        friction: 6,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   const handleLogout = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -229,323 +101,174 @@ const ProfileScreen = ({ navigation }) => {
 
   const handleMenuPress = (screen) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (screen) {
-      navigation.navigate(screen);
-    }
+    if (screen) navigation.navigate(screen);
   };
 
   const handleLanguagePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Alert.alert('Select Language', 'Choose your preferred language', [
       { text: 'English', onPress: () => Alert.alert('Language', 'Language set to English') },
-      { text: 'اردو (Urdu)', onPress: () => Alert.alert('زبان', 'زبان اردو میں تبدیل ہو گئی') },
+      { text: 'Urdu', onPress: () => Alert.alert('Language', 'Language set to Urdu') },
       { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'light-content'} backgroundColor={colors.background} />
+    <View style={[styles.container, { backgroundColor: isDark ? '#0A0A14' : '#F5F5F5' }]}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      <ScrollView
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
       >
-        {/* Dark Gradient Header */}
-        <Animated.View
-          style={[
-            styles.profileHeader,
-            { paddingTop: insets.top + 20 },
-            {
-              opacity: headerAnim,
-              transform: [
-                {
-                  translateY: headerAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-30, 0],
-                  }),
-                },
-              ],
-            },
-          ]}
+        {/* Profile Header */}
+        <LinearGradient
+          colors={isDark ? ['#1A1A2E', '#0A0A14'] : ['#1A1A2E', '#2D2D4E']}
+          style={[styles.header, { paddingTop: insets.top + 20 }]}
         >
-          <Text style={styles.profileHeaderTitle}>PROFILE</Text>
-
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatarWrapper}>
+          {/* Avatar */}
+          <View style={styles.avatarSection}>
+            <View style={styles.avatarOuter}>
               {user?.profile_picture ? (
-                <Image source={{ uri: user.profile_picture }} style={styles.avatarImage} />
+                <Image source={{ uri: user.profile_picture }} style={styles.avatar} />
               ) : (
                 <Image
                   source={user?.gender === 'female' ? defaultFemaleAvatar : defaultMaleAvatar}
-                  style={styles.avatarImage}
+                  style={styles.avatar}
                 />
               )}
-            </View>
-            <View style={styles.verifiedBadge}>
-              <Ionicons name="checkmark" size={14} color="#000" />
-            </View>
-          </View>
-
-          <Text style={styles.profileName}>
-            {user?.first_name} {user?.last_name}
-          </Text>
-
-          {/* Stats Row */}
-          <View style={styles.profileStats}>
-            <View style={styles.profileStat}>
-              <View style={styles.profileStatValueRow}>
-                <Text style={styles.profileStatNumber}>
-                  {user?.driver?.rating?.toFixed(1) || '5.0'}
-                </Text>
-                <Ionicons name="star" size={16} color="#FCC014" />
+              <View style={styles.verifiedBadge}>
+                <Ionicons name="checkmark" size={12} color="#000" />
               </View>
-              <Text style={styles.profileStatLabel}>Rating</Text>
             </View>
 
-            <View style={styles.profileStatDivider} />
-
-            <View style={styles.profileStat}>
-              <Text style={styles.profileStatNumber}>
-                {user?.driver?.total_rides || 0}
+            <View style={styles.nameSection}>
+              <Text style={styles.userName}>
+                {user?.first_name} {user?.last_name}
               </Text>
-              <Text style={styles.profileStatLabel}>Rides</Text>
+              <Text style={styles.userPhone}>{user?.phone || 'Driver'}</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.editBtn}
+              onPress={() => handleMenuPress('EditProfile')}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="create-outline" size={18} color={PRIMARY} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Stats */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{user?.driver?.rating?.toFixed(1) || '5.0'}</Text>
+              <View style={styles.statLabelRow}>
+                <Ionicons name="star" size={12} color={PRIMARY} />
+                <Text style={styles.statLabel}>Rating</Text>
+              </View>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{user?.driver?.total_rides || 0}</Text>
+              <View style={styles.statLabelRow}>
+                <Ionicons name="car" size={12} color="#3B82F6" />
+                <Text style={styles.statLabel}>Rides</Text>
+              </View>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{user?.driver?.years_exp || '1'}y</Text>
+              <View style={styles.statLabelRow}>
+                <Ionicons name="time" size={12} color="#10B981" />
+                <Text style={styles.statLabel}>Experience</Text>
+              </View>
             </View>
           </View>
-        </Animated.View>
 
-        {/* Profile Details Card */}
-        <AnimatedCard animValue={cardAnims[0]} colors={colors}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Verified Details</Text>
-          <View style={styles.verifiedList}>
-            <VerifiedItem label="Verified driver" colors={colors} index={0} />
-            <VerifiedItem label="Verified phone number" colors={colors} index={1} />
-            <VerifiedItem label="Verified Driver's Licence" colors={colors} index={2} />
-            <VerifiedItem label="Member since 2024" colors={colors} index={3} />
-          </View>
-        </AnimatedCard>
-
-        {/* Vehicle Details Card */}
-        {user?.driver && (
-          <AnimatedCard animValue={cardAnims[1]} colors={colors}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Vehicle Details</Text>
-            <View style={styles.vehicleInfo}>
-              <View style={[styles.vehiclePlaceholder, { backgroundColor: colors.inputBackground }]}>
-                <Ionicons name="car" size={32} color={colors.textTertiary} />
+          {/* Vehicle Card */}
+          {user?.driver && (
+            <TouchableOpacity
+              style={styles.vehicleCard}
+              onPress={() => handleMenuPress('VehicleDetails')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.vehicleIconBg}>
+                <Ionicons name="car-sport" size={24} color={PRIMARY} />
               </View>
-              <View style={styles.vehicleDetails}>
-                <Text style={[styles.vehicleModel, { color: colors.text }]}>
+              <View style={styles.vehicleInfo}>
+                <Text style={styles.vehicleModel}>
                   {user.driver.vehicle_model || 'Add Vehicle'}
                 </Text>
-                <Text style={[styles.vehiclePlate, { color: colors.textSecondary }]}>
-                  {user.driver.plate_number || 'No plate'}
-                </Text>
-                <Text style={[styles.vehicleMeta, { color: colors.textTertiary }]}>
-                  {user.driver.vehicle_type || 'Car'} • {user.driver.seats || 4} seats
+                <Text style={styles.vehiclePlate}>
+                  {user.driver.plate_number || 'No plate'} {user.driver.vehicle_color ? `- ${user.driver.vehicle_color}` : ''}
                 </Text>
               </View>
-            </View>
-          </AnimatedCard>
-        )}
+              <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.3)" />
+            </TouchableOpacity>
+          )}
+        </LinearGradient>
 
-        {/* Account Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionHeaderText, { color: colors.textSecondary }]}>ACCOUNT</Text>
+        {/* Menu Sections */}
+        <View style={styles.menuSections}>
+          {/* Account */}
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: isDark ? 'rgba(255,255,255,0.4)' : '#9CA3AF' }]}>ACCOUNT</Text>
+          </View>
+          <View style={[styles.menuCard, { backgroundColor: isDark ? '#14142B' : '#FFF' }]}>
+            <MenuItem icon="person" title="Personal Info" onPress={() => handleMenuPress('EditProfile')} colors={colors} isDark={isDark} />
+            <MenuItem icon="wallet" title="Earnings" subtitle="Track your income" onPress={() => handleMenuPress('Earnings')} colors={colors} isDark={isDark} />
+            <MenuItem icon="time" title="Ride History" onPress={() => handleMenuPress('RideHistory')} colors={colors} isDark={isDark} />
+            <MenuItem icon="star" title="Ratings & Reviews" onPress={() => handleMenuPress('Ratings')} colors={colors} isDark={isDark} />
+            <MenuItem icon="gift" title="Loyalty Rewards" onPress={() => handleMenuPress('Loyalty')} colors={colors} isDark={isDark} />
+          </View>
+
+          {/* Settings */}
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: isDark ? 'rgba(255,255,255,0.4)' : '#9CA3AF' }]}>SETTINGS</Text>
+          </View>
+          <View style={[styles.menuCard, { backgroundColor: isDark ? '#14142B' : '#FFF' }]}>
+            <MenuItem icon="notifications" title="Notifications" onPress={() => handleMenuPress('NotificationsSettings')} colors={colors} isDark={isDark} />
+            <MenuItem icon="moon" title="Dark Mode" isSwitch value={isDark} onPress={toggleTheme} colors={colors} isDark={isDark} />
+            <MenuItem icon="globe" title="Language" value="English" onPress={handleLanguagePress} colors={colors} isDark={isDark} />
+          </View>
+
+          {/* Support */}
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: isDark ? 'rgba(255,255,255,0.4)' : '#9CA3AF' }]}>SUPPORT</Text>
+          </View>
+          <View style={[styles.menuCard, { backgroundColor: isDark ? '#14142B' : '#FFF' }]}>
+            <MenuItem icon="help-circle" title="Help & Support" onPress={() => handleMenuPress('Support')} colors={colors} isDark={isDark} />
+            <MenuItem icon="book" title="FAQ" onPress={() => handleMenuPress('DriverFAQ')} colors={colors} isDark={isDark} />
+            <MenuItem icon="document-text" title="Terms & Conditions" onPress={() => handleMenuPress('Support')} colors={colors} isDark={isDark} />
+            <MenuItem icon="shield-checkmark" title="Privacy Policy" onPress={() => handleMenuPress('Support')} colors={colors} isDark={isDark} />
+          </View>
+
+          {/* Logout */}
+          <TouchableOpacity
+            style={[styles.logoutBtn, { borderColor: isDark ? '#EF444430' : '#EF444420' }]}
+            onPress={handleLogout}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+
+          {/* Version */}
+          <Text style={[styles.version, { color: isDark ? 'rgba(255,255,255,0.2)' : '#D1D5DB' }]}>
+            Shareide Fleet v1.0.0
+          </Text>
         </View>
-        <AnimatedCard animValue={cardAnims[2]} colors={colors}>
-          <MenuItem
-            icon="person"
-            title="Personal Information"
-            onPress={() => handleMenuPress('EditProfile')}
-            colors={colors}
-            index={0}
-          />
-          <MenuItem
-            icon="car"
-            title="Vehicle Details"
-            onPress={() => handleMenuPress('VehicleDetails')}
-            colors={colors}
-            index={1}
-          />
-          <MenuItem
-            icon="wallet"
-            title="Earnings"
-            onPress={() => handleMenuPress('Earnings')}
-            colors={colors}
-            index={2}
-          />
-          <MenuItem
-            icon="time"
-            title="Ride History"
-            onPress={() => handleMenuPress('RideHistory')}
-            colors={colors}
-            index={3}
-          />
-          <MenuItem
-            icon="star"
-            title="Ratings & Reviews"
-            onPress={() => handleMenuPress('Ratings')}
-            colors={colors}
-            index={4}
-          />
-          <MenuItem
-            icon="gift"
-            title="Loyalty Rewards"
-            onPress={() => handleMenuPress('Loyalty')}
-            colors={colors}
-            index={5}
-          />
-        </AnimatedCard>
-
-        {/* Settings Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionHeaderText, { color: colors.textSecondary }]}>SETTINGS</Text>
-        </View>
-        <AnimatedCard animValue={cardAnims[3]} colors={colors}>
-          <MenuItem
-            icon="notifications"
-            title="Notifications"
-            onPress={() => handleMenuPress('NotificationsSettings')}
-            colors={colors}
-            index={0}
-          />
-          <MenuItem
-            icon="moon"
-            title="Dark Mode"
-            value={isDark}
-            onPress={toggleTheme}
-            colors={colors}
-            index={1}
-          />
-          <MenuItem
-            icon="globe"
-            title="Language"
-            value="English"
-            onPress={handleLanguagePress}
-            colors={colors}
-            index={2}
-          />
-        </AnimatedCard>
-
-        {/* Support Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionHeaderText, { color: colors.textSecondary }]}>SUPPORT</Text>
-        </View>
-        <AnimatedCard animValue={cardAnims[4]} colors={colors}>
-          <MenuItem
-            icon="help-circle"
-            title="Help & Support"
-            onPress={() => handleMenuPress('Support')}
-            colors={colors}
-            index={0}
-          />
-          <MenuItem
-            icon="book"
-            title="FAQ"
-            onPress={() => handleMenuPress('DriverFAQ')}
-            colors={colors}
-            index={1}
-          />
-          <MenuItem
-            icon="document-text"
-            title="Terms & Conditions"
-            onPress={() => handleMenuPress('Support')}
-            colors={colors}
-            index={2}
-          />
-          <MenuItem
-            icon="shield-checkmark"
-            title="Privacy Policy"
-            onPress={() => handleMenuPress('Support')}
-            colors={colors}
-            index={3}
-          />
-        </AnimatedCard>
-
-        {/* Logout Button */}
-        <LogoutButton
-          colors={colors}
-          animValue={logoutAnim}
-          onPress={handleLogout}
-        />
-
-        {/* Version */}
-        <Animated.Text
-          style={[
-            styles.versionText,
-            { color: colors.textTertiary },
-            { opacity: logoutAnim },
-          ]}
-        >
-          Shareide Fleet v1.0.0
-        </Animated.Text>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
-  );
-};
-
-// Animated Card Component
-const AnimatedCard = ({ children, animValue, colors }) => (
-  <Animated.View
-    style={[
-      styles.card,
-      { backgroundColor: colors.card },
-      shadows.sm,
-      {
-        opacity: animValue,
-        transform: [
-          {
-            translateY: animValue.interpolate({
-              inputRange: [0, 1],
-              outputRange: [30, 0],
-            }),
-          },
-        ],
-      },
-    ]}
-  >
-    {children}
-  </Animated.View>
-);
-
-// Logout Button Component
-const LogoutButton = ({ colors, animValue, onPress }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, { toValue: 0.95, useNativeDriver: true }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }).start();
-  };
-
-  return (
-    <AnimatedTouchable
-      style={[
-        styles.logoutButton,
-        { borderColor: colors.error },
-        {
-          opacity: animValue,
-          transform: [
-            { scale: scaleAnim },
-            {
-              translateY: animValue.interpolate({
-                inputRange: [0, 1],
-                outputRange: [20, 0],
-              }),
-            },
-          ],
-        },
-      ]}
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      activeOpacity={1}
-    >
-      <Ionicons name="log-out" size={20} color={colors.error} />
-      <Text style={[styles.logoutText, { color: colors.error }]}>Logout</Text>
-    </AnimatedTouchable>
   );
 };
 
@@ -553,194 +276,217 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  // Dark gradient profile header
-  profileHeader: {
-    backgroundColor: '#1A1A2E', // kept dark for branded header
-    paddingBottom: 28,
-    alignItems: 'center',
+
+  // Header
+  header: {
+    paddingBottom: 24,
+    paddingHorizontal: 20,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
   },
-  profileHeaderTitle: {
-    fontSize: typography.h5,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.7)',
-    marginBottom: spacing.xl,
+  avatarSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
   },
-  avatarContainer: {
+  avatarOuter: {
     position: 'relative',
-    marginBottom: spacing.md,
   },
-  avatarWrapper: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    overflow: 'hidden',
-    borderWidth: 3,
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.15)',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 50,
   },
   verifiedBadge: {
     position: 'absolute',
-    bottom: 4,
-    right: 4,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#FCC014',
+    bottom: 0,
+    right: -2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: PRIMARY,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#1A1A2E', // matches dark header bg
+    borderWidth: 2,
+    borderColor: '#1A1A2E',
   },
-  profileName: {
-    fontSize: typography.h4,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: spacing.lg,
+  nameSection: {
+    flex: 1,
+    marginLeft: 14,
   },
-  profileStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xxl,
+  userName: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFF',
+    letterSpacing: -0.3,
   },
-  profileStat: {
-    alignItems: 'center',
-  },
-  profileStatValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  profileStatNumber: {
-    fontSize: typography.h4,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  profileStatLabel: {
-    fontSize: typography.caption,
+  userPhone: {
+    fontSize: 13,
     color: 'rgba(255,255,255,0.5)',
     marginTop: 2,
   },
-  profileStatDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-  },
-  // Section headers
-  sectionHeader: {
-    paddingHorizontal: spacing.lg + spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.sm,
-  },
-  sectionHeaderText: {
-    fontSize: typography.caption,
-    fontWeight: '600',
-    letterSpacing: 1,
-  },
-  card: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-    padding: spacing.lg,
-    borderRadius: borderRadius.lg,
-  },
-  cardTitle: {
-    fontSize: typography.body,
-    fontWeight: '600',
-    marginBottom: spacing.md,
-  },
-  verifiedList: {
-    gap: spacing.md,
-  },
-  verifiedItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  verifiedIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  editBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(252,192,20,0.12)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  verifiedLabel: {
-    fontSize: typography.body,
+
+  // Stats
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    marginBottom: 16,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFF',
+    letterSpacing: -0.5,
+  },
+  statLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.45)',
+    fontWeight: '500',
+  },
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+
+  // Vehicle Card
+  vehicleCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 14,
+    padding: 14,
+  },
+  vehicleIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(252,192,20,0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   vehicleInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
-  },
-  vehiclePlaceholder: {
-    width: 80,
-    height: 60,
-    borderRadius: borderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  vehicleDetails: {
     flex: 1,
+    marginLeft: 12,
   },
   vehicleModel: {
-    fontSize: typography.body,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFF',
   },
   vehiclePlate: {
-    fontSize: typography.bodySmall,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.45)',
     marginTop: 2,
   },
-  vehicleMeta: {
-    fontSize: typography.caption,
-    marginTop: 2,
+
+  // Menu Sections
+  menuSections: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
+  sectionHeader: {
+    paddingHorizontal: 4,
+    paddingTop: 20,
+    paddingBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+  },
+  menuCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+
+  // Menu Item
   menuItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
   },
-  menuItemLeft: {
+  menuLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: 12,
+    flex: 1,
   },
-  menuIconContainer: {
-    width: 36,
-    height: 36,
+  menuIconBg: {
+    width: 34,
+    height: 34,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  menuItemTitle: {
-    fontSize: typography.body,
+  menuTitle: {
+    fontSize: 15,
+    fontWeight: '500',
   },
-  menuItemValue: {
-    fontSize: typography.bodySmall,
+  menuSubtitle: {
+    fontSize: 12,
+    marginTop: 1,
   },
-  logoutButton: {
+  menuValue: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+
+  // Logout
+  logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
+    gap: 8,
+    marginTop: 24,
+    paddingVertical: 14,
+    borderRadius: 14,
     borderWidth: 1,
   },
   logoutText: {
-    fontSize: typography.body,
+    fontSize: 15,
     fontWeight: '600',
+    color: '#EF4444',
   },
-  versionText: {
-    fontSize: typography.caption,
+
+  // Version
+  version: {
+    fontSize: 12,
     textAlign: 'center',
-    marginTop: spacing.xl,
+    marginTop: 20,
+    marginBottom: 10,
   },
 });
 

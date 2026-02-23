@@ -123,8 +123,8 @@ const DocumentCaptureScreen = ({ navigation, route }) => {
   };
 
   const handleUsePhoto = () => {
-    if (capturedImage && route?.params?.onCapture) {
-      // Pass image back via route params callback
+    if (capturedImage && route?.params?.returnScreen) {
+      // Pass image back via route params
       navigation.navigate({
         name: route.params.returnScreen,
         params: { capturedImage: capturedImage, docType },
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
   // Preview
   previewImage: {
     flex: 1,
-    resizeMode: 'contain',
+    resizeMode: 'cover',
   },
   previewTopBar: {
     position: 'absolute',

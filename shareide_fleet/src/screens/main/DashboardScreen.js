@@ -8,6 +8,7 @@ import {
   StatusBar,
   Animated,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,8 +23,9 @@ import rideRequestService from '../../utils/rideRequestService';
 import SideDrawer from '../../components/SideDrawer';
 import RideRequestPopup from '../../components/RideRequestPopup';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const PRIMARY = '#FCC014';
+const GO_BTN_SIZE = 120;
 
 const DashboardScreen = ({ navigation }) => {
   const { colors, isDark } = useTheme();
@@ -36,7 +38,7 @@ const DashboardScreen = ({ navigation }) => {
   const [isOnline, setIsOnline] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [mapKey, setMapKey] = useState(0);
-  const [stats, setStats] = useState({ today_earnings: 0, today_rides: 0, rating: 5.0 });
+  const [stats, setStats] = useState({ today_earnings: 0, today_rides: 0, rating: 5.0, acceptance_rate: 0 });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [rideRequests, setRideRequests] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
@@ -54,25 +56,40 @@ const DashboardScreen = ({ navigation }) => {
     return false;
   };
 
+  // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const goButtonScale = useRef(new Animated.Value(1)).current;
+  const goGlowAnim = useRef(new Animated.Value(0)).current;
   const bottomSlide = useRef(new Animated.Value(0)).current;
+  const statsOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     initializeLocation();
     fetchData();
-    Animated.spring(bottomSlide, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true }).start();
+    Animated.parallel([
+      Animated.spring(bottomSlide, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true }),
+      Animated.timing(statsOpacity, { toValue: 1, duration: 600, delay: 300, useNativeDriver: true }),
+    ]).start();
   }, []);
 
   useEffect(() => {
     if (isOnline) {
+      // Pulse animation for GO button glow
       const pulse = Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.6, duration: 1500, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
+          Animated.timing(goGlowAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
+          Animated.timing(goGlowAnim, { toValue: 0, duration: 1500, useNativeDriver: true }),
         ])
       );
       pulse.start();
+
+      const ringPulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.8, duration: 2000, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
+        ])
+      );
+      ringPulse.start();
 
       locationService.startTracking((loc) => {
         setCurrentLocation(loc);
@@ -90,10 +107,12 @@ const DashboardScreen = ({ navigation }) => {
 
       return () => {
         pulse.stop();
+        ringPulse.stop();
         locationService.stopTracking();
         rideRequestService.stop();
       };
     } else {
+      goGlowAnim.setValue(0);
       locationService.stopTracking();
       rideRequestService.stop();
     }
@@ -119,6 +138,7 @@ const DashboardScreen = ({ navigation }) => {
           today_earnings: statsRes.data.today_earnings || 0,
           today_rides: statsRes.data.today_rides || 0,
           rating: statsRes.data.rating || 5.0,
+          acceptance_rate: statsRes.data.acceptance_rate || 0,
         });
         setIsOnline(statsRes.data.is_online || false);
       }
@@ -189,43 +209,35 @@ const DashboardScreen = ({ navigation }) => {
   <style>
     * { margin: 0; padding: 0; }
     html, body, #map { width: 100%; height: 100%; }
-    .marker-wrapper { position: relative; }
-    .marker {
-      width: 52px; height: 52px;
-      background: linear-gradient(135deg, #FCC014 0%, #FF9500 100%);
+    .driver-marker {
+      width: 48px; height: 48px;
+      background: #FCC014;
       border-radius: 50%;
       border: 4px solid #fff;
-      box-shadow: 0 6px 20px rgba(252,192,20,0.5);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
       display: flex; align-items: center; justify-content: center;
+      position: relative;
     }
-    .marker::after {
-      content: ''; width: 24px; height: 24px;
+    .driver-marker::after {
+      content: ''; width: 22px; height: 22px;
       background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23000"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>') center/contain no-repeat;
     }
-    .pulse-ring {
-      position: absolute; width: 80px; height: 80px; top: -14px; left: -14px;
+    .marker-shadow {
+      position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+      width: 32px; height: 8px;
+      background: radial-gradient(ellipse, rgba(0,0,0,0.25), transparent);
       border-radius: 50%;
-      border: 3px solid rgba(252, 192, 20, 0.4);
-      animation: pulseRing 2s ease-out infinite;
     }
-    .pulse-fill {
-      position: absolute; width: 80px; height: 80px; top: -14px; left: -14px;
-      background: rgba(252, 192, 20, 0.15);
-      border-radius: 50%;
-      animation: pulseFill 2s ease-out infinite;
-    }
-    @keyframes pulseRing { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.8); opacity: 0; } }
-    @keyframes pulseFill { 0% { transform: scale(0.5); opacity: 0.4; } 100% { transform: scale(1.5); opacity: 0; } }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <script>
     const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([${lat}, ${lng}], 16);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/${isDark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/${isDark ? 'dark_all' : 'voyager'}/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
     const icon = L.divIcon({
-      html: '<div class="marker-wrapper"><div class="pulse-fill"></div><div class="pulse-ring"></div><div class="marker"></div></div>',
-      className: '', iconSize: [52, 52], iconAnchor: [26, 26]
+      html: '<div class="driver-marker"></div><div class="marker-shadow"></div>',
+      className: '', iconSize: [48, 56], iconAnchor: [24, 28]
     });
     L.marker([${lat}, ${lng}], { icon }).addTo(map);
   </script>
@@ -234,8 +246,8 @@ const DashboardScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor="transparent" />
+    <View style={[styles.container, { backgroundColor: isDark ? '#0A0A14' : '#F5F5F5' }]}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       {/* Full Screen Map */}
       <View style={styles.mapContainer}>
@@ -248,57 +260,32 @@ const DashboardScreen = ({ navigation }) => {
           domStorageEnabled
         />
 
-        {/* Top Header with integrated toggle */}
-        <View style={[styles.topHeader, { paddingTop: insets.top + 8 }]}>
-          {/* Left: Menu */}
+        {/* Top Bar - Floating */}
+        <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
+          {/* Menu Button */}
           <TouchableOpacity
-            style={[styles.headerBtn, { backgroundColor: colors.card || colors.surface }]}
+            style={[styles.floatingBtn, { backgroundColor: isDark ? 'rgba(20,20,35,0.9)' : 'rgba(255,255,255,0.95)' }]}
             onPress={() => setDrawerOpen(true)}
             activeOpacity={0.7}
           >
-            <Ionicons name="menu" size={22} color={colors.text} />
+            <Ionicons name="menu" size={22} color={isDark ? '#FFF' : '#1A1A2E'} />
           </TouchableOpacity>
 
-          {/* Center: Online/Offline Toggle */}
-          <Animated.View style={{ transform: [{ scale: goButtonScale }], opacity: isApproved ? 1 : 0.5 }}>
-            <TouchableOpacity
-              onPress={() => { if (!handleRestrictedAction('go online')) toggleOnline(); }}
-              activeOpacity={0.8}
-              style={styles.toggleOuter}
-            >
-              <LinearGradient
-                colors={isOnline ? ['#10B981', '#059669'] : ['#374151', '#1F2937']}
-                style={styles.toggleTrack}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
-                <View style={[
-                  styles.toggleThumb,
-                  isOnline ? styles.toggleThumbOn : styles.toggleThumbOff,
-                ]}>
-                  {isOnline ? (
-                    <Ionicons name="checkmark" size={14} color="#10B981" />
-                  ) : (
-                    <Ionicons name="close" size={14} color="#9CA3AF" />
-                  )}
-                </View>
-                <Text style={[
-                  styles.toggleLabel,
-                  isOnline ? styles.toggleLabelOn : styles.toggleLabelOff,
-                ]}>
-                  {isOnline ? 'ONLINE' : 'OFFLINE'}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animated.View>
+          {/* Status Pill */}
+          <View style={[styles.statusPill, isOnline ? styles.statusOnline : styles.statusOffline]}>
+            <View style={[styles.statusDot, { backgroundColor: isOnline ? '#10B981' : '#9CA3AF' }]} />
+            <Text style={[styles.statusText, { color: isOnline ? '#10B981' : '#9CA3AF' }]}>
+              {isOnline ? 'Online' : 'Offline'}
+            </Text>
+          </View>
 
-          {/* Right: Notifications */}
+          {/* Notifications */}
           <TouchableOpacity
-            style={[styles.headerBtn, { backgroundColor: colors.card || colors.surface }]}
+            style={[styles.floatingBtn, { backgroundColor: isDark ? 'rgba(20,20,35,0.9)' : 'rgba(255,255,255,0.95)' }]}
             onPress={() => navigation.navigate('Notifications')}
             activeOpacity={0.7}
           >
-            <Ionicons name="notifications-outline" size={22} color={colors.text} />
+            <Ionicons name="notifications-outline" size={22} color={isDark ? '#FFF' : '#1A1A2E'} />
             <View style={styles.notifDot} />
           </TouchableOpacity>
         </View>
@@ -312,11 +299,11 @@ const DashboardScreen = ({ navigation }) => {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
-              <Ionicons name={driverStatus === 'rejected' ? 'close-circle' : 'time'} size={20} color="#FFF" />
+              <Ionicons name={driverStatus === 'rejected' ? 'close-circle' : 'time'} size={18} color="#FFF" />
               <Text style={styles.approvalText}>
                 {driverStatus === 'rejected'
-                  ? 'Your application was rejected. Please contact support.'
-                  : 'Account under review. Features will unlock once approved.'}
+                  ? 'Application rejected. Contact support.'
+                  : 'Account under review. Features unlock after approval.'}
               </Text>
             </LinearGradient>
           </View>
@@ -324,7 +311,10 @@ const DashboardScreen = ({ navigation }) => {
 
         {/* Center Location Button */}
         <TouchableOpacity
-          style={[styles.centerBtn, { bottom: 180 + insets.bottom, backgroundColor: colors.card || colors.surface }]}
+          style={[styles.floatingBtn, styles.centerBtn, {
+            bottom: 310 + insets.bottom,
+            backgroundColor: isDark ? 'rgba(20,20,35,0.9)' : 'rgba(255,255,255,0.95)',
+          }]}
           onPress={initializeLocation}
           activeOpacity={0.7}
         >
@@ -333,62 +323,122 @@ const DashboardScreen = ({ navigation }) => {
 
         {/* Pending Requests Badge */}
         {showPopup && rideRequests.length > 1 && (
-          <View style={[styles.queueBadge, { top: insets.top + 64 }]}>
+          <View style={[styles.queueBadge, { top: insets.top + 70 }]}>
             <View style={styles.queueBadgeInner}>
               <Text style={styles.queueBadgeText}>{rideRequests.length}</Text>
             </View>
           </View>
         )}
-
-        {isOnline && (
-          <Animated.View style={[
-            styles.activePulse,
-            {
-              bottom: 170 + insets.bottom,
-              transform: [{ scale: pulseAnim }],
-              opacity: pulseAnim.interpolate({
-                inputRange: [1, 1.6],
-                outputRange: [0.3, 0],
-              }),
-            },
-          ]} />
-        )}
       </View>
 
-      {/* Compact Bottom Panel */}
+      {/* Bottom Panel - InDrive Style */}
       <Animated.View style={[
         styles.bottomPanel,
         {
-          backgroundColor: colors.card || colors.surface,
+          backgroundColor: isDark ? '#14142B' : '#FFFFFF',
           paddingBottom: insets.bottom + 80,
           transform: [{
             translateY: bottomSlide.interpolate({
               inputRange: [0, 1],
-              outputRange: [200, 0],
+              outputRange: [300, 0],
             }),
           }],
         },
       ]}>
-        {/* Earnings Row */}
-        <View style={styles.earningsRow}>
-          <View>
-            <Text style={[styles.earningsLabel, { color: colors.textTertiary }]}>Today's Earnings</Text>
-            <Text style={[styles.earningsAmount, { color: colors.text }]}>Rs. {stats.today_earnings.toLocaleString()}</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.earningsDetailBtn}
-            onPress={() => navigation.navigate('Earnings')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.earningsDetailText}>Details</Text>
-            <Ionicons name="chevron-forward" size={14} color={PRIMARY} />
-          </TouchableOpacity>
+        {/* GO Button - Centered, Big */}
+        <View style={styles.goButtonContainer}>
+          {/* Pulse rings when online */}
+          {isOnline && (
+            <>
+              <Animated.View style={[
+                styles.pulseRing,
+                {
+                  transform: [{ scale: pulseAnim }],
+                  opacity: pulseAnim.interpolate({
+                    inputRange: [1, 1.8],
+                    outputRange: [0.4, 0],
+                  }),
+                  borderColor: '#10B981',
+                },
+              ]} />
+              <Animated.View style={[
+                styles.pulseRing2,
+                {
+                  transform: [{ scale: Animated.multiply(pulseAnim, 0.7) }],
+                  opacity: pulseAnim.interpolate({
+                    inputRange: [1, 1.8],
+                    outputRange: [0.3, 0],
+                  }),
+                  borderColor: '#10B981',
+                },
+              ]} />
+            </>
+          )}
+
+          <Animated.View style={{ transform: [{ scale: goButtonScale }], opacity: isApproved ? 1 : 0.4 }}>
+            <TouchableOpacity
+              onPress={() => { if (!handleRestrictedAction('go online')) toggleOnline(); }}
+              activeOpacity={0.8}
+              style={styles.goButtonTouchable}
+            >
+              <LinearGradient
+                colors={isOnline ? ['#10B981', '#059669'] : [PRIMARY, '#E5A800']}
+                style={styles.goButton}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.goButtonText}>{isOnline ? 'ON' : 'GO'}</Text>
+                <Text style={styles.goButtonSubText}>{isOnline ? 'Tap to stop' : 'Tap to start'}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
 
-        {/* Compact Action Buttons Row */}
-        <View style={styles.actionRow}>
+        {/* Greeting */}
+        <Text style={[styles.greeting, { color: isDark ? '#FFF' : '#1A1A2E' }]}>
+          {isOnline ? 'You are online' : `Hey ${getUserName()}`}
+        </Text>
+        <Text style={[styles.greetingSub, { color: isDark ? 'rgba(255,255,255,0.5)' : '#9CA3AF' }]}>
+          {isOnline ? 'Waiting for ride requests...' : 'Go online to start earning'}
+        </Text>
+
+        {/* Stats Row */}
+        <Animated.View style={[styles.statsRow, { opacity: statsOpacity }]}>
+          <View style={[styles.statCard, { backgroundColor: isDark ? '#1E1E3A' : '#F9FAFB' }]}>
+            <View style={[styles.statIconBg, { backgroundColor: '#FCC01420' }]}>
+              <Ionicons name="cash-outline" size={18} color={PRIMARY} />
+            </View>
+            <Text style={[styles.statValue, { color: isDark ? '#FFF' : '#1A1A2E' }]}>
+              Rs. {stats.today_earnings.toLocaleString()}
+            </Text>
+            <Text style={[styles.statLabel, { color: isDark ? 'rgba(255,255,255,0.4)' : '#9CA3AF' }]}>Today</Text>
+          </View>
+
+          <View style={[styles.statCard, { backgroundColor: isDark ? '#1E1E3A' : '#F9FAFB' }]}>
+            <View style={[styles.statIconBg, { backgroundColor: '#3B82F620' }]}>
+              <Ionicons name="car-outline" size={18} color="#3B82F6" />
+            </View>
+            <Text style={[styles.statValue, { color: isDark ? '#FFF' : '#1A1A2E' }]}>
+              {stats.today_rides}
+            </Text>
+            <Text style={[styles.statLabel, { color: isDark ? 'rgba(255,255,255,0.4)' : '#9CA3AF' }]}>Rides</Text>
+          </View>
+
+          <View style={[styles.statCard, { backgroundColor: isDark ? '#1E1E3A' : '#F9FAFB' }]}>
+            <View style={[styles.statIconBg, { backgroundColor: '#10B98120' }]}>
+              <Ionicons name="star-outline" size={18} color="#10B981" />
+            </View>
+            <Text style={[styles.statValue, { color: isDark ? '#FFF' : '#1A1A2E' }]}>
+              {stats.rating.toFixed(1)}
+            </Text>
+            <Text style={[styles.statLabel, { color: isDark ? 'rgba(255,255,255,0.4)' : '#9CA3AF' }]}>Rating</Text>
+          </View>
+        </Animated.View>
+
+        {/* Quick Actions */}
+        <View style={styles.quickActions}>
           <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: isDark ? colors.backgroundSecondary : '#0F0F1E' }, !isApproved && { opacity: 0.5 }]}
+            style={[styles.quickActionBtn, { backgroundColor: isDark ? '#1E1E3A' : '#F9FAFB' }, !isApproved && { opacity: 0.4 }]}
             onPress={() => {
               if (handleRestrictedAction('view ride requests')) return;
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -396,18 +446,12 @@ const DashboardScreen = ({ navigation }) => {
             }}
             activeOpacity={0.7}
           >
-            <View style={[styles.actionIconBg, { backgroundColor: '#FCC01420' }]}>
-              <Ionicons name="people" size={18} color={PRIMARY} />
-            </View>
-            <View style={styles.actionTextCol}>
-              <Text style={styles.actionTitle}>Ride Requests</Text>
-              <Text style={styles.actionSub}>Find passengers</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
+            <Ionicons name="people" size={20} color={PRIMARY} />
+            <Text style={[styles.quickActionText, { color: isDark ? '#FFF' : '#1A1A2E' }]}>Requests</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: isDark ? colors.backgroundSecondary : '#0F0F1E' }, !isApproved && { opacity: 0.5 }]}
+            style={[styles.quickActionBtn, { backgroundColor: isDark ? '#1E1E3A' : '#F9FAFB' }, !isApproved && { opacity: 0.4 }]}
             onPress={() => {
               if (handleRestrictedAction('post rides')) return;
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -418,14 +462,32 @@ const DashboardScreen = ({ navigation }) => {
             }}
             activeOpacity={0.7}
           >
-            <View style={[styles.actionIconBg, { backgroundColor: '#10B98120' }]}>
-              <Ionicons name="add-circle" size={18} color="#10B981" />
-            </View>
-            <View style={styles.actionTextCol}>
-              <Text style={styles.actionTitle}>Post Ride</Text>
-              <Text style={styles.actionSub}>Share a trip</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
+            <Ionicons name="add-circle" size={20} color="#10B981" />
+            <Text style={[styles.quickActionText, { color: isDark ? '#FFF' : '#1A1A2E' }]}>Post Ride</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.quickActionBtn, { backgroundColor: isDark ? '#1E1E3A' : '#F9FAFB' }]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('Earnings');
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="bar-chart" size={20} color="#8B5CF6" />
+            <Text style={[styles.quickActionText, { color: isDark ? '#FFF' : '#1A1A2E' }]}>Earnings</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.quickActionBtn, { backgroundColor: isDark ? '#1E1E3A' : '#F9FAFB' }]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate('HeatMap');
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="flame" size={20} color="#EF4444" />
+            <Text style={[styles.quickActionText, { color: isDark ? '#FFF' : '#1A1A2E' }]}>Hotspots</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -460,8 +522,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Top Header
-  topHeader: {
+  // Top Bar
+  topBar: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -472,17 +534,41 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
-  headerBtn: {
+  floatingBtn: {
     width: 46,
     height: 46,
     borderRadius: 23,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    gap: 8,
+  },
+  statusOnline: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+  },
+  statusOffline: {
+    backgroundColor: 'rgba(156, 163, 175, 0.15)',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusText: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   notifDot: {
     position: 'absolute',
@@ -494,59 +580,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#EF4444',
     borderWidth: 2,
     borderColor: '#FFF',
-  },
-
-  // Toggle in header
-  toggleOuter: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  toggleTrack: {
-    width: 120,
-    height: 40,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  toggleThumb: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  toggleThumbOn: {
-    position: 'absolute',
-    right: 4,
-  },
-  toggleThumbOff: {
-    position: 'absolute',
-    left: 4,
-  },
-  toggleLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-  },
-  toggleLabelOn: {
-    color: '#FFFFFF',
-    position: 'absolute',
-    left: 14,
-  },
-  toggleLabelOff: {
-    color: 'rgba(255,255,255,0.7)',
-    position: 'absolute',
-    right: 12,
   },
 
   // Approval Banner
@@ -561,7 +594,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 16,
+    borderRadius: 14,
     gap: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -577,20 +610,10 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // Center button
+  // Center Button
   centerBtn: {
     position: 'absolute',
     right: 16,
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
 
   queueBadge: {
@@ -602,14 +625,14 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F59E0B',
+    backgroundColor: '#EF4444',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#EF4444',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 6,
   },
   queueBadgeText: {
     color: '#FFFFFF',
@@ -617,94 +640,136 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  activePulse: {
-    position: 'absolute',
-    alignSelf: 'center',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#10B981',
-  },
-
-  // Compact Bottom Panel
+  // Bottom Panel
   bottomPanel: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingTop: 20,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
     paddingHorizontal: 20,
+    paddingTop: 0,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 24,
+    elevation: 20,
+    marginTop: -30,
   },
 
-  // Earnings
-  earningsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  // GO Button
+  goButtonContainer: {
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -GO_BTN_SIZE / 2,
+    marginBottom: 12,
+    height: GO_BTN_SIZE + 20,
+  },
+  goButtonTouchable: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 16,
+  },
+  goButton: {
+    width: GO_BTN_SIZE,
+    height: GO_BTN_SIZE,
+    borderRadius: GO_BTN_SIZE / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 5,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  goButtonText: {
+    fontSize: 36,
+    fontWeight: '900',
+    color: '#FFF',
+    letterSpacing: 2,
+    textShadowColor: 'rgba(0,0,0,0.15)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  goButtonSubText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: -2,
+  },
+  pulseRing: {
+    position: 'absolute',
+    width: GO_BTN_SIZE + 30,
+    height: GO_BTN_SIZE + 30,
+    borderRadius: (GO_BTN_SIZE + 30) / 2,
+    borderWidth: 2,
+  },
+  pulseRing2: {
+    position: 'absolute',
+    width: GO_BTN_SIZE + 60,
+    height: GO_BTN_SIZE + 60,
+    borderRadius: (GO_BTN_SIZE + 60) / 2,
+    borderWidth: 1.5,
+  },
+
+  // Greeting
+  greeting: {
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
+  greetingSub: {
+    fontSize: 13,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 20,
+  },
+
+  // Stats Row
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
     marginBottom: 16,
   },
-  earningsLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    marginBottom: 2,
-  },
-  earningsAmount: {
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  earningsDetailBtn: {
-    flexDirection: 'row',
+  statCard: {
+    flex: 1,
     alignItems: 'center',
-    backgroundColor: '#FCC01415',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 4,
-  },
-  earningsDetailText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: PRIMARY,
-  },
-
-  // Compact Action Buttons
-  actionRow: {
-    gap: 10,
-  },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
     paddingVertical: 14,
+    paddingHorizontal: 8,
     borderRadius: 16,
   },
-  actionIconBg: {
-    width: 38,
-    height: 38,
+  statIconBg: {
+    width: 36,
+    height: 36,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginBottom: 8,
   },
-  actionTextCol: {
-    flex: 1,
+  statValue: {
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
-  actionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  actionSub: {
+  statLabel: {
     fontSize: 11,
-    color: 'rgba(255,255,255,0.5)',
     fontWeight: '500',
-    marginTop: 1,
+    marginTop: 2,
+  },
+
+  // Quick Actions
+  quickActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  quickActionBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderRadius: 14,
+    gap: 6,
+  },
+  quickActionText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
 });
 
