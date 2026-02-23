@@ -57,5 +57,13 @@ coverage/
 # Archives
 *.zip
 
+# Credentials & Keystores
+credentials.json
+*.keystore
+large_payload.json
+
+# PDFs
+*.pdf
+
 # Claude
 .claude/

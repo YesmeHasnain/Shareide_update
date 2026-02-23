@@ -108,10 +108,13 @@ const PendingScreen = ({ navigation }) => {
             documents: response.data.documents,
           };
           await updateUser(updatedUser);
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'MainTabs' }],
-          });
+          // Small delay to let AuthContext state settle before navigating
+          setTimeout(() => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'MainTabs' }],
+            });
+          }, 300);
         }
       }
     } catch (error) {
