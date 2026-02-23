@@ -20,6 +20,7 @@ import { rideAPI } from '../../api/ride';
 import locationService from '../../utils/locationService';
 import rideRequestService from '../../utils/rideRequestService';
 import SideDrawer from '../../components/SideDrawer';
+import RideRequestPopup from '../../components/RideRequestPopup';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PRIMARY = '#FCC014';
@@ -37,6 +38,8 @@ const DashboardScreen = ({ navigation }) => {
   const [mapKey, setMapKey] = useState(0);
   const [stats, setStats] = useState({ today_earnings: 0, today_rides: 0, rating: 5.0 });
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [rideRequests, setRideRequests] = useState([]);
+  const [showPopup, setShowPopup] = useState(false);
 
   const handleRestrictedAction = (actionName) => {
     if (!isApproved) {
@@ -79,15 +82,8 @@ const DashboardScreen = ({ navigation }) => {
       rideRequestService.start({
         onNewRideRequest: (requests) => {
           if (requests.length > 0) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert(
-              'New Ride Request!',
-              `${requests[0].pickup_location} → ${requests[0].dropoff_location}`,
-              [
-                { text: 'View', onPress: () => navigation.navigate('RideRequest', { rideId: requests[0].id }) },
-                { text: 'Later', style: 'cancel' },
-              ]
-            );
+            setRideRequests(requests);
+            setShowPopup(true);
           }
         },
       });
@@ -166,6 +162,17 @@ const DashboardScreen = ({ navigation }) => {
     if (user?.name) return user.name.split(' ')[0];
     if (user?.first_name) return user.first_name;
     return 'Captain';
+  };
+
+  const handleAcceptRide = (request) => {
+    setShowPopup(false);
+    setRideRequests([]);
+    rideRequestService.clearQueue();
+    navigation.navigate('RideRequest', { rideId: request.id });
+  };
+
+  const handleDeclineRide = (request) => {
+    rideRequestService.markDeclined(request.id);
   };
 
   const getMapHtml = () => {
@@ -324,6 +331,15 @@ const DashboardScreen = ({ navigation }) => {
           <Ionicons name="locate" size={22} color={PRIMARY} />
         </TouchableOpacity>
 
+        {/* Pending Requests Badge */}
+        {showPopup && rideRequests.length > 1 && (
+          <View style={[styles.queueBadge, { top: insets.top + 64 }]}>
+            <View style={styles.queueBadgeInner}>
+              <Text style={styles.queueBadgeText}>{rideRequests.length}</Text>
+            </View>
+          </View>
+        )}
+
         {isOnline && (
           <Animated.View style={[
             styles.activePulse,
@@ -413,6 +429,14 @@ const DashboardScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </Animated.View>
+
+      {/* Ride Request Popup */}
+      <RideRequestPopup
+        requests={rideRequests}
+        visible={showPopup}
+        onAccept={handleAcceptRide}
+        onDecline={handleDeclineRide}
+      />
 
       {/* Side Drawer */}
       <SideDrawer
@@ -567,6 +591,30 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+  },
+
+  queueBadge: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 20,
+  },
+  queueBadgeInner: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F59E0B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  queueBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
   },
 
   activePulse: {

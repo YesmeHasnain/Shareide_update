@@ -17,6 +17,9 @@ class RideRequestService {
     this.appState = AppState.currentState;
     this.userChannel = null;
     this.rideChannel = null;
+    this.queuedRequests = [];
+    this.declinedIds = new Set();
+    this.knownIds = new Set();
   }
 
   // Start polling for ride requests
@@ -114,8 +117,27 @@ class RideRequestService {
     this.isPolling = false;
     this.onNewRideRequest = null;
     this.onRideUpdate = null;
+    this.queuedRequests = [];
+    this.declinedIds.clear();
+    this.knownIds.clear();
 
     console.log('Ride request service stopped');
+  }
+
+  // Mark a request as declined so it won't reappear
+  markDeclined(requestId) {
+    this.declinedIds.add(requestId);
+    this.queuedRequests = this.queuedRequests.filter(r => r.id !== requestId);
+  }
+
+  // Get current queued requests
+  getQueuedRequests() {
+    return this.queuedRequests;
+  }
+
+  // Clear queue (e.g. after accepting a ride)
+  clearQueue() {
+    this.queuedRequests = [];
   }
 
   // Check for new ride requests
@@ -126,11 +148,26 @@ class RideRequestService {
       if (response.data.success) {
         const requests = response.data.data || [];
 
-        // Notify about new ride requests
-        if (requests.length > 0 && this.onNewRideRequest) {
-          // Haptic feedback for new request
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          this.onNewRideRequest(requests);
+        // Filter out already declined and already queued requests
+        let hasNew = false;
+        for (const req of requests) {
+          if (!this.declinedIds.has(req.id) && !this.knownIds.has(req.id)) {
+            this.queuedRequests.push(req);
+            this.knownIds.add(req.id);
+            hasNew = true;
+          }
+        }
+
+        // Remove queued requests that are no longer in the server response
+        const serverIds = new Set(requests.map(r => r.id));
+        this.queuedRequests = this.queuedRequests.filter(r => serverIds.has(r.id));
+
+        // Notify with the full queue
+        if (this.queuedRequests.length > 0 && this.onNewRideRequest) {
+          if (hasNew) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
+          this.onNewRideRequest([...this.queuedRequests]);
         }
       }
     } catch (error) {
