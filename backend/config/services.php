@@ -97,4 +97,14 @@ return [
         'key' => env('GOOGLE_CLOUD_VISION_KEY'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | OpenAI (Chat Moderation)
+    |--------------------------------------------------------------------------
+    */
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+        'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+    ],
+
 ];

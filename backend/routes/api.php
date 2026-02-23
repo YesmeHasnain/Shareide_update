@@ -254,6 +254,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/{chatId}/send-image', [ChatController::class, 'sendImage']);
         Route::post('/{chatId}/send-voice', [ChatController::class, 'sendVoice']);
         Route::post('/{chatId}/mark-read', [ChatController::class, 'markAsRead']);
+        Route::post('/{chatId}/typing', [ChatController::class, 'sendTyping']);
     });
 
     // ============================================

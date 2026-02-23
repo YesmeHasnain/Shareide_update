@@ -1,20 +1,16 @@
-# Dependencies (will be installed on build server)
-node_modules/
-
-# Build artifacts
-dist/
-.expo/
-android/
-ios/
-web-build/
-
-# Dev files
-.git/
-.vscode/
+node_modules
+dist
+.expo
+android
+ios
+web-build
+.git
+.vscode
 *.log
 .DS_Store
 Thumbs.db
-
-# Large unnecessary files
 *.tar.gz
 *.zip
+assets/Figma
+assets/Female
+assets/Male

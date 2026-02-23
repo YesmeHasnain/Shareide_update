@@ -10,6 +10,9 @@ use App\Models\Chat;
 use App\Models\ChatMessage;
 use App\Models\RideRequest;
 use App\Events\NewChatMessage;
+use App\Events\ChatTyping;
+use App\Events\ChatMessagesRead;
+use App\Services\ChatModerationService;
 
 class ChatController extends Controller
 {
@@ -177,6 +180,17 @@ class ChatController extends Controller
                     'success' => false,
                     'message' => 'Unauthorized access to this chat'
                 ], 403);
+            }
+
+            // Moderate message content (block phone numbers, social handles, etc.)
+            $moderationService = new ChatModerationService();
+            $moderation = $moderationService->moderate($request->message);
+            if ($moderation['blocked']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $moderation['reason'],
+                    'moderation_blocked' => true,
+                ], 422);
             }
 
             // Create message
@@ -442,6 +456,11 @@ class ChatController extends Controller
             }
             $chat->save();
 
+            // Broadcast read receipt so sender sees blue ticks
+            if ($updated > 0) {
+                broadcast(new ChatMessagesRead($chat->id, $user->id))->toOthers();
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Messages marked as read',
@@ -453,6 +472,36 @@ class ChatController extends Controller
                 'success' => false,
                 'message' => 'Failed to mark messages as read',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Send typing indicator
+     */
+    public function sendTyping(Request $request, $chatId)
+    {
+        try {
+            $user = $request->user();
+            $chat = Chat::findOrFail($chatId);
+
+            $isRider = $chat->rider_id === $user->id;
+            $isDriver = $chat->driver_id === $user->id;
+
+            if (!$isRider && !$isDriver) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 403);
+            }
+
+            broadcast(new ChatTyping($chat->id, $user->id, $user->name))->toOthers();
+
+            return response()->json(['success' => true], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send typing indicator'
             ], 500);
         }
     }

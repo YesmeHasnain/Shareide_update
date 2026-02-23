@@ -97,6 +97,12 @@ import RideRequestsScreen from '../screens/rides/RideRequestsScreen';
 import RateRiderScreen from '../screens/rides/RateRiderScreen';
 import AvailableRequestsScreen from '../screens/rides/AvailableRequestsScreen';
 
+// Wallet Screens
+import TopUpScreen from '../screens/wallet/TopUpScreen';
+import WithdrawScreen from '../screens/wallet/WithdrawScreen';
+import PaymentWebViewScreen from '../screens/wallet/PaymentWebViewScreen';
+import TransactionHistoryScreen from '../screens/wallet/TransactionHistoryScreen';
+
 // New Feature Screens
 import HeatMapScreen from '../screens/map/HeatMapScreen';
 import DriverFAQScreen from '../screens/support/DriverFAQScreen';
@@ -319,6 +325,12 @@ const AppNavigator = () => {
         <Stack.Screen name="PostRide" component={withApprovalGuard(PostRideScreen, 'Post Ride')} />
         <Stack.Screen name="RideRequests" component={withApprovalGuard(RideRequestsScreen, 'Ride Requests')} />
         <Stack.Screen name="RateRider" component={RateRiderScreen} />
+
+        {/* Wallet Screens */}
+        <Stack.Screen name="TopUp" component={TopUpScreen} />
+        <Stack.Screen name="Withdraw" component={WithdrawScreen} />
+        <Stack.Screen name="PaymentWebView" component={PaymentWebViewScreen} options={{ gestureEnabled: false }} />
+        <Stack.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
 
         {/* New Feature Screens */}
         <Stack.Screen name="AvailableRequests" component={withApprovalGuard(AvailableRequestsScreen, 'Available Requests')} />

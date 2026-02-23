@@ -14,6 +14,33 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// Create Android notification channels immediately at module load
+// (before any notification arrives, even before login)
+if (Platform.OS === 'android') {
+  Notifications.setNotificationChannelAsync('default', {
+    name: 'Default',
+    importance: Notifications.AndroidImportance.MAX,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#FCC014',
+  }).catch(() => {});
+
+  Notifications.setNotificationChannelAsync('rides', {
+    name: 'Ride Requests',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 500, 250, 500],
+    lightColor: '#FCC014',
+    sound: 'default',
+  }).catch(() => {});
+
+  Notifications.setNotificationChannelAsync('chat', {
+    name: 'Chat Messages',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#FCC014',
+    sound: 'default',
+  }).catch(() => {});
+}
+
 class NotificationService {
   constructor() {
     this.expoPushToken = null;
@@ -52,24 +79,6 @@ class NotificationService {
         console.log('Expo Push Token:', this.expoPushToken);
       } else {
         console.log('Must use physical device for push notifications');
-      }
-
-      // Setup Android notification channel
-      if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'Default',
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#FCC014',
-        });
-
-        await Notifications.setNotificationChannelAsync('rides', {
-          name: 'Ride Requests',
-          importance: Notifications.AndroidImportance.HIGH,
-          vibrationPattern: [0, 500, 250, 500],
-          lightColor: '#FCC014',
-          sound: 'default',
-        });
       }
 
       return this.expoPushToken;

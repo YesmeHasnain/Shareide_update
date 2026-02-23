@@ -21,6 +21,11 @@ export const AuthProvider = ({ children }) => {
       if (savedToken && savedUser) {
         setToken(savedToken);
         setUser(JSON.parse(savedUser));
+
+        // Re-register push token on app restart (non-blocking)
+        notificationService.registerToken().catch((err) => {
+          console.log('Failed to re-register push token on restart:', err);
+        });
       }
     } catch (error) {
       console.error('Load user data error:', error);
